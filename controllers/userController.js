@@ -4,6 +4,7 @@ const { generatePrimaryMemberId, generateFamilyMemberId, generateOtp, generateTo
 const fs = require("fs");
 const path = require("path");
 const QRCodeHelper = require('../utils/helper');
+const { logAction } = require("./commonController");
 
 require("dotenv").config();
 // const twilio = require("twilio"); // Uncomment this when you want to use Twilio for OTPs
@@ -17,8 +18,26 @@ const STATIC_OTP = "123456";
 
 const createUser = async (req, res) => {
     try {
-        const { name, email, mobileNumber, relation, age, parentUserId, address } = req.body;
-        console.log(req.body, "ree")
+        const {
+            name,
+            email,
+            mobileNumber,
+            relation,
+            age,
+            parentUserId,
+            address,
+            address1,
+            address2,
+            city,
+            state,
+            country,
+            pin,
+            dateOfBirth,
+            maritalStatus,
+            marriageDate,
+            title,
+        } = req.body;
+
         const profilePicturePath = req.file ? `/uploads/profilePictures/${req.file.filename}` : "";
 
         // Determine if this user is a primary user or a family member
@@ -31,6 +50,16 @@ const createUser = async (req, res) => {
                 memberId,
                 relation: "Primary",
                 address,
+                address1,
+                address2,
+                city,
+                state,
+                country,
+                pin,
+                dateOfBirth,
+                maritalStatus,
+                marriageDate,
+                title,
                 profilePicture: profilePicturePath,
                 isDeleted: false,
                 lastLogin: Date.now(),
@@ -70,6 +99,16 @@ const createUser = async (req, res) => {
             memberId,
             relation,
             address,
+            address1,
+            address2,
+            city,
+            state,
+            country,
+            pin,
+            dateOfBirth,
+            maritalStatus,
+            marriageDate,
+            title,
             parentUserId: parentUser._id,
             age: relation === "Child" ? age : undefined,
             profilePicture: profilePicturePath,
@@ -88,6 +127,7 @@ const createUser = async (req, res) => {
         });
     }
 };
+
 
 // Step 1: Request login to generate and send OTP
 const loginRequest = async (req, res) => {
@@ -132,7 +172,17 @@ const loginRequest = async (req, res) => {
             from: process.env.TWILIO_PHONE_NUMBER,
             to: user.mobileNumber,
         });
-        */
+        */  // Log the login action
+        const ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+        await logAction({
+            userId: user._id,
+            userType: "User",
+            action: "login",
+            role: 'member',
+            ipAddress: ip,
+            userAgent: req.headers["user-agent"],
+        });
 
         res.status(200).json({
             message: process.env.USE_STATIC_OTP === "true" ? "Static OTP set for testing" : "OTP sent to registered mobile number",
@@ -177,6 +227,7 @@ const verifyOtp = async (req, res) => {
             userId: user._id,
             memberId: user.memberId,
             email: user.email,
+            role: 'member',
             mobileNumber: user.mobileNumber,
         }
         const token = generateToken(tokenData)
@@ -200,37 +251,56 @@ const verifyOtp = async (req, res) => {
 
 
 // -------------------------old_Code----------------------------------------------------
-// Helper function to recursively fetch family members
+// Helper function to recursively fetch family members with QR codes
 // const fetchFamilyTree = async (userId) => {
-//     const familyMembers = await User.find({ parentUserId: userId }, "-otp -__v");
+//     const familyMembers = await User.find({ parentUserId: userId, status: 'Active' }, "-otp -__v");
 
 //     // Recursively fetch sub-family members for each family member
 //     const familyTree = await Promise.all(
-//         familyMembers.map(async (member) => ({
-//             _id: member._id,
-//             name: member.name,
-//             email: member.email,
-//             mobileNumber: member.mobileNumber,
-//             memberId: member.memberId,
-//             relation: member.relation,
-//             address: member.address,
-//             age: member.age,
-//             profilePicture: member.profilePicture,
-//             familyMembers: await fetchFamilyTree(member._id), // Recursively fetch sub-family members
-//         }))
+//         familyMembers.map(async (member) => {
+//             // Generate QR code including the profile picture
+//             const qrData = {
+//                 _id: member._id,
+//                 name: member.name,
+//                 email: member.email,
+//                 mobileNumber: member.mobileNumber,
+//                 memberId: member.memberId,
+//                 relation: member.relation,
+//                 address: member.address,
+//                 age: member.age,
+//                 status: member.status,
+//                 activatedDate: member.activatedDate,
+//                 profilePicture: member.profilePicture, // Add profile picture in QR data
+//             };
+//             const qrCode = await QRCodeHelper.generateQRCode(qrData);
+
+//             return {
+//                 _id: member._id,
+//                 name: member.name,
+//                 email: member.email,
+//                 mobileNumber: member.mobileNumber,
+//                 memberId: member.memberId,
+//                 relation: member.relation,
+//                 address: member.address,
+//                 age: member.age,
+//                 status: member.status,
+//                 activatedDate: member.activatedDate,
+//                 profilePicture: member.profilePicture,
+//                 qrCode, // Include the generated QR code
+//                 familyMembers: await fetchFamilyTree(member._id), // Recursively fetch sub-family members
+//             };
+//         })
 //     );
 
 //     return familyTree;
 // };
-
-// Helper function to recursively fetch family members with QR codes
 const fetchFamilyTree = async (userId) => {
     const familyMembers = await User.find({ parentUserId: userId, status: 'Active' }, "-otp -__v");
 
     // Recursively fetch sub-family members for each family member
     const familyTree = await Promise.all(
         familyMembers.map(async (member) => {
-            // Generate QR code including the profile picture
+            // Generate QR code including the profile picture and additional fields
             const qrData = {
                 _id: member._id,
                 name: member.name,
@@ -239,7 +309,17 @@ const fetchFamilyTree = async (userId) => {
                 memberId: member.memberId,
                 relation: member.relation,
                 address: member.address,
+                address1: member.address1,
+                address2: member.address2,
+                city: member.city,
+                state: member.state,
+                country: member.country,
+                pin: member.pin,
                 age: member.age,
+                dateOfBirth: member.dateOfBirth,
+                maritalStatus: member.maritalStatus,
+                marriageDate: member.marriageDate,
+                title: member.title,
                 status: member.status,
                 activatedDate: member.activatedDate,
                 profilePicture: member.profilePicture, // Add profile picture in QR data
@@ -254,7 +334,17 @@ const fetchFamilyTree = async (userId) => {
                 memberId: member.memberId,
                 relation: member.relation,
                 address: member.address,
+                address1: member.address1,
+                address2: member.address2,
+                city: member.city,
+                state: member.state,
+                country: member.country,
+                pin: member.pin,
                 age: member.age,
+                dateOfBirth: member.dateOfBirth,
+                maritalStatus: member.maritalStatus,
+                marriageDate: member.marriageDate,
+                title: member.title,
                 status: member.status,
                 activatedDate: member.activatedDate,
                 profilePicture: member.profilePicture,
@@ -267,6 +357,7 @@ const fetchFamilyTree = async (userId) => {
     return familyTree;
 };
 
+
 // Fetch user details including nested family members based on userId from the JWT token
 // const getUserDetails = async (req, res) => {
 //     try {
@@ -278,10 +369,32 @@ const fetchFamilyTree = async (userId) => {
 //             return res.status(404).json({ message: "User not found" });
 //         }
 
+//         // Check if the user is active
+//         if (user.status !== "Active") {
+//             return res.status(400).json({ message: "User is inactive. Please contact support." });
+//         }
+
+
+//         // Generate QR code for the primary user including profile picture
+//         const primaryUserQRData = {
+//             _id: user._id,
+//             name: user.name,
+//             email: user.email,
+//             mobileNumber: user.mobileNumber,
+//             memberId: user.memberId,
+//             address: user.address,
+//             relation: user.relation,
+//             age: user.age,
+//             status: user.status,
+//             activatedDate: user.activatedDate,
+//             profilePicture: user.profilePicture, // Include profile picture
+//         };
+//         const primaryUserQRCode = await QRCodeHelper.generateQRCode(primaryUserQRData);
+
 //         // Fetch the full family tree for this user
 //         const familyMembers = await fetchFamilyTree(userId);
 
-//         // Send the response including the user and their full family tree
+//         // Send the response including the user and their full family tree with QR codes
 //         res.status(200).json({
 //             message: "User details retrieved successfully",
 //             user: {
@@ -295,7 +408,10 @@ const fetchFamilyTree = async (userId) => {
 //                 address: user.address,
 //                 relation: user.relation,
 //                 age: user.age,
-//                 familyMembers, // Nested family members
+//                 status: user.status,
+//                 activatedDate: user.activatedDate,
+//                 qrCode: primaryUserQRCode, // Include the primary user's QR code
+//                 familyMembers, // Nested family members with QR codes
 //             },
 //         });
 //     } catch (error) {
@@ -303,7 +419,6 @@ const fetchFamilyTree = async (userId) => {
 //         res.status(500).json({ message: "Error fetching user details", error: error.message });
 //     }
 // };
-
 const getUserDetails = async (req, res) => {
     try {
         const userId = req.user.userId; // Extract userId from the token's decoded data
@@ -319,8 +434,7 @@ const getUserDetails = async (req, res) => {
             return res.status(400).json({ message: "User is inactive. Please contact support." });
         }
 
-
-        // Generate QR code for the primary user including profile picture
+        // Generate QR code for the primary user including profile picture and additional fields
         const primaryUserQRData = {
             _id: user._id,
             name: user.name,
@@ -328,6 +442,16 @@ const getUserDetails = async (req, res) => {
             mobileNumber: user.mobileNumber,
             memberId: user.memberId,
             address: user.address,
+            address1: user.address1,
+            address2: user.address2,
+            city: user.city,
+            state: user.state,
+            country: user.country,
+            pin: user.pin,
+            dateOfBirth: user.dateOfBirth,
+            maritalStatus: user.maritalStatus,
+            marriageDate: user.marriageDate,
+            title: user.title,
             relation: user.relation,
             age: user.age,
             status: user.status,
@@ -351,6 +475,16 @@ const getUserDetails = async (req, res) => {
                 lastLogin: user.lastLogin,
                 profilePicture: user.profilePicture,
                 address: user.address,
+                address1: user.address1,
+                address2: user.address2,
+                city: user.city,
+                state: user.state,
+                country: user.country,
+                pin: user.pin,
+                dateOfBirth: user.dateOfBirth,
+                maritalStatus: user.maritalStatus,
+                marriageDate: user.marriageDate,
+                title: user.title,
                 relation: user.relation,
                 age: user.age,
                 status: user.status,
@@ -364,6 +498,7 @@ const getUserDetails = async (req, res) => {
         res.status(500).json({ message: "Error fetching user details", error: error.message });
     }
 };
+
 
 // ------------------ ------------------------------------------------------------------------
 
@@ -410,10 +545,41 @@ const updateProfilePicture = async (req, res) => {
     }
 };
 
+const userLogout = async (req, res) => {
+    try {
+        const user = req.user;
+        // const adminId = req.user.id; // Assuming JWT middleware attaches `user` to `req`
+        const ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+        await logAction({
+            userId: user.userId,
+            userType: "User",
+            action: "logout",
+            role: user.role,
+            ipAddress: ip,
+            userAgent: req.headers["user-agent"],
+        });
+
+        // Invalidate the token (optional, depends on implementation)
+        // This could be handled by blacklisting the token or setting an expiry.
+
+        res.status(200).json({
+            message: 'Logout successful.',
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({
+            message: 'Internal Server Error',
+        });
+    }
+};
+
+
 module.exports = {
     createUser,
     loginRequest,
     verifyOtp,
     getUserDetails,
-    updateProfilePicture
+    updateProfilePicture,
+    userLogout
 };

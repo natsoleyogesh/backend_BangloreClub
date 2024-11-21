@@ -15,6 +15,7 @@ const addOffer = async (req, res) => {
             department,
             termsAndConditions,
             showExclusive,
+            discountOffer
         } = req.body;
 
         // Check if the file is uploaded
@@ -35,6 +36,7 @@ const addOffer = async (req, res) => {
             bannerImage: bannerImagePath,
             termsAndConditions,
             showExclusive,
+            discountOffer
         });
 
         // Save the offer to the database
@@ -65,6 +67,7 @@ const updateOffer = async (req, res) => {
         if (req.body.department) updates.department = req.body.department;
         if (req.body.termsAndConditions) updates.termsAndConditions = req.body.termsAndConditions;
         if (req.body.showExclusive !== undefined) updates.showExclusive = req.body.showExclusive; // Boolean check
+        if (req.body.discountOffer !== undefined) updates.discountOffer = req.body.discountOffer; // Boolean check
         if (req.file) updates.bannerImage = req.file ? `/uploads/offers/${req.file.filename}` : ""; // Handle uploaded file
 
         // Check if updates object is empty
