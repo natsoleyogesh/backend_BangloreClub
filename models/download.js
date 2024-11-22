@@ -21,6 +21,11 @@ const downloadSchema = new mongoose.Schema(
             enum: ['Active', 'Inactive'], // Status can be ACTIVE or INACTIVE
             default: 'Active',
         },
+        expiredDate: {
+            type: Date,
+            default: null,
+            required: true
+        }
     },
     {
         timestamps: true, // Adds createdAt and updatedAt

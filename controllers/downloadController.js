@@ -10,7 +10,7 @@ const addDownload = async (req, res, next) => {
             });
         }
 
-        const { title, description, status } = req.body;
+        const { title, description, status, expiredDate } = req.body;
 
         const fileUrl = req.file ? `/uploads/downloads/${req.file.filename}` : "";
         // Create a new download document
@@ -19,6 +19,7 @@ const addDownload = async (req, res, next) => {
             description,
             fileUrl: fileUrl, // Path to the uploaded file
             status: status || 'ACTIVE', // Default status is ACTIVE
+            expiredDate
         });
 
         // Save to the database
@@ -64,7 +65,7 @@ const downloadDetails = async (req, res) => {
 const updateDownload = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, description, status } = req.body;
+        const { title, description, status, expiredDate } = req.body;
         // const updates = req.body;
         if (!id) {
             return res.status(400).json({ message: 'Please Providethe valid id' });
@@ -78,6 +79,7 @@ const updateDownload = async (req, res) => {
         if (description) updates.description = description;
         if (status) updates.status = status;
         if (fileUrl) updates.fileUrl = fileUrl; // Update profile image only if uploaded
+        if (expiredDate) updates.expiredDate = expiredDate;
 
         const updatedDownload = await Download.findByIdAndUpdate(id, updates, { new: true });
         if (!updatedDownload) {
@@ -107,30 +109,38 @@ const deletedDownload = async (req, res) => {
 
 const getActiveDownloads = async (req, res) => {
     try {
-        const { type } = req.query;
-        const currentYear = new Date().getFullYear();
-        let query = { status: 'Active' };
+        const { type } = req.query; // Extract 'type' from query params
+        const currentDate = new Date(); // Current date for comparison
+
+        let query = { status: 'Active' }; // Base query for active downloads
 
         if (type === 'current') {
-            // Show only downloads from the current year
-            query.createdAt = {
-                $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
-                $lte: new Date(`${currentYear}-12-31T23:59:59.999Z`),
-            };
+            // Only include downloads that are not expired
+            query.$or = [
+                { expiredDate: null }, // No expiry date (never expires)
+                { expiredDate: { $gte: currentDate } }, // Expiry date is in the future
+            ];
         } else if (type === 'history') {
-            // Show only downloads from past years (excluding the current year)
-            query.createdAt = {
-                $lt: new Date(`${currentYear}-01-01T00:00:00.000Z`),
-            };
+            // Only include downloads that are expired
+            query.expiredDate = { $lt: currentDate }; // Expiry date is in the past
         }
 
-        const activeDownloads = await Download.find(query);
-        const downloads = activeDownloads.reverse();
-        return res.status(200).json({ message: "Downloads fetched successfully", downloads });
+        // Fetch downloads based on the query
+        const downloads = await Download.find(query).sort({ createdAt: -1 }); // Sort by most recent first
+
+        return res.status(200).json({
+            message: 'Downloads fetched successfully',
+            downloads,
+        });
     } catch (error) {
-        return res.status(500).json({ message: 'Error fetching active downloads', error: error.message });
+        console.error('Error fetching downloads:', error);
+        return res.status(500).json({
+            message: 'Error fetching downloads',
+            error: error.message,
+        });
     }
 };
+
 
 module.exports = {
     addDownload,
