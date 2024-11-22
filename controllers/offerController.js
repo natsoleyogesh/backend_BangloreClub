@@ -1,5 +1,54 @@
 const Offer = require("../models/offers");
 
+// const addOffer = async (req, res) => {
+//     try {
+//         const {
+//             title,
+//             description,
+//             couponCode,
+//             discountPercentage,
+//             discountAmount,
+//             startDate,
+//             endDate,
+//             status,
+//             type,
+//             department,
+//             termsAndConditions,
+//             showExclusive,
+//             discountOffer
+//         } = req.body;
+
+//         // Check if the file is uploaded
+//         // const bannerImage = req.file ? req.file.path : null;
+//         const bannerImagePath = req.file ? `/uploads/offers/${req.file.filename}` : "";
+//         // Create a new offer
+//         const newOffer = new Offer({
+//             title,
+//             description,
+//             couponCode,
+//             discountPercentage,
+//             discountAmount,
+//             startDate,
+//             endDate,
+//             status,
+//             type,
+//             department,
+//             bannerImage: bannerImagePath,
+//             termsAndConditions,
+//             showExclusive,
+//             discountOffer
+//         });
+
+//         // Save the offer to the database
+//         await newOffer.save();
+
+//         res.status(201).json({ message: "Offer added successfully", offer: newOffer });
+//     } catch (error) {
+//         console.error("Error adding offer:", error);
+//         res.status(500).json({ message: "Error adding offer", error: error.message });
+//     }
+// };
+
 const addOffer = async (req, res) => {
     try {
         const {
@@ -18,9 +67,18 @@ const addOffer = async (req, res) => {
             discountOffer
         } = req.body;
 
-        // Check if the file is uploaded
-        // const bannerImage = req.file ? req.file.path : null;
+        // Check if an exclusive offer already exists
+        if (showExclusive) {
+            const existingExclusiveOffer = await Offer.findOne({ showExclusive: true });
+            if (existingExclusiveOffer) {
+                return res.status(400).json({
+                    message: "An exclusive offer already exists. Only one exclusive offer is allowed."
+                });
+            }
+        }
+
         const bannerImagePath = req.file ? `/uploads/offers/${req.file.filename}` : "";
+
         // Create a new offer
         const newOffer = new Offer({
             title,
@@ -70,6 +128,20 @@ const updateOffer = async (req, res) => {
         if (req.body.discountOffer !== undefined) updates.discountOffer = req.body.discountOffer; // Boolean check
         if (req.file) updates.bannerImage = req.file ? `/uploads/offers/${req.file.filename}` : ""; // Handle uploaded file
 
+        // If updating showExclusive, ensure only one exclusive offer exists
+        if (updates.showExclusive) {
+            const existingExclusiveOffer = await Offer.findOne({
+                showExclusive: true,
+                _id: { $ne: id } // Exclude the current offer being updated
+            });
+
+            if (existingExclusiveOffer) {
+                return res.status(400).json({
+                    message: "An exclusive offer already exists. Only one exclusive offer is allowed."
+                });
+            }
+        }
+
         // Check if updates object is empty
         if (Object.keys(updates).length === 0) {
             return res.status(400).json({ message: "No valid fields provided to update" });
@@ -87,6 +159,46 @@ const updateOffer = async (req, res) => {
         res.status(500).json({ message: "Error updating offer", error: error.message });
     }
 };
+
+
+// const updateOffer = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+
+//         // Build the updates object dynamically
+//         const updates = {};
+//         if (req.body.title) updates.title = req.body.title;
+//         if (req.body.description) updates.description = req.body.description;
+//         if (req.body.couponCode) updates.couponCode = req.body.couponCode;
+//         if (req.body.discountPercentage) updates.discountPercentage = req.body.discountPercentage;
+//         if (req.body.discountAmount) updates.discountAmount = req.body.discountAmount;
+//         if (req.body.startDate) updates.startDate = req.body.startDate;
+//         if (req.body.endDate) updates.endDate = req.body.endDate;
+//         if (req.body.status) updates.status = req.body.status;
+//         if (req.body.type) updates.type = req.body.type;
+//         if (req.body.department) updates.department = req.body.department;
+//         if (req.body.termsAndConditions) updates.termsAndConditions = req.body.termsAndConditions;
+//         if (req.body.showExclusive !== undefined) updates.showExclusive = req.body.showExclusive; // Boolean check
+//         if (req.body.discountOffer !== undefined) updates.discountOffer = req.body.discountOffer; // Boolean check
+//         if (req.file) updates.bannerImage = req.file ? `/uploads/offers/${req.file.filename}` : ""; // Handle uploaded file
+
+//         // Check if updates object is empty
+//         if (Object.keys(updates).length === 0) {
+//             return res.status(400).json({ message: "No valid fields provided to update" });
+//         }
+
+//         // Find and update the offer by ID
+//         const updatedOffer = await Offer.findByIdAndUpdate(id, updates, { new: true });
+//         if (!updatedOffer) {
+//             return res.status(404).json({ message: "Offer not found" });
+//         }
+
+//         res.status(200).json({ message: "Offer updated successfully", offer: updatedOffer });
+//     } catch (error) {
+//         console.error("Error updating offer:", error);
+//         res.status(500).json({ message: "Error updating offer", error: error.message });
+//     }
+// };
 
 // Get all offers
 const getAllOffers = async (req, res) => {
