@@ -66,9 +66,12 @@ const addOffer = async (req, res) => {
             showExclusive,
             discountOffer
         } = req.body;
+        console.log(showExclusive, "showExclusive")
+        // Explicitly parse `showExclusive` as a boolean
+        const isExclusive = showExclusive === true || showExclusive === "true";
 
         // Check if an exclusive offer already exists
-        if (showExclusive) {
+        if (isExclusive) {
             const existingExclusiveOffer = await Offer.findOne({ showExclusive: true });
             if (existingExclusiveOffer) {
                 return res.status(400).json({
@@ -127,19 +130,27 @@ const updateOffer = async (req, res) => {
         if (req.body.showExclusive !== undefined) updates.showExclusive = req.body.showExclusive; // Boolean check
         if (req.body.discountOffer !== undefined) updates.discountOffer = req.body.discountOffer; // Boolean check
         if (req.file) updates.bannerImage = req.file ? `/uploads/offers/${req.file.filename}` : ""; // Handle uploaded file
+        console.log(updates.showExclusive, "showExclusive")
 
         // If updating showExclusive, ensure only one exclusive offer exists
-        if (updates.showExclusive) {
-            const existingExclusiveOffer = await Offer.findOne({
-                showExclusive: true,
-                _id: { $ne: id } // Exclude the current offer being updated
-            });
+        if (req.body.showExclusive !== undefined) {
+            const isExclusive = req.body.showExclusive === true || req.body.showExclusive === "true";
 
-            if (existingExclusiveOffer) {
-                return res.status(400).json({
-                    message: "An exclusive offer already exists. Only one exclusive offer is allowed."
+            if (isExclusive) {
+                // Check if another exclusive offer exists
+                const existingExclusiveOffer = await Offer.findOne({
+                    showExclusive: true,
+                    _id: { $ne: id } // Exclude the current offer being updated
                 });
+
+                if (existingExclusiveOffer) {
+                    return res.status(400).json({
+                        message: "An exclusive offer already exists. Only one exclusive offer is allowed."
+                    });
+                }
             }
+
+            updates.showExclusive = isExclusive;
         }
 
         // Check if updates object is empty
