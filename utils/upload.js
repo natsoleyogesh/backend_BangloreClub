@@ -129,4 +129,54 @@ const offerupload = multer({
     limits: { fileSize: 100 * 1024 }, // Limit file size to 100 KB
 });
 
-module.exports = { upload, eventupload, roomUpload, offerupload };
+// Configure Multer storage
+// Set up storage configuration for Multer
+const hodstorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/hods'); // Directory for uploaded images
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`);
+    },
+});
+
+
+// Multer upload instance
+const hodupload = multer({
+    storage: hodstorage,
+    fileFilter,
+    limits: { fileSize: 100 * 1024 }, // Limit file size to 100 KB
+});
+
+
+// Configure Multer storage
+const downloadStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/downloads'); // Directory where files will be stored
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + '-' + file.originalname); // Unique filename
+    },
+});
+
+// File filter to allow only PDFs
+const downloadFileFilter = (req, file, cb) => {
+    const fileType = path.extname(file.originalname).toLowerCase();
+    if (fileType === '.pdf') {
+        cb(null, true); // Accept the file
+    } else {
+        cb(new Error('Only PDF files are allowed'), false); // Reject the file
+    }
+};
+
+// Initialize Multer
+const downloadUpload = multer({
+    storage: downloadStorage,
+    fileFilter: downloadFileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+});
+
+
+module.exports = { upload, eventupload, roomUpload, offerupload, hodupload, downloadUpload };
