@@ -18,7 +18,7 @@ const addDownload = async (req, res, next) => {
             title,
             description,
             fileUrl: fileUrl, // Path to the uploaded file
-            status: status || 'ACTIVE', // Default status is ACTIVE
+            status: status || 'Active', // Default status is ACTIVE
             expiredDate
         });
 
@@ -111,18 +111,19 @@ const getActiveDownloads = async (req, res) => {
     try {
         const { type } = req.query; // Extract 'type' from query params
         const currentDate = new Date(); // Current date for comparison
+        const startOfToday = new Date(currentDate.setHours(0, 0, 0, 0)); // Start of today
 
         let query = { status: 'Active' }; // Base query for active downloads
 
         if (type === 'current') {
-            // Only include downloads that are not expired
+            // Include downloads that are not expired or expire today or in the future
             query.$or = [
                 { expiredDate: null }, // No expiry date (never expires)
-                { expiredDate: { $gte: currentDate } }, // Expiry date is in the future
+                { expiredDate: { $gte: startOfToday } }, // Expiry date is today or in the future
             ];
         } else if (type === 'history') {
-            // Only include downloads that are expired
-            query.expiredDate = { $lt: currentDate }; // Expiry date is in the past
+            // Only include downloads that expired strictly before today
+            query.expiredDate = { $lt: startOfToday }; // Expiry date is strictly in the past
         }
 
         // Fetch downloads based on the query
@@ -140,6 +141,7 @@ const getActiveDownloads = async (req, res) => {
         });
     }
 };
+
 
 
 module.exports = {

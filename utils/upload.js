@@ -179,4 +179,35 @@ const downloadUpload = multer({
 });
 
 
-module.exports = { upload, eventupload, roomUpload, offerupload, hodupload, downloadUpload };
+// Configure Multer storage
+const noticeStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/notices'); // Directory where files will be stored
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + '-' + file.originalname); // Unique filename
+    },
+});
+
+// File filter to accept only specific file types
+const noticeFileFilter = (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|webp|pdf|doc|docx|txt/; // Added PDF, Word (doc, docx), and .txt
+    const mimeType = allowedTypes.test(file.mimetype);
+    const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+
+    if (mimeType && extName) {
+        return cb(null, true);
+    }
+    cb(new Error('Only .jpeg, .jpg, .png, .webp, .pdf, .doc, .docx, and .txt files are allowed!'));
+};
+
+// Initialize Multer
+const noticeUpload = multer({
+    storage: noticeStorage,
+    fileFilter: noticeFileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+});
+
+
+module.exports = { upload, eventupload, roomUpload, offerupload, hodupload, downloadUpload, noticeUpload };

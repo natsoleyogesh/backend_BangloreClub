@@ -11,6 +11,7 @@ const roomRoutes = require("./roomRoutes");
 const offerRoutes = require("./offerRoutes");
 const hodRoutes = require("./hodRoutes");
 const downloadRoutes = require("./downloadRoutes");
+const clubNoticeRoutes = require("./clubNoticeRoutes");
 
 adminRoutes(router);
 userRoutes(router);
@@ -21,5 +22,6 @@ roomRoutes(router);
 offerRoutes(router);
 hodRoutes(router);
 downloadRoutes(router);
+clubNoticeRoutes(router);
 
 module.exports = router;
