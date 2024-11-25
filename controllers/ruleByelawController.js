@@ -219,7 +219,7 @@ const getActiveRulesBylaws = async (req, res) => {
         const { type } = req.query;
 
         // Validate type if provided
-        if (type && !["Rule", "Bylaw"].includes(type)) {
+        if (type && !["Rule", "Byelaw"].includes(type)) {
             return res.status(400).json({ message: "Invalid type. Valid types are 'Rule' or 'Bylaw'." });
         }
 
