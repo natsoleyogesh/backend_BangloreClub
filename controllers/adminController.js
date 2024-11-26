@@ -146,31 +146,6 @@ const getAdmins = async (req, res) => {
   }
 };
 
-// const fetchFamilyTree = async (userId) => {
-//   const familyMembers = await User.find({ parentUserId: userId }, "-otp -__v").populate('parentUserId');
-
-//   // Recursively fetch sub-family members for each family member
-//   const familyTree = await Promise.all(
-//     familyMembers.map(async (member) => ({
-//       _id: member._id,
-//       name: member.name,
-//       email: member.email,
-//       mobileNumber: member.mobileNumber,
-//       memberId: member.memberId,
-//       relation: member.relation,
-//       address: member.address,
-//       age: member.age,
-//       status: member.status,
-//       activatedDate: member.activatedDate,
-//       profilePicture: member.profilePicture,
-//       parentUserId: member.parentUserId,
-//       familyMembers: await fetchFamilyTree(member._id), // Recursively fetch sub-family members
-//     }))
-//   );
-
-//   return familyTree;
-// };
-
 const fetchFamilyTree = async (userId) => {
   const familyMembers = await User.find({ parentUserId: userId }, "-otp -__v").populate('parentUserId');
 
@@ -205,46 +180,6 @@ const fetchFamilyTree = async (userId) => {
 
   return familyTree;
 };
-
-
-// const getUserDetailsById = async (req, res) => {
-//   try {
-//     const userId = req.params.userId; // Extract userId from the token's decoded data
-
-//     // Find the primary user by ID
-//     const user = await User.findById(userId, "-otp -__v").populate('parentUserId');
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
-
-//     // Fetch the full family tree for this user
-//     const familyMembers = await fetchFamilyTree(userId);
-
-//     // Send the response including the user and their full family tree
-//     res.status(200).json({
-//       message: "User details retrieved successfully",
-//       user: {
-//         _id: user._id,
-//         name: user.name,
-//         email: user.email,
-//         mobileNumber: user.mobileNumber,
-//         memberId: user.memberId,
-//         lastLogin: user.lastLogin,
-//         profilePicture: user.profilePicture,
-//         address: user.address,
-//         relation: user.relation,
-//         parentUserId: user.parentUserId,
-//         age: user.age,
-//         status: user.status,
-//         activatedDate: user.activatedDate,
-//         familyMembers, // Nested family members
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Error fetching user details:", error);
-//     res.status(500).json({ message: "Error fetching user details", error: error.message });
-//   }
-// };
 
 const getUserDetailsById = async (req, res) => {
   try {
@@ -361,8 +296,6 @@ const adminLogout = async (req, res) => {
       userAgent: req.headers["user-agent"],
     });
 
-    // Invalidate the token (optional, depends on implementation)
-    // This could be handled by blacklisting the token or setting an expiry.
 
     res.status(200).json({
       message: 'Logout successful, action logged.',

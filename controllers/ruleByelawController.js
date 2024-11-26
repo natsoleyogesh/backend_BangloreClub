@@ -216,30 +216,55 @@ const deleteRuleBylaw = async (req, res) => {
 
 const getActiveRulesBylaws = async (req, res) => {
     try {
-        const { type } = req.query;
+        const { search, page = 1, limit = 5, type } = req.query;
 
         // Validate type if provided
         if (type && !["Rule", "Byelaw"].includes(type)) {
-            return res.status(400).json({ message: "Invalid type. Valid types are 'Rule' or 'Bylaw'." });
+            return res.status(400).json({ message: "Invalid type. Valid types are 'Rule' or 'Byelaw'." });
         }
 
         // Build query dynamically
         const query = { status: "Active" };
-        if (type) {
-            query.type = type; // Add type filter if provided
+
+        if (type) query.type = type; // Filter by type if provided
+
+        // If a search term is provided, apply it to multiple fields (e.g., title, category, etc.)
+        if (search) {
+            query.$or = [
+                { title: { $regex: search, $options: "i" } }, // Case-insensitive search on title
+                { category: { $regex: search, $options: "i" } }, // Case-insensitive search on category
+                { description: { $regex: search, $options: "i" } } // Case-insensitive search on description
+            ];
         }
 
-        // Fetch active items based on the query
-        const activeItems = await ClubRuleByelaw.find(query).sort({ createdAt: -1 });
+        // Pagination logic
+        const pageNumber = parseInt(page, 10) || 1;
+        const limitNumber = parseInt(limit, 10) || 5; // Default limit is 5
+        const skip = (pageNumber - 1) * limitNumber;
+
+        // Fetch search results with pagination
+        const results = await ClubRuleByelaw.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limitNumber);
+
+        // Get total count for pagination metadata
+        const totalItems = await ClubRuleByelaw.countDocuments(query);
 
         res.status(200).json({
-            message: "Active Rules and Bylaws fetched successfully.",
-            ruleByelaws: activeItems,
+            message: "Search results fetched successfully.",
+            ruleByelaws: results,
+            pagination: {
+                totalItems,
+                currentPage: pageNumber,
+                totalPages: Math.ceil(totalItems / limitNumber),
+                limit: limitNumber,
+            },
         });
     } catch (error) {
-        console.error("Error fetching active Rules/Bylaws:", error);
+        console.error("Error searching Rules/Bylaws:", error);
         res.status(500).json({
-            message: "Failed to fetch active Rules/Bylaws.",
+            message: "Failed to fetch search results.",
             error: error.message,
         });
     }

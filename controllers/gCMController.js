@@ -149,60 +149,6 @@ const addGCM = async (req, res) => {
     }
 };
 
-
-// const updateGCM = async (req, res) => {
-//     try {
-//         const { id } = req.params; // Extract member ID from URL params
-//         const {
-//             title,
-//             name,
-//             memberId,
-//             designation,
-//             categories,
-//             contactNumber,
-//             status,
-//         } = req.body;
-
-//         // Build the update object dynamically
-//         const updates = {};
-//         if (title) updates.title = title;
-//         if (name) updates.name = name;
-//         if (memberId) updates.memberId = memberId;
-//         if (designation) updates.designation = designation;
-//         if (categories && Array.isArray(categories)) updates.categories = categories;
-//         if (contactNumber) updates.contactNumber = contactNumber;
-//         if (status) updates.status = status;
-//         if (req.file) {
-//             updates.profileImage = req.file ? `/uploads/profilePictures/${req.file.filename}` : "";
-//         }
-
-
-//         // Update General Committee Member in the database
-//         const updatedMember = await GeneralCommitteeMember.findByIdAndUpdate(
-//             id,
-//             updates,
-//             { new: true } // Return the updated document
-//         );
-
-//         if (!updatedMember) {
-//             return res.status(404).json({
-//                 message: "General Committee Member not found",
-//             });
-//         }
-
-//         res.status(200).json({
-//             message: "General Committee Member updated successfully",
-//             gcm: updatedMember,
-//         });
-//     } catch (error) {
-//         console.error("Error updating General Committee Member:", error);
-//         res.status(500).json({
-//             message: "Failed to update General Committee Member",
-//             error: error.message,
-//         });
-//     }
-// };
-
 const updateGCM = async (req, res) => {
     try {
         const { id } = req.params; // Extract member ID from URL params
