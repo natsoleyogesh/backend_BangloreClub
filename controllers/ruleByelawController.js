@@ -7,7 +7,7 @@ const addRuleBylaw = async (req, res) => {
 
         // Validate type
         if (!type || !["Rule", "Byelaw"].includes(type)) {
-            return res.status(400).json({ message: "Invalid or missing type. Valid types: Rule, Bylaw." });
+            return res.status(400).json({ message: "Invalid or missing type. Valid types: Rule, Byelaw." });
         }
 
         // Check if a rule/bylaw with the same type, category, and title already exists

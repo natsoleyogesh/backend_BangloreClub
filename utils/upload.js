@@ -210,4 +210,42 @@ const noticeUpload = multer({
 });
 
 
-module.exports = { upload, eventupload, roomUpload, offerupload, hodupload, downloadUpload, noticeUpload };
+// Create the upload directory if it doesn't exist
+const uploadDirectory = "uploads/foodAndBeverage";
+if (!fs.existsSync(uploadDirectory)) {
+    fs.mkdirSync(uploadDirectory, { recursive: true });
+}
+
+
+// Define the storage engine
+const FBstorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadDirectory); // Save files to the defined directory
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + '-' + file.originalname); // Unique filename
+    },
+});
+
+// File filter to allow only specific file types
+const FBfileFilter = (req, file, cb) => {
+    const allowedExtensions = [".png", ".jpg", ".jpeg", ".pdf"];
+    const ext = path.extname(file.originalname).toLowerCase();
+
+    if (!allowedExtensions.includes(ext)) {
+        return cb(new Error("Only .png, .jpg, .jpeg, and .pdf files are allowed."));
+    }
+
+    cb(null, true); // Accept the file
+};
+
+// Initialize the multer upload
+const FBupload = multer({
+    storage: FBstorage,
+    fileFilter: FBfileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB file size limit
+});
+
+
+module.exports = { upload, eventupload, roomUpload, offerupload, hodupload, downloadUpload, noticeUpload, FBupload };

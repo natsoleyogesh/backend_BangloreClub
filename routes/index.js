@@ -15,6 +15,8 @@ const clubNoticeRoutes = require("./clubNoticeRoutes");
 const gCMRoutes = require("./gCMRoutes");
 const ruleByelawRoutes = require("./ruleByelawRoutes");
 const faqRoutes = require("./faqRoutes");
+const comRoutes = require("./comRoutes");
+const foodAndBeverageRoutes = require("./foodAndBeverageRoutes");
 
 adminRoutes(router);
 userRoutes(router);
@@ -29,5 +31,7 @@ clubNoticeRoutes(router);
 gCMRoutes(router);
 ruleByelawRoutes(router);
 faqRoutes(router);
+comRoutes(router);
+foodAndBeverageRoutes(router);
 
 module.exports = router;
