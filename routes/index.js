@@ -17,6 +17,7 @@ const ruleByelawRoutes = require("./ruleByelawRoutes");
 const faqRoutes = require("./faqRoutes");
 const comRoutes = require("./comRoutes");
 const foodAndBeverageRoutes = require("./foodAndBeverageRoutes");
+const membershipWaitingListRoutes = require("./membershipWaitingListRoutes");
 
 adminRoutes(router);
 userRoutes(router);
@@ -33,5 +34,6 @@ ruleByelawRoutes(router);
 faqRoutes(router);
 comRoutes(router);
 foodAndBeverageRoutes(router);
+membershipWaitingListRoutes(router)
 
 module.exports = router;

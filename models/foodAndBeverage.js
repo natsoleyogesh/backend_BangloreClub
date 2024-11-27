@@ -1,48 +1,9 @@
 const mongoose = require("mongoose");
-
-// const SubCategorySchema = new mongoose.Schema({
-//     name: { type: String, required: true },
-//     // timings: {
-//     //     days: { type: [String], required: true },
-//     //     startTime: { type: String, required: true },
-//     //     endTime: { type: String, required: true },
-//     // },
-//     timings: [
-//         {
-//             startDay: {
-//                 type: String, // Start day (e.g., "Mon")
-//             },
-//             endDay: {
-//                 type: String, // End day (e.g., "Sun")
-//             },
-//             startTime: {
-//                 type: String, // Start time (e.g., "8:00 AM")
-//             },
-//             endTime: {
-//                 type: String, // End time (e.g., "10:00 PM")
-//             },
-//         },
-//     ],
-//     images: { type: [String], default: [] }, // Array of image file paths
-//     menu: { type: String, default: null }, // Menu file path (PDF)
-// });
-
-// const foodAndBeverageSchema = new mongoose.Schema(
-//     {
-//         name: { type: String, required: true },
-//         description: { type: String },
-//         bannerImage: { type: String },
-//         subCategories: [SubCategorySchema], // Nested subcategories
-//         status: {
-//             type: String,
-//             enum: ['Active', 'Inactive'], // Status can be ACTIVE or INACTIVE
-//             default: 'Active',
-//         },
-//     },
-//     { timestamps: true }
-// );
-
 const TimingSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        default: ""
+    },
     startDay: {
         type: String, // Start day (e.g., "Mon")
         required: true,
@@ -73,6 +34,14 @@ const SubCategorySchema = new mongoose.Schema({
     timings: {
         type: [TimingSchema], // Array of timings for flexibility
         required: true,
+    },
+    location: {
+        type: String,
+        default: ""
+    },
+    extansion_no: {
+        type: String,
+        default: ""
     },
     images: {
         type: [String], // Array of image file paths

@@ -1,4 +1,4 @@
-const { addFoodAndBeverage, getAllFoodAndBeverages, getFoodAndBeverageById, updateFoodAndBeverage, deleteFoodAndBeverage } = require("../controllers/foodAndBeverageController");
+const { addFoodAndBeverage, getAllFoodAndBeverages, getFoodAndBeverageById, updateFoodAndBeverage, deleteFoodAndBeverage, getActiveFoodAndBeverages } = require("../controllers/foodAndBeverageController");
 const { verifyToken } = require("../utils/common");
 const { FBupload } = require("../utils/upload");
 
@@ -11,5 +11,5 @@ module.exports = (router) => {
     // router.put("/foodAndBeverage/update-foodAndBeverage/:id", FBupload.fields([{ name: "bannerImage", maxCount: 1 }, { name: "subCategoryImages_*" }, { name: "menuFile_*" },]), updateFoodAndBeverage);
     router.put("/foodAndBeverage/update-foodAndBeverage/:id", FBupload.any(), updateFoodAndBeverage);
     router.delete("/foodAndBeverage/delete/:id", deleteFoodAndBeverage);
-    // router.get("/foodAndBeverage/active-foodAndBeverages", verifyToken, getActiveComs);
+    router.get("/foodAndBeverage/active-foodAndBeverages", verifyToken, getActiveFoodAndBeverages);
 }
