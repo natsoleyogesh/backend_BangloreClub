@@ -14,10 +14,10 @@ const addFoodAndBeverage = async (req, res) => {
             // Attach uploaded images and menu files to subcategories
             parsedSubCategories = parsedSubCategories.map((subCategory, index) => {
                 const images = req.files.filter((file) =>
-                    file.fieldname === `subCategoryImages_${index}`
+                    file.fieldname === `images_${index}`
                 );
                 const menuFile = req.files.find((file) =>
-                    file.fieldname === `menuFile_${index}`
+                    file.fieldname === `menu_${index}`
                 );
 
                 const imagePaths = images.map((file) => `/uploads/foodAndBeverage/${file.filename}`);
@@ -81,10 +81,10 @@ const updateFoodAndBeverage = async (req, res) => {
             const parsedSubCategories = JSON.parse(subCategories).map((subCategory, index) => {
                 // Filter files for current subcategory
                 const images = req.files.filter((file) =>
-                    file.fieldname === `subCategoryImages_${index}`
+                    file.fieldname === `images_${index}`
                 );
                 const menuFile = req.files.find((file) =>
-                    file.fieldname === `menuFile_${index}`
+                    file.fieldname === `menu_${index}`
                 );
 
                 // Map image file paths
@@ -99,6 +99,7 @@ const updateFoodAndBeverage = async (req, res) => {
 
             updates.subCategories = parsedSubCategories;
         }
+        // console.log(updates, "updates")
 
         // Update the Food & Beverage category
         const updatedCategory = await FoodAndBeverage.findByIdAndUpdate(id, updates, {
