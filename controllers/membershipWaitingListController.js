@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const MembershipWaitingList = require("../models/membershipWaitingList");
 const User = require("../models/user");
 const { application } = require("express");
+const { generatePrimaryMemberId } = require("../utils/common");
 
 
 
@@ -373,14 +374,14 @@ const getActiveApplications = async (req, res) => {
         const skip = (pageNumber - 1) * limitNumber;
 
         // Fetch active Food and Beverage categories
-        const activeApplications = await MembershipWaitingList.find({ status: "Active" })
+        const activeApplications = await MembershipWaitingList.find({ applicationStatus: "Pending", status: "Active" })
             .populate("sponsoredBy")
             .sort({ createdAt: -1 }) // Sort by creation date (newest first)
             .skip(skip)
             .limit(limitNumber);
 
         // Count total active categories for pagination
-        const totalItems = await MembershipWaitingList.countDocuments({ status: "Active" });
+        const totalItems = await MembershipWaitingList.countDocuments({ applicationStatus: "Pending", status: "Active" });
 
         // Prepare the response
         res.status(200).json({
@@ -402,6 +403,166 @@ const getActiveApplications = async (req, res) => {
     }
 };
 
+// Function to update application status and handle approval/rejection
+const updateApplicationStatus = async (req, res) => {
+    try {
+        const { requestId, status } = req.body; // Extract applicationId and status from the request body
+
+        // Step 1: Find the application in the waiting list by its applicationId
+        // const application = await MembershipWaitingList.findOne({ applicationId });
+        const application = await MembershipWaitingList.findById(requestId);
+
+        if (!application) {
+            return res.status(404).json({ message: "Application not found." });
+        }
+
+        // Step 2: Handle application status change based on the requested status
+        if (status === "Approved") {
+            // Step 3: If status is 'Approved', create the user and change status to 'Approved'
+
+            // Check if the application is already approved
+            if (application.applicationStatus === "Approved") {
+                return res.status(400).json({ message: "This application is already approved." });
+            }
+
+            // Create the user based on the application details (similar to your createUser function)
+            const {
+                name,
+                email,
+                mobileNumber,
+                relation,
+                age,
+                parentUserId,
+                address,
+                address1,
+                address2,
+                city,
+                state,
+                country,
+                pin,
+                dateOfBirth,
+                maritalStatus,
+                marriageDate,
+                title,
+            } = application;
+
+            const profilePicturePath = application.profilePicture || ""; // Use the profile picture from the application
+
+            // Determine if this is a primary user or a family member
+            if (!parentUserId) {
+                // Create a primary user
+                const memberId = await generatePrimaryMemberId(); // Assuming this is a function to generate a member ID
+                const newUser = new User({
+                    name,
+                    email,
+                    mobileNumber,
+                    memberId,
+                    relation: "Primary", // Set the relation to 'Primary'
+                    address,
+                    address1,
+                    address2,
+                    city,
+                    state,
+                    country,
+                    pin,
+                    dateOfBirth,
+                    maritalStatus,
+                    marriageDate,
+                    title,
+                    profilePicture: profilePicturePath,
+                    lastLogin: Date.now(),
+                });
+
+                const savedUser = await newUser.save();
+
+                // Update the application status to 'Approved'
+                application.applicationStatus = "Approved";
+                await application.save();
+
+                return res.status(201).json({
+                    message: "Primary user created and application approved successfully.",
+                    user: savedUser,
+                });
+            }
+
+            // If it's a family member, handle similarly
+            const parentUser = await User.findById(parentUserId);
+            if (!parentUser) {
+                return res.status(404).json({ message: "Parent user not found." });
+            }
+
+            // Validate relationship rules
+            const existingRelations = await User.find({ parentUserId });
+            if (relation === "Spouse" && existingRelations.some((member) => member.relation === "Spouse")) {
+                return res.status(400).json({ message: "Only one spouse can be added per user." });
+            }
+
+            if (relation === "Child" && (!age || age < 18)) {
+                return res.status(400).json({ message: "Children must be 18 or older to be added." });
+            }
+
+            const memberId = await generateFamilyMemberId(parentUser.memberId, existingRelations.length);
+
+            const familyMember = new User({
+                name,
+                email,
+                mobileNumber,
+                memberId,
+                relation,
+                address,
+                address1,
+                address2,
+                city,
+                state,
+                country,
+                pin,
+                dateOfBirth,
+                maritalStatus,
+                marriageDate,
+                title,
+                parentUserId: parentUser._id,
+                age: relation === "Child" ? age : undefined,
+                profilePicture: profilePicturePath,
+            });
+
+            const savedFamilyMember = await familyMember.save();
+
+            // Update the application status to 'Approved'
+            application.applicationStatus = "Approved";
+            await application.save();
+
+            return res.status(201).json({
+                message: "Family member added successfully and application approved.",
+                user: savedFamilyMember,
+            });
+        }
+
+        // If status is 'Rejected', simply update the application status and return a message
+        if (status === "Rejected") {
+            // Check if the application is already rejected
+            if (application.applicationStatus === "Rejected") {
+                return res.status(400).json({ message: "This application is already rejected." });
+            }
+
+            application.applicationStatus = "Rejected"; // Set the status to 'Rejected'
+            await application.save();
+
+            return res.status(200).json({
+                message: "Application rejected successfully.",
+            });
+        }
+
+        // If status is invalid, return an error
+        return res.status(400).json({ message: "Invalid status. Please provide either 'Approved' or 'Rejected'." });
+    } catch (error) {
+        console.error("Error updating application status:", error);
+        return res.status(500).json({
+            message: "Error updating application status.",
+            error: error.message,
+        });
+    }
+};
+
 module.exports = {
     addWaiting,
     getAllApplications,
@@ -409,5 +570,6 @@ module.exports = {
     deleteApplicationById,
     updateApplicationById,
     updateProfilePicture,
-    getActiveApplications
+    getActiveApplications,
+    updateApplicationStatus
 }
