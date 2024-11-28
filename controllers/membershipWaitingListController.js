@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const MembershipWaitingList = require("../models/membershipWaitingList");
 const User = require("../models/user");
+const { application } = require("express");
 
 
 
@@ -294,7 +295,7 @@ const updateApplicationById = async (req, res) => {
             id,
             updateFields,
             { new: true, runValidators: true } // Return updated document and validate input
-        ).populate("sponsoredBy", "name email mobileNumber");
+        ).populate("sponsoredBy");
 
         if (!updatedApplication) {
             return res.status(404).json({
@@ -362,11 +363,51 @@ const updateProfilePicture = async (req, res) => {
     }
 };
 
+const getActiveApplications = async (req, res) => {
+    try {
+        const { page = 1, limit = 5 } = req.query;
+
+        // Convert query parameters to integers
+        const pageNumber = parseInt(page, 10) || 1;
+        const limitNumber = parseInt(limit, 10) || 5;
+        const skip = (pageNumber - 1) * limitNumber;
+
+        // Fetch active Food and Beverage categories
+        const activeApplications = await MembershipWaitingList.find({ status: "Active" })
+            .populate("sponsoredBy")
+            .sort({ createdAt: -1 }) // Sort by creation date (newest first)
+            .skip(skip)
+            .limit(limitNumber);
+
+        // Count total active categories for pagination
+        const totalItems = await MembershipWaitingList.countDocuments({ status: "Active" });
+
+        // Prepare the response
+        res.status(200).json({
+            message: "Active Applications fetched successfully.",
+            applications: activeApplications,
+            pagination: {
+                totalItems,
+                currentPage: pageNumber,
+                totalPages: Math.ceil(totalItems / limitNumber),
+                limit: limitNumber,
+            },
+        });
+    } catch (error) {
+        console.error("Error fetching active Application:", error);
+        res.status(500).json({
+            message: "Failed to fetch active Application.",
+            error: error.message,
+        });
+    }
+};
+
 module.exports = {
     addWaiting,
     getAllApplications,
     getApplicationById,
     deleteApplicationById,
     updateApplicationById,
-    updateProfilePicture
+    updateProfilePicture,
+    getActiveApplications
 }

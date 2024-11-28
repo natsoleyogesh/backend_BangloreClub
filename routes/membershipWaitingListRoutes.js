@@ -1,4 +1,4 @@
-const { addWaiting, getAllApplications, getApplicationById, updateProfilePicture, updateApplicationById, deleteApplicationById } = require("../controllers/membershipWaitingListController");
+const { addWaiting, getAllApplications, getApplicationById, updateProfilePicture, updateApplicationById, deleteApplicationById, getActiveApplications } = require("../controllers/membershipWaitingListController");
 const { verifyToken } = require("../utils/common");
 const { upload } = require("../utils/upload");
 
@@ -10,4 +10,5 @@ module.exports = (router) => {
     router.put("/membershipwaiting/update-profile-picture/:id", upload.single("profilePicture"), updateProfilePicture);
     router.put("/membershipwaiting/update-membershipwaiting/:id", updateApplicationById);
     router.delete("/membershipwaiting/delete/:id", deleteApplicationById);
+    router.get("/membershipwaiting/active-membershipwaitings", verifyToken, getActiveApplications)
 }
