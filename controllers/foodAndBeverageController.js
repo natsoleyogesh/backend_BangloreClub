@@ -55,12 +55,103 @@ const addFoodAndBeverage = async (req, res) => {
     }
 };
 
+// const updateFoodAndBeverage = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const { name, description, subCategories, status } = req.body;
+
+//         console.log(req.body, "req update")
+
+//         // Prepare the updates object
+//         const updates = {};
+
+//         // Dynamically add provided fields to the updates object
+//         if (name) updates.name = name;
+//         if (description) updates.description = description;
+//         if (status) updates.status = status;
+
+//         // Handle `bannerImage` update
+//         const bannerImage = req.files.find((file) => file.fieldname === "bannerImage");
+//         if (bannerImage) {
+//             updates.bannerImage = `/uploads/foodAndBeverage/${bannerImage.filename}`;
+//         }
+
+//         // Handle `subCategories` update if provided
+//         if (subCategories) {
+//             const parsedSubCategories = JSON.parse(subCategories).map((subCategory, index) => {
+//                 // Filter files for current subcategory
+//                 const images = req.files.filter((file) =>
+//                     file.fieldname === `images_${index}`
+//                 );
+//                 const menuFile = req.files.find((file) =>
+//                     file.fieldname === `menu_${index}`
+//                 );
+
+//                 // Map image file paths
+//                 const imagePaths = images.map((file) => `/uploads/foodAndBeverage/${file.filename}`);
+
+//                 return {
+//                     ...subCategory,
+//                     images: imagePaths,
+//                     menu: menuFile ? `/uploads/foodAndBeverage/${menuFile.filename}` : null,
+//                 };
+//             });
+
+//             updates.subCategories = parsedSubCategories;
+//         }
+//         // console.log(updates, "updates")
+
+//         // Update the Food & Beverage category
+//         const updatedCategory = await FoodAndBeverage.findByIdAndUpdate(id, updates, {
+//             new: true, // Return the updated document
+//             runValidators: true, // Validate the updates against the schema
+//         });
+
+//         if (!updatedCategory) {
+//             return res.status(404).json({ message: "Food & Beverage category not found." });
+//         }
+
+//         res.status(200).json({
+//             message: "Food & Beverage category updated successfully.",
+//             foodAndBeverage: updatedCategory,
+//         });
+//     } catch (error) {
+//         console.error("Error updating Food & Beverage category:", error);
+//         res.status(500).json({
+//             message: "Failed to update Food & Beverage category.",
+//             error: error.message,
+//         });
+//     }
+// };
+
+// const getFoodAndBeverageById = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+
+//         const category = await FoodAndBeverage.findById(id);
+//         if (!category) {
+//             return res.status(404).json({ message: "Category not found." });
+//         }
+
+//         res.status(200).json({
+//             message: "Food & Beverage category fetched successfully.",
+//             foodAndBeverage: category,
+//         });
+//     } catch (error) {
+//         console.error("Error fetching Food & Beverage category:", error);
+//         res.status(500).json({
+//             message: "Failed to fetch Food & Beverage category.",
+//             error: error.message,
+//         });
+//     }
+// };
+
 const updateFoodAndBeverage = async (req, res) => {
     try {
         const { id } = req.params;
         const { name, description, subCategories, status } = req.body;
 
-        console.log(req.body, "req update")
+        console.log(req.body, "req update");
 
         // Prepare the updates object
         const updates = {};
@@ -79,13 +170,9 @@ const updateFoodAndBeverage = async (req, res) => {
         // Handle `subCategories` update if provided
         if (subCategories) {
             const parsedSubCategories = JSON.parse(subCategories).map((subCategory, index) => {
-                // Filter files for current subcategory
-                const images = req.files.filter((file) =>
-                    file.fieldname === `images_${index}`
-                );
-                const menuFile = req.files.find((file) =>
-                    file.fieldname === `menu_${index}`
-                );
+                // Filter files for the current subcategory
+                const images = req.files.filter((file) => file.fieldname === `images_${index}`);
+                const menuFile = req.files.find((file) => file.fieldname === `menu_${index}`);
 
                 // Map image file paths
                 const imagePaths = images.map((file) => `/uploads/foodAndBeverage/${file.filename}`);
@@ -93,13 +180,25 @@ const updateFoodAndBeverage = async (req, res) => {
                 return {
                     ...subCategory,
                     images: imagePaths,
-                    menu: menuFile ? `/uploads/foodAndBeverage/${menuFile.filename}` : null,
+                    menu: menuFile ? `/uploads/foodAndBeverage/${menuFile.filename}` : subCategory.menu, // Preserve existing menu if not updated
                 };
             });
 
-            updates.subCategories = parsedSubCategories;
+            // Update the specific subcategories within the existing subCategories array
+            const updatedSubCategories = updates.subCategories || [];
+            parsedSubCategories.forEach((parsedSubCategory) => {
+                const index = updatedSubCategories.findIndex(
+                    (existingSubCategory) => existingSubCategory._id === parsedSubCategory._id
+                );
+                if (index !== -1) {
+                    updatedSubCategories[index] = parsedSubCategory; // Update only the specific subcategory
+                } else {
+                    updatedSubCategories.push(parsedSubCategory); // Add a new subcategory if it doesn't exist
+                }
+            });
+
+            updates.subCategories = updatedSubCategories;
         }
-        // console.log(updates, "updates")
 
         // Update the Food & Beverage category
         const updatedCategory = await FoodAndBeverage.findByIdAndUpdate(id, updates, {
@@ -124,27 +223,6 @@ const updateFoodAndBeverage = async (req, res) => {
     }
 };
 
-// const getFoodAndBeverageById = async (req, res) => {
-//     try {
-//         const { id } = req.params;
-
-//         const category = await FoodAndBeverage.findById(id);
-//         if (!category) {
-//             return res.status(404).json({ message: "Category not found." });
-//         }
-
-//         res.status(200).json({
-//             message: "Food & Beverage category fetched successfully.",
-//             foodAndBeverage: category,
-//         });
-//     } catch (error) {
-//         console.error("Error fetching Food & Beverage category:", error);
-//         res.status(500).json({
-//             message: "Failed to fetch Food & Beverage category.",
-//             error: error.message,
-//         });
-//     }
-// };
 
 const getFoodAndBeverageById = async (req, res) => {
     try {
