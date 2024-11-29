@@ -3,7 +3,8 @@ const MembershipWaitingList = require("../models/membershipWaitingList");
 const User = require("../models/user");
 const { application } = require("express");
 const { generatePrimaryMemberId } = require("../utils/common");
-
+const fs = require("fs");
+const path = require("path");
 
 
 // const addWaiting = async (req, res) => {

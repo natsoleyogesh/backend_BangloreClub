@@ -306,6 +306,12 @@ const bookEvent = async (req, res) => {
             return res.status(400).json({ message: 'Event ID and Primary Member ID are required.' });
         }
 
+        // Check if the user has already booked this event
+        const existingBooking = await EventBooking.findOne({ eventId, primaryMemberId, bookingStatus: "Confirmed" });
+        if (existingBooking) {
+            return res.status(400).json({ message: 'You have already booked this event.' });
+        }
+
         // Fetch the event details
         const event = await Event.findById(eventId);
         if (!event) {
@@ -403,8 +409,8 @@ const bookEvent = async (req, res) => {
         // Return the response
         return res.status(201).json({
             message: 'Booking successful',
-            qrCodes,
-            allDetailsQRCode,
+            // qrCodes,
+            // allDetailsQRCode,
             bookingDetails: newBooking,
         });
     } catch (error) {
@@ -413,6 +419,78 @@ const bookEvent = async (req, res) => {
     }
 };
 
+const bookingDetails = async (req, res) => {
+    try {
+        const { eventId, primaryMemberId, dependents, guests } = req.body;
+
+        // Validate request data
+        if (!eventId || !primaryMemberId) {
+            return res.status(400).json({ message: 'Event ID and Primary Member ID are required.' });
+        }
+
+        // Fetch the event details
+        const event = await Event.findById(eventId);
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found.' });
+        }
+
+        if (event.status !== 'Active') {
+            return res.status(400).json({ message: 'Event is not active or available for booking.' });
+        }
+
+        if (event.availableTickets <= 0) {
+            return res.status(400).json({ message: 'No tickets available for this event.' });
+        }
+
+        // Pricing calculations
+        const primaryMemberCount = 1; // Primary member is always 1
+        const dependentMemberCount = dependents ? dependents.length : 0;
+        const guestMemberCount = guests ? guests.length : 0;
+
+        const subtotal =
+            primaryMemberCount * event.primaryMemberPrice +
+            dependentMemberCount * event.dependentMemberPrice +
+            guestMemberCount * event.guestMemberPrice;
+
+        const taxAmount = (subtotal * event.taxRate) / 100;
+        const totalAmount = subtotal + taxAmount;
+
+        // Prepare the response data without QR codes
+        const bookingDetails = {
+            eventId,
+            primaryMemberId,
+            dependents: dependents || [],
+            guests: guests || [],
+            counts: {
+                primaryMemberCount,
+                dependentMemberCount,
+                guestMemberCount,
+            },
+            ticketDetails: {
+                primaryMemberPrice: event.primaryMemberPrice,
+                dependentPrice: event.dependentMemberPrice,
+                guestPrice: event.guestMemberPrice,
+                taxRate: event.taxRate,
+                subtotal,
+                taxAmount,
+                totalAmount,
+            },
+            paymentStatus: 'Pending', // Default status
+            bookingStatus: 'Pending', // Default status
+        };
+
+        // Return the booking details without saving to the database
+        return res.status(200).json({
+            message: 'Booking details calculated successfully.',
+            bookingDetails,
+        });
+    } catch (error) {
+        console.error('Error booking event:', error);
+        return res.status(500).json({ message: 'An error occurred while calculating the event booking details.', error });
+    }
+};
+
+
 
 module.exports = {
     createEvent,
@@ -420,5 +498,6 @@ module.exports = {
     getEventById,
     updateEvent,
     deleteEvent,
-    bookEvent
+    bookEvent,
+    bookingDetails
 }

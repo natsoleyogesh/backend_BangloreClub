@@ -350,6 +350,23 @@ const qrScanDetails = async (req, res) => {
 };
 
 
+const getAllActiveUsers = async (req, res) => {
+  try {
+    // const userId = req.user.userId; // Extract userId from the token's decoded data
+
+    // Find the primary user by ID
+    const users = await User.find({ status: "Active" });
+    // Send the response including the user and their full family tree
+    res.status(200).json({
+      message: "Active User details retrieved successfully",
+      users
+    });
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    res.status(500).json({ message: "Error fetching user details", error: error.message });
+  }
+};
+
 module.exports = {
   createAdmin,
   adminLogin,
@@ -358,5 +375,6 @@ module.exports = {
   getAllUsers,
   deleteMember,
   adminLogout,
-  qrScanDetails
+  qrScanDetails,
+  getAllActiveUsers
 };
