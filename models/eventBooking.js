@@ -120,6 +120,14 @@ const eventBookingSchema = new mongoose.Schema(
             enum: ['Confirmed', 'Cancelled'],
             default: 'Confirmed',
         },
+        isDeleted: {
+            type: Boolean,
+            default: false
+        },
+        deletedAt: {
+            type: Date,
+            default: null
+        }
     },
     { timestamps: true }
 );

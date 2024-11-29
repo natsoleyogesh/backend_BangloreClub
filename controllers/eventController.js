@@ -491,6 +491,62 @@ const bookingDetails = async (req, res) => {
 };
 
 
+const getAllBookings = async (req, res) => {
+    try {
+        const bookings = await EventBooking.find({ isDeleted: false, deletedAt: null });
+        return res.status(200).json({ message: 'Bookings fetched successfully', bookings });
+    } catch (error) {
+        console.error('Error fetching bookings:', error);
+        return res.status(500).json({ message: 'An error occurred while fetching bookings', error });
+    }
+};
+
+
+const getBookingById = async (req, res) => {
+    try {
+        const { bookingId } = req.params;
+
+        // Find the booking, ensuring it is not deleted
+        const booking = await EventBooking.findById(bookingId)
+        // .populate('eventId primaryMemberId dependents.userId guests.userId');
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found or has been deleted' });
+        }
+
+        return res.status(200).json({ message: 'Booking fetched successfully', booking });
+    } catch (error) {
+        console.error('Error fetching booking:', error);
+        return res.status(500).json({ message: 'An error occurred while fetching the booking', error });
+    }
+};
+
+
+const deleteBooking = async (req, res) => {
+    try {
+        const { bookingId } = req.params;
+
+        const booking = await EventBooking.findById(bookingId)
+
+        // If no booking was found or already deleted
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found or already deleted' });
+        }
+        // Soft delete: set `deletedAt` to the current time using findByIdAndUpdate
+        const deletedbooking = await EventBooking.findByIdAndUpdate(
+            bookingId,
+            { isDeleted: true, deletedAt: new Date() },
+            { new: true, runValidators: true } // `new: true` returns the updated document
+        );
+
+        return res.status(200).json({ message: 'Booking deleted successfully!', booking: deletedbooking });
+    } catch (error) {
+        console.error('Error deleting booking:', error);
+        return res.status(500).json({ message: 'An error occurred while deleting the booking', error });
+    }
+};
+
+
 
 module.exports = {
     createEvent,
@@ -499,5 +555,8 @@ module.exports = {
     updateEvent,
     deleteEvent,
     bookEvent,
-    bookingDetails
+    bookingDetails,
+    getAllBookings,
+    getBookingById,
+    deleteBooking
 }

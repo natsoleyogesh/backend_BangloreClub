@@ -1,4 +1,4 @@
-const { createEvent, getAllEvents, getEventById, updateEvent, deleteEvent, bookEvent, bookingDetails } = require("../controllers/eventController");
+const { createEvent, getAllEvents, getEventById, updateEvent, deleteEvent, bookEvent, bookingDetails, getAllBookings, getBookingById, deleteBooking } = require("../controllers/eventController");
 const { verifyToken } = require("../utils/common");
 const { eventupload } = require("../utils/upload");
 
@@ -13,5 +13,8 @@ module.exports = (router) => {
     // event bookings routes
     router.post("/event/book-event", bookEvent);
     router.post("/event/booking-details", bookingDetails);
+    router.get("/event/all-bookings", getAllBookings);
+    router.get("/event/booking-details/:bookingId", getBookingById);
+    router.delete("/event/booking-delete/:bookingId", deleteBooking);
 
 }
