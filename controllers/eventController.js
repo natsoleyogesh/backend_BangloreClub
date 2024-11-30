@@ -308,9 +308,9 @@ const bookEvent = async (req, res) => {
 
         // Check if the user has already booked this event
         const existingBooking = await EventBooking.findOne({ eventId, primaryMemberId, bookingStatus: "Confirmed" });
-        if (existingBooking) {
-            return res.status(400).json({ message: 'You have already booked this event.' });
-        }
+        // if (existingBooking) {
+        //     return res.status(400).json({ message: 'You have already booked this event.' });
+        // }
 
         // Fetch the event details
         const event = await Event.findById(eventId);
