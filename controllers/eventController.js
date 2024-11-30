@@ -343,7 +343,7 @@ const bookEvent = async (req, res) => {
         const members = [
             { userId: primaryMemberId, type: 'Primary', eventId },
             ...(dependents || []).map(dep => ({ userId: dep.userId, type: 'Dependent', eventId })),
-            ...(guests || []).map(guest => ({ userId: guest.name, type: 'Guest', eventId })),
+            ...(guests || []).map(guest => ({ userId: guest.name, type: 'Guest', eventId })), // For guest, use name instead of userId
         ];
 
         // Generate individual QR codes
@@ -369,15 +369,23 @@ const bookEvent = async (req, res) => {
         };
         const allDetailsQRCode = await QRCodeHelper.generateQRCode(allDetailsQRCodeData);
 
+        // Generate QR code for the primary member
+        const primaryMemberQRCode = qrCodes.find(qr => qr.userId.toString() === primaryMemberId.toString()).qrCode;
+
         // Save the booking
         const newBooking = new EventBooking({
             eventId,
             primaryMemberId,
-            dependents: dependents.map(dep => ({ userId: dep.userId })),
+            primaryMemberQRCode, // Store the primary member's QR code
+            dependents: dependents.map(dep => ({
+                userId: dep.userId,
+                qrCode: qrCodes.find(qr => qr.userId.toString() === dep.userId.toString()).qrCode,
+            })),
             guests: guests.map(guest => ({
                 name: guest.name,
                 email: guest.email,
                 phone: guest.phone,
+                qrCode: qrCodes.find(qr => qr.userId === guest.name).qrCode,
             })),
             counts: {
                 primaryMemberCount,
@@ -393,7 +401,6 @@ const bookEvent = async (req, res) => {
                 taxAmount,
                 totalAmount,
             },
-            qrCodes,
             allDetailsQRCode,
             paymentStatus: 'Pending',
             bookingStatus: 'Confirmed',
@@ -402,15 +409,12 @@ const bookEvent = async (req, res) => {
         await newBooking.save();
 
         // Update the available tickets in the Event schema
-        event.availableTickets -=
-            primaryMemberCount + dependentMemberCount + guestMemberCount;
+        event.availableTickets -= (primaryMemberCount + dependentMemberCount + guestMemberCount);
         await event.save();
 
         // Return the response
         return res.status(201).json({
             message: 'Booking successful',
-            // qrCodes,
-            // allDetailsQRCode,
             bookingDetails: newBooking,
         });
     } catch (error) {
@@ -418,6 +422,8 @@ const bookEvent = async (req, res) => {
         return res.status(500).json({ message: 'An error occurred while booking the event.', error });
     }
 };
+
+
 
 const bookingDetails = async (req, res) => {
     try {
@@ -493,7 +499,9 @@ const bookingDetails = async (req, res) => {
 
 const getAllBookings = async (req, res) => {
     try {
-        const bookings = await EventBooking.find({ isDeleted: false, deletedAt: null });
+        const bookings = await EventBooking.find({ isDeleted: false, deletedAt: null })
+            .populate("eventId")
+            .populate("primaryMemberId");
         return res.status(200).json({ message: 'Bookings fetched successfully', bookings });
     } catch (error) {
         console.error('Error fetching bookings:', error);
@@ -502,12 +510,94 @@ const getAllBookings = async (req, res) => {
 };
 
 
+const getBookingDetailsById = async (req, res) => {
+    try {
+        const { bookingId } = req.params;
+
+        // Find the booking, ensuring it is not deleted
+        const booking = await EventBooking.findById(bookingId)
+            .populate("eventId")
+            .populate("primaryMemberId")
+            .populate("dependents.userId") // Populate dependents
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found or has been deleted' });
+        }
+
+        // Format the booking details
+        const formattedBooking = {
+            ticketDetails: booking.ticketDetails,
+            _id: booking._id,
+            memberDetails: [], // Array to hold all members (primary, dependents, and guests)
+            allDetailsQRCode: booking.allDetailsQRCode, // QR code for all details
+            paymentStatus: booking.paymentStatus,
+            bookingStatus: booking.bookingStatus,
+            isDeleted: booking.isDeleted,
+            createdAt: booking.createdAt,
+            updatedAt: booking.updatedAt,
+        };
+
+        // Add primary member to memberDetails array
+        formattedBooking.memberDetails.push({
+            _id: booking.primaryMemberId._id,
+            name: booking.primaryMemberId.name,
+            email: booking.primaryMemberId.email,
+            mobileNumber: booking.primaryMemberId.mobileNumber,
+            memberId: booking.primaryMemberId.memberId,
+            relation: booking.primaryMemberId.relation,
+            profilePicture: booking.primaryMemberId.profilePicture,
+            type: booking.primaryMemberId.relation,
+            qrCode: booking.primaryMemberQRCode, // Primary member QR code
+        });
+
+        // Add dependents to memberDetails array
+        booking.dependents.forEach(dep => {
+            formattedBooking.memberDetails.push({
+                _id: dep.userId._id,
+                name: dep.userId.name,
+                email: dep.userId.email,
+                mobileNumber: dep.userId.mobileNumber,
+                memberId: dep.userId.memberId,
+                relation: dep.userId.relation,
+                profilePicture: dep.userId.profilePicture,
+                type: dep.type,
+                qrCode: dep.qrCode, // Dependent QR code
+            });
+        });
+
+        // Add guests to memberDetails array
+        booking.guests.forEach(guest => {
+            formattedBooking.memberDetails.push({
+                _id: guest._id,
+                name: guest.name,
+                email: guest.email,
+                phone: guest.phone,
+                type: guest.type,
+                qrCode: guest.qrCode, // Guest QR code
+            });
+        });
+
+        // Return the response with formatted booking details
+        return res.status(200).json({
+            message: 'Booking fetched successfully',
+            booking: formattedBooking,
+        });
+    } catch (error) {
+        console.error('Error fetching booking:', error);
+        return res.status(500).json({ message: 'An error occurred while fetching the booking', error });
+    }
+};
+
+
+
 const getBookingById = async (req, res) => {
     try {
         const { bookingId } = req.params;
 
         // Find the booking, ensuring it is not deleted
         const booking = await EventBooking.findById(bookingId)
+            .populate("eventId")
+            .populate("primaryMemberId")
+            .populate("dependents.userId")
         // .populate('eventId primaryMemberId dependents.userId guests.userId');
 
         if (!booking) {
@@ -558,5 +648,6 @@ module.exports = {
     bookingDetails,
     getAllBookings,
     getBookingById,
-    deleteBooking
+    deleteBooking,
+    getBookingDetailsById
 }
