@@ -351,10 +351,10 @@ const bookEvent = async (req, res) => {
         // Generate individual QR codes
         const qrCodes = await QRCodeHelper.generateMultipleQRCodes(members);
         const uniqueNumber = Math.floor(Math.random() * 10000000000); // Generates a random 10-digit number
-        const uniqueQRCode = `QR${uniqueNumber}`; // The unique QR code string (QR + 10-digit number)
+        const uniqueQRCodeId = `QR${uniqueNumber}`; // The unique QR code string (QR + 10-digit number)
         // Generate QR code for all details
         const allDetailsQRCodeData = {
-            uniqueQRCode,
+            uniqueQRCodeId,
             eventId,
             eventTitle: event.eventTitle,
             eventDate: event.eventDate,
@@ -372,20 +372,20 @@ const bookEvent = async (req, res) => {
             },
         };
         const allDetailsQRCode = await QRCodeHelper.generateQRCode(allDetailsQRCodeData);
-        const allDetailsUniqueQRCode = uniqueQRCode;
+        const allDetailsUniqueQRCode = uniqueQRCodeId;
         // Generate QR code for the primary member
         const primaryMemberQRCode = qrCodes.find(qr => qr.userId.toString() === primaryMemberId.toString()).qrCode;
-        const primaryUniqueQRCode = qrCodes.find(qr => qr.userId.toString() === primaryMemberId.toString()).uniqueQRCodeData;
+        const uniqueQRCode = qrCodes.find(qr => qr.userId.toString() === primaryMemberId.toString()).uniqueQRCodeData;
         // Save the booking
         const newBooking = new EventBooking({
             eventId,
             primaryMemberId,
             primaryMemberQRCode, // Store the primary member's QR code
-            primaryUniqueQRCode,
+            uniqueQRCode,
             dependents: dependents.map(dep => ({
                 userId: dep.userId,
                 qrCode: qrCodes.find(qr => qr.userId.toString() === dep.userId.toString()).qrCode,
-                dependentUniqueQRCode: qrCodes.find(qr => qr.userId.toString() === dep.userId.toString()).uniqueQRCodeData,
+                uniqueQRCode: qrCodes.find(qr => qr.userId.toString() === dep.userId.toString()).uniqueQRCodeData,
 
             })),
             guests: guests.map(guest => ({
@@ -393,7 +393,7 @@ const bookEvent = async (req, res) => {
                 email: guest.email,
                 phone: guest.phone,
                 qrCode: qrCodes.find(qr => qr.userId === guest.name).qrCode,
-                guestUniqueQRCode: qrCodes.find(qr => qr.userId === guest.name).uniqueQRCodeData,
+                uniqueQRCode: qrCodes.find(qr => qr.userId === guest.name).uniqueQRCodeData,
 
             })),
             counts: {
@@ -560,7 +560,7 @@ const getBookingDetailsById = async (req, res) => {
             relation: booking.primaryMemberId.relation,
             profilePicture: booking.primaryMemberId.profilePicture,
             type: booking.primaryMemberId.relation,
-            primaryUniqueQRCode: booking.primaryUniqueQRCode, // Primary member QR code
+            uniqueQRCode: booking.uniqueQRCode, // Primary member QR code
             qrCode: booking.primaryMemberQRCode, // Primary member QR code
 
         });
@@ -576,7 +576,7 @@ const getBookingDetailsById = async (req, res) => {
                 relation: dep.userId.relation,
                 profilePicture: dep.userId.profilePicture,
                 type: dep.type,
-                dependentUniqueQRCode: dep.dependentUniqueQRCode, // Dependent QR code
+                uniqueQRCode: dep.uniqueQRCode, // Dependent QR code
                 qrCode: dep.qrCode, // Dependent QR code
             });
         });
@@ -589,7 +589,7 @@ const getBookingDetailsById = async (req, res) => {
                 email: guest.email,
                 phone: guest.phone,
                 type: guest.type,
-                guestUniqueQRCode: guest.guestUniqueQRCode, // Guest QR code
+                uniqueQRCode: guest.uniqueQRCode, // Guest QR code
                 qrCode: guest.qrCode, // Guest QR code
             });
         });

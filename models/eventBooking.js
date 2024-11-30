@@ -155,7 +155,7 @@ const eventBookingSchema = new mongoose.Schema(
             type: String, // Store the QR code for the primary member
             default: ""
         },
-        primaryUniqueQRCode: {
+        uniqueQRCode: {
             type: String,
             required: true,
             unique: true,
@@ -174,7 +174,7 @@ const eventBookingSchema = new mongoose.Schema(
                     type: String,
                     default: "dependent"
                 },
-                dependentUniqueQRCode: {
+                uniqueQRCode: {
                     type: String,
                     required: true,
                     unique: true,
@@ -203,7 +203,7 @@ const eventBookingSchema = new mongoose.Schema(
                     type: String,
                     default: "guest"
                 },
-                guestUniqueQRCode: {
+                uniqueQRCode: {
                     type: String,
                     required: true,
                     unique: true,
