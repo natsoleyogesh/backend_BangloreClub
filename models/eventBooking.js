@@ -155,6 +155,11 @@ const eventBookingSchema = new mongoose.Schema(
             type: String, // Store the QR code for the primary member
             default: ""
         },
+        primaryUniqueQRCode: {
+            type: String,
+            required: true,
+            unique: true,
+        },
         dependents: [
             {
                 userId: {
@@ -168,7 +173,12 @@ const eventBookingSchema = new mongoose.Schema(
                 type: {
                     type: String,
                     default: "dependent"
-                }
+                },
+                dependentUniqueQRCode: {
+                    type: String,
+                    required: true,
+                    unique: true,
+                },
             },
         ],
         guests: [
@@ -192,7 +202,12 @@ const eventBookingSchema = new mongoose.Schema(
                 type: {
                     type: String,
                     default: "guest"
-                }
+                },
+                guestUniqueQRCode: {
+                    type: String,
+                    required: true,
+                    unique: true,
+                },
             },
         ],
         counts: {
@@ -247,6 +262,11 @@ const eventBookingSchema = new mongoose.Schema(
         allDetailsQRCode: {
             type: String, // QR code containing all booking details
             required: true,
+        },
+        allDetailsUniqueQRCode: {
+            type: String,
+            required: true,
+            unique: true,
         },
         paymentStatus: {
             type: String,

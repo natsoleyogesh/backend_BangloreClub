@@ -337,8 +337,10 @@ const bookEvent = async (req, res) => {
             guestMemberCount * event.guestMemberPrice;
 
         const taxAmount = (subtotal * event.taxRate) / 100;
-        const totalAmount = subtotal + taxAmount;
+        let totalAmount = subtotal + taxAmount;
 
+        // Round totalAmount to 2 decimal places
+        totalAmount = Math.round(totalAmount * 100) / 100; // Round to 2 decimal places
         // Prepare individual QR data
         const members = [
             { userId: primaryMemberId, type: 'Primary', eventId },
@@ -348,9 +350,11 @@ const bookEvent = async (req, res) => {
 
         // Generate individual QR codes
         const qrCodes = await QRCodeHelper.generateMultipleQRCodes(members);
-
+        const uniqueNumber = Math.floor(Math.random() * 10000000000); // Generates a random 10-digit number
+        const uniqueQRCode = `QR${uniqueNumber}`; // The unique QR code string (QR + 10-digit number)
         // Generate QR code for all details
         const allDetailsQRCodeData = {
+            uniqueQRCode,
             eventId,
             eventTitle: event.eventTitle,
             eventDate: event.eventDate,
@@ -368,24 +372,29 @@ const bookEvent = async (req, res) => {
             },
         };
         const allDetailsQRCode = await QRCodeHelper.generateQRCode(allDetailsQRCodeData);
-
+        const allDetailsUniqueQRCode = uniqueQRCode;
         // Generate QR code for the primary member
         const primaryMemberQRCode = qrCodes.find(qr => qr.userId.toString() === primaryMemberId.toString()).qrCode;
-
+        const primaryUniqueQRCode = qrCodes.find(qr => qr.userId.toString() === primaryMemberId.toString()).uniqueQRCodeData;
         // Save the booking
         const newBooking = new EventBooking({
             eventId,
             primaryMemberId,
             primaryMemberQRCode, // Store the primary member's QR code
+            primaryUniqueQRCode,
             dependents: dependents.map(dep => ({
                 userId: dep.userId,
                 qrCode: qrCodes.find(qr => qr.userId.toString() === dep.userId.toString()).qrCode,
+                dependentUniqueQRCode: qrCodes.find(qr => qr.userId.toString() === dep.userId.toString()).uniqueQRCodeData,
+
             })),
             guests: guests.map(guest => ({
                 name: guest.name,
                 email: guest.email,
                 phone: guest.phone,
                 qrCode: qrCodes.find(qr => qr.userId === guest.name).qrCode,
+                guestUniqueQRCode: qrCodes.find(qr => qr.userId === guest.name).uniqueQRCodeData,
+
             })),
             counts: {
                 primaryMemberCount,
@@ -402,6 +411,7 @@ const bookEvent = async (req, res) => {
                 totalAmount,
             },
             allDetailsQRCode,
+            allDetailsUniqueQRCode,
             paymentStatus: 'Pending',
             bookingStatus: 'Confirmed',
         });
@@ -459,8 +469,10 @@ const bookingDetails = async (req, res) => {
             guestMemberCount * event.guestMemberPrice;
 
         const taxAmount = (subtotal * event.taxRate) / 100;
-        const totalAmount = subtotal + taxAmount;
+        let totalAmount = subtotal + taxAmount;
 
+        // Round totalAmount to 2 decimal places
+        totalAmount = Math.round(totalAmount * 100) / 100; // Round to 2 decimal places
         // Prepare the response data without QR codes
         const bookingDetails = {
             eventId,
@@ -502,7 +514,8 @@ const getAllBookings = async (req, res) => {
         const bookings = await EventBooking.find({ isDeleted: false, deletedAt: null })
             .populate("eventId")
             .populate("primaryMemberId");
-        return res.status(200).json({ message: 'Bookings fetched successfully', bookings });
+        const reversedata = bookings.reverse()
+        return res.status(200).json({ message: 'Bookings fetched successfully', bookings: reversedata });
     } catch (error) {
         console.error('Error fetching bookings:', error);
         return res.status(500).json({ message: 'An error occurred while fetching bookings', error });
@@ -525,9 +538,10 @@ const getBookingDetailsById = async (req, res) => {
 
         // Format the booking details
         const formattedBooking = {
-            ticketDetails: booking.ticketDetails,
             _id: booking._id,
+            ticketDetails: booking.ticketDetails,
             memberDetails: [], // Array to hold all members (primary, dependents, and guests)
+            allDetailsUniqueQRCode: booking.allDetailsUniqueQRCode, // QR code for all details
             allDetailsQRCode: booking.allDetailsQRCode, // QR code for all details
             paymentStatus: booking.paymentStatus,
             bookingStatus: booking.bookingStatus,
@@ -546,7 +560,9 @@ const getBookingDetailsById = async (req, res) => {
             relation: booking.primaryMemberId.relation,
             profilePicture: booking.primaryMemberId.profilePicture,
             type: booking.primaryMemberId.relation,
+            primaryUniqueQRCode: booking.primaryUniqueQRCode, // Primary member QR code
             qrCode: booking.primaryMemberQRCode, // Primary member QR code
+
         });
 
         // Add dependents to memberDetails array
@@ -560,6 +576,7 @@ const getBookingDetailsById = async (req, res) => {
                 relation: dep.userId.relation,
                 profilePicture: dep.userId.profilePicture,
                 type: dep.type,
+                dependentUniqueQRCode: dep.dependentUniqueQRCode, // Dependent QR code
                 qrCode: dep.qrCode, // Dependent QR code
             });
         });
@@ -572,6 +589,7 @@ const getBookingDetailsById = async (req, res) => {
                 email: guest.email,
                 phone: guest.phone,
                 type: guest.type,
+                guestUniqueQRCode: guest.guestUniqueQRCode, // Guest QR code
                 qrCode: guest.qrCode, // Guest QR code
             });
         });
@@ -636,6 +654,50 @@ const deleteBooking = async (req, res) => {
     }
 };
 
+const updateBookingStatusAndPaymentStatus = async (req, res) => {
+    try {
+        const { bookingId } = req.params; // Booking ID from URL parameter
+        const updateData = req.body; // The entire body contains the fields to be updated
+
+        // Validate that at least one field is provided in the request body
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ message: 'At least one field is required to update.' });
+        }
+
+        // Validate the values of fields in the request body
+        const validBookingStatuses = ['Confirmed', 'Cancelled'];
+        const validPaymentStatuses = ['Pending', 'Completed', 'Failed'];
+
+        if (updateData.bookingStatus && !validBookingStatuses.includes(updateData.bookingStatus)) {
+            return res.status(400).json({ message: 'Invalid bookingStatus value.' });
+        }
+
+        if (updateData.paymentStatus && !validPaymentStatuses.includes(updateData.paymentStatus)) {
+            return res.status(400).json({ message: 'Invalid paymentStatus value.' });
+        }
+
+        // Find the event booking by bookingId
+        const booking = await EventBooking.findById(bookingId);
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found.' });
+        }
+
+        // Update the booking with only the fields provided in the request body
+        const updatedBooking = await EventBooking.findByIdAndUpdate(
+            bookingId,
+            { $set: updateData },  // Only update the fields present in updateData
+            { new: true } // Return the updated document
+        );
+
+        return res.status(200).json({
+            message: 'Booking updated successfully.',
+            updatedBooking
+        });
+    } catch (error) {
+        console.error('Error updating booking:', error);
+        return res.status(500).json({ message: 'An error occurred while updating the booking.', error });
+    }
+};
 
 
 module.exports = {
@@ -649,5 +711,6 @@ module.exports = {
     getAllBookings,
     getBookingById,
     deleteBooking,
-    getBookingDetailsById
+    getBookingDetailsById,
+    updateBookingStatusAndPaymentStatus
 }
