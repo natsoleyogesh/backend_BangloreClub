@@ -20,7 +20,7 @@ module.exports = (router) => {
 
     router.put("/event/booking-status/:bookingId", updateBookingStatusAndPaymentStatus);
 
-    router.get("/event/allbookings/:memberId", verifyToken, getBookingDetails);
+    router.get("/event/allbookings", verifyToken, getBookingDetails);
 
 
 }
