@@ -700,6 +700,94 @@ const updateBookingStatusAndPaymentStatus = async (req, res) => {
 };
 
 
+const getBookingDetails = async (req, res) => {
+    try {
+        const { userId } = req.user;
+        // Find all bookings for the member, ensuring they are not deleted, and sorted by createdAt in descending order
+        const bookings = await EventBooking.find({ primaryMemberId: userId, isDeleted: false, deletedAt: null })
+            .populate("eventId")
+            .populate("primaryMemberId")
+            .populate("dependents.userId") // Populate dependents
+            .sort({ createdAt: -1 }); // Sort by createdAt in descending order
+
+        if (bookings.length === 0) {
+            return res.status(404).json({ message: 'No bookings found or all bookings have been deleted' });
+        }
+
+        // Format the booking details for each booking
+        const formattedBookings = bookings.map(booking => {
+            const formattedBooking = {
+                _id: booking._id,
+                ticketDetails: booking.ticketDetails,
+                memberDetails: [], // Array to hold all members (primary, dependents, and guests)
+                allDetailsUniqueQRCode: booking.allDetailsUniqueQRCode, // QR code for all details
+                allDetailsQRCode: booking.allDetailsQRCode, // QR code for all details
+                paymentStatus: booking.paymentStatus,
+                bookingStatus: booking.bookingStatus,
+                isDeleted: booking.isDeleted,
+                createdAt: booking.createdAt,
+                updatedAt: booking.updatedAt,
+            };
+
+            // Add primary member to memberDetails array
+            formattedBooking.memberDetails.push({
+                _id: booking.primaryMemberId._id,
+                name: booking.primaryMemberId.name,
+                email: booking.primaryMemberId.email,
+                mobileNumber: booking.primaryMemberId.mobileNumber,
+                memberId: booking.primaryMemberId.memberId,
+                relation: booking.primaryMemberId.relation,
+                profilePicture: booking.primaryMemberId.profilePicture,
+                type: booking.primaryMemberId.relation,
+                uniqueQRCode: booking.uniqueQRCode, // Primary member QR code
+                qrCode: booking.primaryMemberQRCode, // Primary member QR code
+            });
+
+            // Add dependents to memberDetails array
+            booking.dependents.forEach(dep => {
+                formattedBooking.memberDetails.push({
+                    _id: dep.userId._id,
+                    name: dep.userId.name,
+                    email: dep.userId.email,
+                    mobileNumber: dep.userId.mobileNumber,
+                    memberId: dep.userId.memberId,
+                    relation: dep.userId.relation,
+                    profilePicture: dep.userId.profilePicture,
+                    type: dep.type,
+                    uniqueQRCode: dep.uniqueQRCode, // Dependent QR code
+                    qrCode: dep.qrCode, // Dependent QR code
+                });
+            });
+
+            // Add guests to memberDetails array
+            booking.guests.forEach(guest => {
+                formattedBooking.memberDetails.push({
+                    _id: guest._id,
+                    name: guest.name,
+                    email: guest.email,
+                    phone: guest.phone,
+                    type: guest.type,
+                    uniqueQRCode: guest.uniqueQRCode, // Guest QR code
+                    qrCode: guest.qrCode, // Guest QR code
+                });
+            });
+
+            return formattedBooking;
+        });
+
+        // Return the response with formatted bookings
+        return res.status(200).json({
+            message: 'Bookings fetched successfully',
+            bookings: formattedBookings,
+        });
+
+    } catch (error) {
+        console.error('Error Getting bookings:', error);
+        return res.status(500).json({ message: 'An error occurred while getting the bookings.', error });
+    }
+};
+
+
 module.exports = {
     createEvent,
     getAllEvents,
@@ -712,5 +800,6 @@ module.exports = {
     getBookingById,
     deleteBooking,
     getBookingDetailsById,
-    updateBookingStatusAndPaymentStatus
+    updateBookingStatusAndPaymentStatus,
+    getBookingDetails
 }
