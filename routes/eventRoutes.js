@@ -1,4 +1,4 @@
-const { createEvent, getAllEvents, getEventById, updateEvent, deleteEvent, bookEvent, bookingDetails, getAllBookings, getBookingById, deleteBooking, getBookingDetailsById, updateBookingStatusAndPaymentStatus } = require("../controllers/eventController");
+const { createEvent, getAllEvents, getEventById, updateEvent, deleteEvent, bookEvent, bookingDetails, getAllBookings, getBookingById, deleteBooking, getBookingDetailsById, updateBookingStatusAndPaymentStatus, getBookingDetails } = require("../controllers/eventController");
 const { verifyToken } = require("../utils/common");
 const { eventupload } = require("../utils/upload");
 
@@ -20,6 +20,7 @@ module.exports = (router) => {
 
     router.put("/event/booking-status/:bookingId", updateBookingStatusAndPaymentStatus);
 
+    router.get("/event/allbookings", verifyToken, getBookingDetails);
 
 
 }
