@@ -1,4 +1,6 @@
 const Room = require("../models/room");
+const RoomBooking = require('../models/roomBooking');  // Path to your RoomBooking model
+const RoomWithCategory = require('../models/roomWithCategory');
 const mongoose = require("mongoose");
 const path = require("path");
 const fs = require("fs")
@@ -370,6 +372,227 @@ const getAllAvailableRooms = async (req, res) => {
 };
 
 
+// ALL BOOKING APIS FUNCTIONS
+
+const createRoomBooking = async (req, res) => {
+    try {
+        const {
+            primaryMemberId,
+            memberType,
+            memberDetails,
+            roomCategoryCounts,
+            memberCounts,
+            bookingDates,
+            paymentMode,
+            guestContact
+        } = req.body;
+
+        // Validate that totalOccupants matches the length of memberDetails
+        if (memberCounts.totalOccupants !== memberDetails.length) {
+            return res.status(400).json({ message: 'Total occupants do not match the number of members provided' });
+        }
+        if (memberType === "guest" && !guestContact) {
+            return res.status(400).json({ message: "Please Provide the Guest Contact details" })
+        }
+
+
+        // Iterate over each room category count to get the correct price and tax rate based on memberType
+        for (const roomCategoryCount of roomCategoryCounts) {
+            const roomType = roomCategoryCount.roomType;
+
+            // Fetch RoomWithCategory data to get prices and tax rates
+            const roomCategory = await RoomWithCategory.findById(roomType);
+            if (!roomCategory) {
+                return res.status(400).json({ message: 'Invalid room category type' });
+            }
+
+            // Set the correct price based on memberType (primaryMemberPrice for 'self', guestPrice for 'guest')
+            const roomPrice = memberType === 'self' ? roomCategory.primaryMemberPrice : roomCategory.guestPrice;
+
+            // Set the correct tax rate from RoomWithCategory model
+            const taxRate = roomCategory.taxRate;
+
+            // Assign the fetched price and tax rate to the roomCategoryCount object
+            roomCategoryCount.roomPrice = roomPrice;
+            roomCategoryCount.taxRate = taxRate;  // Adding taxRate to the roomCategoryCount object
+        }
+
+        // Create a new booking object with the data
+        const newRoomBooking = new RoomBooking({
+            primaryMemberId,
+            memberType,
+            memberDetails,
+            roomCategoryCounts,
+            memberCounts,
+            bookingDates,
+            paymentMode,
+            guestContact
+        });
+
+        // Calculate total amount and tax
+        newRoomBooking.pricingDetails.totalAmount = calculateTotalAmount(newRoomBooking);
+        newRoomBooking.pricingDetails.totalTaxAmount = calculateTotalTaxAmount(newRoomBooking);
+
+        // Save the new booking
+        await newRoomBooking.save();
+
+        // Respond with success
+        return res.status(201).json({ message: 'Room booking created successfully', booking: newRoomBooking });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Error creating booking', error: err.message });
+    }
+}
+
+// Calculate total amount
+function calculateTotalAmount(booking) {
+    let totalAmount = 0;
+    let totalTaxAmount = 0;
+
+    booking.roomCategoryCounts.forEach(roomCategoryCount => {
+        const { roomPrice, roomCount, taxRate } = roomCategoryCount;
+        const roomTotalPrice = roomPrice * roomCount;
+        const taxAmount = (roomTotalPrice * taxRate) / 100;
+        totalAmount += roomTotalPrice;
+        totalTaxAmount += taxAmount;
+    });
+
+    // Add total tax amount to the final total amount
+    return totalAmount + totalTaxAmount;
+}
+
+// Calculate total tax amount
+function calculateTotalTaxAmount(booking) {
+    let totalTaxAmount = 0;
+
+    booking.roomCategoryCounts.forEach(roomCategoryCount => {
+        const { roomPrice, roomCount, taxRate } = roomCategoryCount;
+        const roomTotalPrice = roomPrice * roomCount;
+        const taxAmount = (roomTotalPrice * taxRate) / 100;
+        totalTaxAmount += taxAmount;
+    });
+
+    return totalTaxAmount;
+}
+
+const getAllBookings = async (req, res) => {
+    try {
+        const bookings = await RoomBooking.find({ isDeleted: false })
+            .populate('roomCategoryCounts.roomType') // Populate RoomWithCategory fields
+            .populate('primaryMemberId') // Populate User fields (assuming User model has these fields)
+            .sort({ createdAt: -1 });  // Sort by 'createdAt' in descending order
+        if (!bookings || bookings.length === 0) {
+            return res.status(404).json({ message: 'No bookings found' });
+        }
+
+        return res.status(200).json({ message: "Fetch All Bookings Successfully", bookings });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Error retrieving bookings', error: err.message });
+    }
+};
+
+const getBookingById = async (req, res) => {
+    try {
+        const { bookingId } = req.params;
+
+        // Validate that the bookingId is a valid MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+            return res.status(400).json({ message: 'Invalid booking ID format' });
+        }
+
+        // const booking = await RoomBooking.findById(bookingId)
+        const booking = await RoomBooking.findOne({ _id: bookingId, isDeleted: false })  // Exclude soft-deleted bookings
+            .populate('roomCategoryCounts.roomType') // Populate RoomWithCategory fields
+            .populate('primaryMemberId'); // Populate User fields
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        return res.status(200).json({ mesage: "Booking Details Fetch Successfully", booking });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Error retrieving booking', error: err.message });
+    }
+};
+
+
+const getMyBookings = async (req, res) => {
+    try {
+        const primaryMemberId = req.user.userId; // Assuming the user is authenticated, and their ID is stored in req.user._id
+        const { page = 1, limit = 10 } = req.query; // Default to page 1 and limit 10 if no query params are provided
+
+        const skip = (page - 1) * limit; // Skip the results for pagination
+
+        const bookings = await RoomBooking.find({ primaryMemberId, isDeleted: false })
+            .populate('roomCategoryCounts.roomType') // Populate RoomWithCategory fields
+            .populate('primaryMemberId') // Populate User fields
+            .sort({ createdAt: -1 }) // Sort by 'createdAt' in descending order
+            .skip(skip) // Skip results for pagination
+            .limit(Number(limit)); // Limit the number of results per page
+
+        if (!bookings || bookings.length === 0) {
+            return res.status(404).json({ message: 'No bookings found for this user' });
+        }
+
+        // Get the total number of bookings for pagination info
+        const totalBookings = await RoomBooking.countDocuments({ primaryMemberId, isDeleted: false });
+
+        // Calculate total pages
+        const totalPages = Math.ceil(totalBookings / limit);
+
+        return res.status(200).json({
+            message: "All bookings fetched successfully",
+            bookings,
+            pagination: {
+                totalBookings,
+                totalPages,
+                currentPage: page,
+                perPage: limit,
+            },
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Error retrieving your bookings', error: err.message });
+    }
+};
+
+
+const deleteBooking = async (req, res) => {
+    try {
+        const bookingId = req.params.bookingId;
+
+        // Validate that the bookingId is a valid MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+            return res.status(400).json({ message: 'Invalid booking ID format' });
+        }
+
+        // Find the booking by ID
+        const booking = await RoomBooking.findById(bookingId);
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        // Check if the booking is already marked as deleted
+        if (booking.isDeleted) {
+            return res.status(400).json({ message: 'Booking has already been deleted' });
+        }
+
+        // Perform soft delete: set 'deleted' flag to true and store deletion timestamp
+        booking.isDeleted = true;
+        booking.deletedAt = new Date();  // Timestamp for when it was deleted
+        await booking.save();
+
+        return res.status(200).json({ message: 'Booking soft deleted successfully' });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Error deleting booking', error: err.message });
+    }
+};
+
+
 module.exports = {
     addRoom,
     getAllRooms,
@@ -378,5 +601,11 @@ module.exports = {
     deleteRoom,
     deleteRoomImage,
     uploadRoomImage,
-    getAllAvailableRooms
+    getAllAvailableRooms,
+    // ALL BOOKINGS FUNCTIONS
+    createRoomBooking,
+    getAllBookings,
+    getBookingById,
+    getMyBookings,
+    deleteBooking
 }

@@ -18,6 +18,7 @@ const faqRoutes = require("./faqRoutes");
 const comRoutes = require("./comRoutes");
 const foodAndBeverageRoutes = require("./foodAndBeverageRoutes");
 const membershipWaitingListRoutes = require("./membershipWaitingListRoutes");
+const roomWithCategoryRoutes = require("./roomWithCategory");
 
 adminRoutes(router);
 userRoutes(router);
@@ -34,6 +35,7 @@ ruleByelawRoutes(router);
 faqRoutes(router);
 comRoutes(router);
 foodAndBeverageRoutes(router);
-membershipWaitingListRoutes(router)
+membershipWaitingListRoutes(router);
+roomWithCategoryRoutes(router);
 
 module.exports = router;
