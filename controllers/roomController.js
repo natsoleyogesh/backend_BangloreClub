@@ -504,19 +504,53 @@ const getBookingById = async (req, res) => {
         // const booking = await RoomBooking.findById(bookingId)
         const booking = await RoomBooking.findOne({ _id: bookingId, isDeleted: false })  // Exclude soft-deleted bookings
             .populate('roomCategoryCounts.roomType') // Populate RoomWithCategory fields
-            .populate('primaryMemberId'); // Populate User fields
+            .populate('primaryMemberId') // Populate User fields
+            .exec();
 
         if (!booking) {
             return res.status(404).json({ message: 'Booking not found' });
         }
+        // Check if roomNumbers contains any populated data
+        console.log('Populated roomNumbers:', booking.roomCategoryCounts);
+        // Step 2: Get all roomCategoryCounts and their roomNumbers
+        const populatedRoomCategoryCounts = await Promise.all(
+            booking.roomCategoryCounts.map(async (category) => {
+                // Fetch the RoomWithCategory document for the current roomType
+                const roomCategory = await RoomWithCategory.findById(category.roomType);
 
-        return res.status(200).json({ mesage: "Booking Details Fetch Successfully", booking });
+                if (!roomCategory) {
+                    return {
+                        ...category.toObject(),
+                        roomDetails: [],
+                    };
+                }
+
+                // Map roomNumbers to their corresponding details from roomDetails
+                const detailedRoomNumbers = category.roomNumbers.map((roomId) => {
+                    const roomDetail = roomCategory.roomDetails.find((room) => room._id.equals(roomId));
+                    return roomDetail || null; // Add room detail if found, or null if not
+                });
+
+                return {
+                    ...category.toObject(),
+                    roomNumbers: detailedRoomNumbers.filter((room) => room !== null), // Filter out nulls
+                };
+            })
+        );
+
+        // Step 3: Attach populated roomCategoryCounts to the booking object
+        const response = {
+            ...booking.toObject(),
+            roomCategoryCounts: populatedRoomCategoryCounts,
+        };
+
+
+        return res.status(200).json({ mesage: "Booking Details Fetch Successfully", response });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Error retrieving booking', error: err.message });
     }
 };
-
 
 const getMyBookings = async (req, res) => {
     try {
@@ -525,8 +559,9 @@ const getMyBookings = async (req, res) => {
 
         const skip = (page - 1) * limit; // Skip the results for pagination
 
+        // Step 1: Fetch bookings (without the populated roomCategoryCounts)
         const bookings = await RoomBooking.find({ primaryMemberId, isDeleted: false })
-            .populate('roomCategoryCounts.roomType') // Populate RoomWithCategory fields
+            .populate('roomCategoryCounts.roomType', '-roomDetails') // Populate RoomWithCategory fields
             .populate('primaryMemberId') // Populate User fields
             .sort({ createdAt: -1 }) // Sort by 'createdAt' in descending order
             .skip(skip) // Skip results for pagination
@@ -536,7 +571,44 @@ const getMyBookings = async (req, res) => {
             return res.status(404).json({ message: 'No bookings found for this user' });
         }
 
-        // Get the total number of bookings for pagination info
+        // Step 2: Manually populate the roomCategoryCounts and their related room details
+        const populatedBookings = await Promise.all(
+            bookings.map(async (booking) => {
+                // Step 3: Populate the roomCategoryCounts (as shown in your previous code)
+                const populatedRoomCategoryCounts = await Promise.all(
+                    booking.roomCategoryCounts.map(async (category) => {
+                        // Fetch the RoomWithCategory document for the current roomType
+                        const roomCategory = await RoomWithCategory.findById(category.roomType);
+
+                        if (!roomCategory) {
+                            return {
+                                ...category.toObject(),
+                                roomDetails: [],
+                            };
+                        }
+
+                        // Map roomNumbers to their corresponding details from roomDetails
+                        const detailedRoomNumbers = category.roomNumbers.map((roomId) => {
+                            const roomDetail = roomCategory.roomDetails.find((room) => room._id.equals(roomId));
+                            return roomDetail || null; // Add room detail if found, or null if not
+                        });
+
+                        return {
+                            ...category.toObject(),
+                            roomNumbers: detailedRoomNumbers.filter((room) => room !== null), // Filter out nulls
+                        };
+                    })
+                );
+
+                // Step 4: Attach populated roomCategoryCounts to the booking object
+                return {
+                    ...booking.toObject(),
+                    roomCategoryCounts: populatedRoomCategoryCounts,
+                };
+            })
+        );
+
+        // Step 5: Get the total number of bookings for pagination info
         const totalBookings = await RoomBooking.countDocuments({ primaryMemberId, isDeleted: false });
 
         // Calculate total pages
@@ -544,7 +616,7 @@ const getMyBookings = async (req, res) => {
 
         return res.status(200).json({
             message: "All bookings fetched successfully",
-            bookings,
+            bookings: populatedBookings,
             pagination: {
                 totalBookings,
                 totalPages,
@@ -593,6 +665,170 @@ const deleteBooking = async (req, res) => {
 };
 
 
+// WORKING CODE BUT ROOM IS NOT STORE 
+const updateRoomAllocation = async (req, res) => {
+    try {
+        const bookingId = req.params.bookingId; // Booking ID from URL
+        const { allocatedRooms } = req.body; // Data sent in the body for update (array of room allocations)
+
+        // 1. Find the booking by ID
+        const booking = await RoomBooking.findById(bookingId);
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        // 2. Loop through each room allocation and validate each category
+        for (const allocation of allocatedRooms) {
+            const { roomType, allocatedRoomIds } = allocation;
+            const { checkIn, checkOut } = booking.bookingDates;
+
+            // Check if the room category exists in the booking's roomCategoryCounts
+            const roomCategoryCount = booking.roomCategoryCounts.find(category => category.roomType.toString() === roomType);
+            if (!roomCategoryCount) {
+                return res.status(404).json({ message: `Room type ${roomType} not found in this booking` });
+            }
+
+            // 3. Fetch the room category details from the RoomWithCategory collection
+            const roomWithCategory = await RoomWithCategory.findById(roomType);
+            if (!roomWithCategory) {
+                return res.status(404).json({ message: 'Room category not found in RoomWithCategory' });
+            }
+
+            // 4. Check available rooms that meet the date and status requirements
+            const checkAvailabilityForDates = async (roomId) => {
+                // Fetch all bookings for this room
+                const bookingsForRoom = await RoomBooking.find({
+                    "roomCategoryCounts.roomNumbers": roomId,
+                    "bookingDates.checkOut": { $gt: checkIn },
+                    "bookingDates.checkIn": { $lt: checkOut },
+                    "isDeleted": false,  // Ensure deleted bookings are excluded
+                });
+
+                // If any bookings overlap, the room is not available
+                return bookingsForRoom.length === 0;
+            };
+
+            // Filter rooms that match the allocated room IDs, are available, and do not have conflicts with existing bookings
+            const availableRooms = await Promise.all(
+                roomWithCategory.roomDetails.filter(room =>
+                    room.status === 'Available' && allocatedRoomIds.includes(room._id.toString())
+                ).map(async (room) => {
+                    const isAvailable = await checkAvailabilityForDates(room._id);
+                    return isAvailable ? room : null;
+                })
+            );
+
+            // Remove unavailable rooms (null values)
+            const validAvailableRooms = availableRooms.filter(room => room !== null);
+
+            // 5. Check if the number of available rooms is sufficient
+            if (validAvailableRooms.length < allocatedRoomIds.length) {
+                return res.status(400).json({ message: `Not enough rooms available for room type ${roomType} for the selected dates` });
+            }
+
+            // 6. Update the booking by allocating rooms
+            booking.roomCategoryCounts.forEach(category => {
+                if (category.roomType.toString() === roomType) {
+                    console.log(`Updating room numbers for room type: ${roomType}`);
+                    console.log(`Allocated rooms: ${allocatedRoomIds}`);
+                    category.roomNumbers = allocatedRoomIds;
+                }
+            });
+        }
+
+        // Save the updated booking
+        await booking.save();
+
+        return res.status(200).json({ message: 'Room allocation updated successfully', booking });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+};
+
+
+// const updateRoomAllocation = async (req, res) => {
+//     try {
+//         const bookingId = req.params.bookingId; // Booking ID from URL
+//         const { allocatedRooms } = req.body; // Data sent in the body for update (array of room allocations)
+
+//         // 1. Find the booking by ID
+//         const booking = await RoomBooking.findById(bookingId);
+//         if (!booking) {
+//             return res.status(404).json({ message: 'Booking not found' });
+//         }
+
+//         // 2. Loop through each room allocation and validate each category
+//         for (const allocation of allocatedRooms) {
+//             const { roomType, allocatedRoomIds } = allocation;
+//             const { checkIn, checkOut } = booking.bookingDates;
+
+//             // Check if the room category exists in the booking's roomCategoryCounts
+//             const roomCategoryCount = booking.roomCategoryCounts.find(category => category.roomType.toString() === roomType);
+//             if (!roomCategoryCount) {
+//                 return res.status(404).json({ message: `Room type ${roomType} not found in this booking` });
+//             }
+
+//             // 3. Fetch the room category details from the RoomWithCategory collection
+//             const roomWithCategory = await RoomWithCategory.findById(roomType);
+//             if (!roomWithCategory) {
+//                 return res.status(404).json({ message: 'Room category not found in RoomWithCategory' });
+//             }
+
+//             // 4. Check available rooms that meet the date and status requirements
+//             const checkAvailabilityForDates = async (roomId) => {
+//                 const bookingsForRoom = await RoomBooking.find({
+//                     "roomCategoryCounts.roomNumbers": roomId,
+//                     "bookingDates.checkOut": { $gt: checkIn },
+//                     "bookingDates.checkIn": { $lt: checkOut },
+//                     "isDeleted": false,  // Ensure deleted bookings are excluded
+//                 });
+//                 return bookingsForRoom.length === 0;
+//             };
+
+//             // Filter rooms that match the allocated room IDs, are available, and do not have conflicts with existing bookings
+//             const availableRooms = await Promise.all(
+//                 roomWithCategory.roomDetails.filter(room =>
+//                     room.status === 'Available' && allocatedRoomIds.includes(room._id.toString())
+//                 ).map(async (room) => {
+//                     const isAvailable = await checkAvailabilityForDates(room._id);
+//                     return isAvailable ? room : null;
+//                 })
+//             );
+
+//             // Remove unavailable rooms (null values)
+//             const validAvailableRooms = availableRooms.filter(room => room !== null);
+
+//             // 5. Check if the number of available rooms is sufficient
+//             if (validAvailableRooms.length < allocatedRoomIds.length) {
+//                 return res.status(400).json({ message: `Not enough rooms available for room type ${roomType} for the selected dates` });
+//             }
+
+//             // 6. Update the booking by allocating rooms
+//             booking.roomCategoryCounts.forEach(category => {
+//                 if (category.roomType.toString() === roomType) {
+//                     // Logging to ensure roomNumbers is being updated correctly
+//                     console.log(`Updating room numbers for room type: ${roomType}`);
+//                     console.log(`Allocated rooms: ${allocatedRoomIds}`);
+//                     category.roomNumbers = allocatedRoomIds;
+//                 }
+//             });
+//         }
+
+//         // Log the updated booking object to check room allocation changes
+//         console.log("Updated booking object:", booking.roomCategoryCounts);
+
+//         // Save the updated booking
+//         await booking.save();
+
+//         res.status(200).json({ message: 'Room allocation updated successfully', booking });
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).json({ message: 'Server error' });
+//     }
+// };
+
+
 module.exports = {
     addRoom,
     getAllRooms,
@@ -607,5 +843,7 @@ module.exports = {
     getAllBookings,
     getBookingById,
     getMyBookings,
-    deleteBooking
+    deleteBooking,
+    updateRoomAllocation
 }
+

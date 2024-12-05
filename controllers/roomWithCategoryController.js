@@ -1,6 +1,7 @@
 const RoomWithCategory = require('../models/roomWithCategory');  // Import the model
 const path = require("path");
 const fs = require("fs");
+const RoomBooking = require('../models/roomBooking');
 
 const addRoomWithCategory = async (req, res) => {
     try {
@@ -317,57 +318,213 @@ const updateRoomWithCategory = async (req, res) => {
 };
 
 
+// const getActiveRoomsWithCategory = async (req, res) => {
+//     try {
+//         const { page = 1, limit = 10, search = '', minAvailableRooms = 1 } = req.query;  // Default to 1 for minAvailableRooms
+//         const skip = (page - 1) * limit;
+
+//         // Build search criteria
+//         const searchCriteria = {
+//             isDeleted: false,
+//             totalAvailableRoom: { $gte: minAvailableRooms },  // Filter rooms with at least minAvailableRooms
+//         };
+
+//         // Fetch rooms with category matching the criteria
+//         const roomsWithCategory = await RoomWithCategory.find(searchCriteria)
+//             .skip(skip)
+//             .limit(limit)
+//             .sort({ 'categoryName': 1 });  // Sort alphabetically by categoryName (you can modify this as needed)
+
+//         // Get the total number of matching rooms for pagination metadata
+//         const totalRooms = await RoomWithCategory.countDocuments(searchCriteria);
+
+//         // Calculate total pages
+//         const totalPages = Math.ceil(totalRooms / limit);
+
+//         if (roomsWithCategory.length === 0) {
+//             return res.status(200).json({
+//                 message: 'No active rooms with category found',
+//                 data: [],
+//                 pagination: {
+//                     // totalRooms,
+//                     totalPages,
+//                     currentPage: parseInt(page),
+//                     limit: parseInt(limit),
+//                 },
+//             });
+//         }
+
+//         return res.status(200).json({
+//             message: 'Active rooms with category fetched successfully',
+//             data: roomsWithCategory,
+//             pagination: {
+//                 // totalRooms,
+//                 totalPages,
+//                 currentPage: parseInt(page),
+//                 limit: parseInt(limit),
+//             },
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({ message: 'Server error while fetching active rooms with category', error: error.message });
+//     }
+// };
+
+// const getActiveRoomsWithCategory = async (req, res) => {
+//     try {
+//         const { page = 1, limit = 10, checkIn, checkOut, roomCount } = req.query;
+
+//         // Validate input
+//         if (!checkIn || !checkOut || !roomCount) {
+//             return res.status(400).json({ message: 'Missing required fields: checkIn, checkOut, roomCount' });
+//         }
+
+//         const skip = (page - 1) * limit;
+
+//         // Parse dates
+//         const checkInDate = new Date(checkIn);
+//         const checkOutDate = new Date(checkOut);
+
+//         // Build the search criteria for RoomWithCategory (checking if room count is available)
+//         const searchCriteria = {
+//             isDeleted: false,
+//             totalAvailableRoom: { $gte: roomCount },  // Ensure enough rooms are available
+//         };
+
+//         // Fetch room categories with the availability filter
+//         const roomsWithCategory = await RoomWithCategory.find(searchCriteria)
+//             .skip(skip)
+//             .limit(limit)
+//             .sort({ 'categoryName': 1 });
+
+//         if (roomsWithCategory.length === 0) {
+//             return res.status(200).json({
+//                 message: 'No available rooms found for the specified dates',
+//                 data: [],
+//                 pagination: {
+//                     totalPages: 0,
+//                     currentPage: parseInt(page),
+//                     limit: parseInt(limit),
+//                 },
+//             });
+//         }
+
+//         // Filter out rooms that are already booked during the requested dates
+//         const availableRooms = [];
+
+//         for (let category of roomsWithCategory) {
+//             const bookedRooms = await RoomBooking.find({
+//                 'roomCategoryCounts.roomType': category._id,
+//                 'bookingDates.checkIn': { $lt: checkOutDate },  // Booked before checkOut
+//                 'bookingDates.checkOut': { $gt: checkInDate }, // Booked after checkIn
+//                 isDeleted: false,
+//             });
+
+//             const bookedRoomCount = bookedRooms.reduce((acc, booking) => {
+//                 const roomCategory = booking.roomCategoryCounts.find(r => r.roomType.toString() === category._id.toString());
+//                 return acc + (roomCategory ? roomCategory.roomCount : 0);
+//             }, 0);
+
+//             // Check if available rooms >= required roomCount
+//             if (category.totalAvailableRoom - bookedRoomCount >= roomCount) {
+//                 availableRooms.push(category);
+//             }
+//         }
+
+//         // Calculate pagination details
+//         const totalRooms = availableRooms.length;
+//         const totalPages = Math.ceil(totalRooms / limit);
+
+//         return res.status(200).json({
+//             message: 'Available rooms fetched successfully',
+//             data: availableRooms,
+//             pagination: {
+//                 totalRooms,
+//                 totalPages,
+//                 currentPage: parseInt(page),
+//                 limit: parseInt(limit),
+//             },
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({
+//             message: 'Server error while fetching available rooms',
+//             error: error.message,
+//         });
+//     }
+// };
+
 const getActiveRoomsWithCategory = async (req, res) => {
     try {
-        const { page = 1, limit = 10, search = '', minAvailableRooms = 1 } = req.query;  // Default to 1 for minAvailableRooms
-        const skip = (page - 1) * limit;
+        const { checkIn, checkOut, roomCount } = req.query;
 
-        // Build search criteria
-        const searchCriteria = {
+        // Validate input
+        if (!checkIn || !checkOut || !roomCount) {
+            return res.status(400).json({ message: 'Missing required fields: checkIn, checkOut, roomCount' });
+        }
+
+        const checkInDate = new Date(checkIn);
+        const checkOutDate = new Date(checkOut);
+
+        if (isNaN(checkInDate) || isNaN(checkOutDate) || checkInDate >= checkOutDate) {
+            return res.status(400).json({ message: 'Invalid check-in or check-out dates' });
+        }
+
+        const roomCountNumber = parseInt(roomCount, 10);
+        if (isNaN(roomCountNumber) || roomCountNumber <= 0) {
+            return res.status(400).json({ message: 'Invalid room count' });
+        }
+
+        // Step 1: Find room categories with available rooms
+        const roomsWithCategory = await RoomWithCategory.find({
             isDeleted: false,
-            totalAvailableRoom: { $gte: minAvailableRooms },  // Filter rooms with at least minAvailableRooms
-        };
-
-        // Fetch rooms with category matching the criteria
-        const roomsWithCategory = await RoomWithCategory.find(searchCriteria)
-            .skip(skip)
-            .limit(limit)
-            .sort({ 'categoryName': 1 });  // Sort alphabetically by categoryName (you can modify this as needed)
-
-        // Get the total number of matching rooms for pagination metadata
-        const totalRooms = await RoomWithCategory.countDocuments(searchCriteria);
-
-        // Calculate total pages
-        const totalPages = Math.ceil(totalRooms / limit);
+            totalAvailableRoom: { $gte: roomCountNumber },
+        }).sort({ categoryName: 1 });
 
         if (roomsWithCategory.length === 0) {
-            return res.status(200).json({
-                message: 'No active rooms with category found',
-                data: [],
-                pagination: {
-                    // totalRooms,
-                    totalPages,
-                    currentPage: parseInt(page),
-                    limit: parseInt(limit),
-                },
+            return res.status(404).json({ message: 'No rooms available for the specified criteria' });
+        }
+
+        // Step 2: Filter rooms by checking bookings
+        const availableRooms = [];
+
+        for (const category of roomsWithCategory) {
+            // Find overlapping bookings for this category
+            const overlappingBookings = await RoomBooking.find({
+                'roomCategoryCounts.roomType': category._id,
+                'bookingDates.checkIn': { $lt: checkOutDate },
+                'bookingDates.checkOut': { $gt: checkInDate },
+                isDeleted: false,
             });
+
+            // Calculate total booked rooms for this category
+            const bookedRoomCount = overlappingBookings.reduce((count, booking) => {
+                const categoryBooking = booking.roomCategoryCounts.find(
+                    (r) => r.roomType.toString() === category._id.toString()
+                );
+                return count + (categoryBooking ? categoryBooking.roomCount : 0);
+            }, 0);
+
+            // Check if sufficient rooms are available
+            if (category.totalAvailableRoom - bookedRoomCount >= roomCountNumber) {
+                availableRooms.push(category);
+            }
+        }
+
+        if (availableRooms.length === 0) {
+            return res.status(404).json({ message: 'No available rooms found for the specified dates' });
         }
 
         return res.status(200).json({
-            message: 'Active rooms with category fetched successfully',
-            data: roomsWithCategory,
-            pagination: {
-                // totalRooms,
-                totalPages,
-                currentPage: parseInt(page),
-                limit: parseInt(limit),
-            },
+            message: 'Available rooms fetched successfully',
+            data: availableRooms,
         });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Server error while fetching active rooms with category', error: error.message });
+        console.error('Error fetching available rooms:', error);
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 };
+
 
 
 const deleteRoomWithCaegoryImage = async (req, res) => {
