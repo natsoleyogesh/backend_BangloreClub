@@ -248,4 +248,30 @@ const FBupload = multer({
 });
 
 
-module.exports = { upload, eventupload, roomUpload, offerupload, hodupload, downloadUpload, noticeUpload, FBupload };
+// Configure multer for file upload with file size limit
+const ICONstorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        // Set destination folder to store files
+        cb(null, 'uploads/icons'); // Make sure the 'uploads/icons' folder exists
+    },
+    filename: (req, file, cb) => {
+        // Use the original filename
+        cb(null, Date.now() + path.extname(file.originalname)); // Add timestamp to prevent name conflicts
+    }
+});
+
+const ICONupload = multer({
+    storage: ICONstorage,
+    limits: { fileSize: 100 * 1024 }, // 100 KB limit (in bytes)
+    fileFilter: (req, file, cb) => {
+        // Allow only SVG files
+        if (file.mimetype === 'image/svg+xml') {
+            cb(null, true);
+        } else {
+            cb(new Error('Only SVG files are allowed'), false);
+        }
+    }
+}).single('icon'); // Field name should match the form input field name
+
+
+module.exports = { upload, eventupload, roomUpload, offerupload, hodupload, downloadUpload, noticeUpload, FBupload, ICONupload };

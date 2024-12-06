@@ -67,13 +67,6 @@ const roomBookingSchema = new mongoose.Schema(
                     type: Number, // Price per room for this category type
                     required: true,
                 },
-                // roomNumbers: [
-                //     {
-                //         type: String, // Room number allocated for this category
-                //         // required: true,
-                //         default: []
-                //     },
-                // ],
                 roomNumbers: [
                     {
                         type: mongoose.Schema.Types.ObjectId, // Should reference RoomWithCategory

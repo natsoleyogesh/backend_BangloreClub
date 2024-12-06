@@ -20,6 +20,12 @@ const foodAndBeverageRoutes = require("./foodAndBeverageRoutes");
 const membershipWaitingListRoutes = require("./membershipWaitingListRoutes");
 const roomWithCategoryRoutes = require("./roomWithCategory");
 
+// master data routes
+const departmentRoutes = require("./masterRoutes/departmentRoutes");
+const restaurantRoutes = require("./masterRoutes/restaurantRoutes");
+const amenitiesRoutes = require("./masterRoutes/amenitiesRoutes");
+const taxTypeRoutes = require("./masterRoutes/taxTypeRoutes");
+
 adminRoutes(router);
 userRoutes(router);
 profileRequestRoutes(router);
@@ -37,5 +43,11 @@ comRoutes(router);
 foodAndBeverageRoutes(router);
 membershipWaitingListRoutes(router);
 roomWithCategoryRoutes(router);
+
+// master data
+departmentRoutes(router);
+restaurantRoutes(router);
+amenitiesRoutes(router);
+taxTypeRoutes(router);
 
 module.exports = router;
