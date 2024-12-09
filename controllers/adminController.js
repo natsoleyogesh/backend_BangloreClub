@@ -355,7 +355,7 @@ const getAllActiveUsers = async (req, res) => {
     // const userId = req.user.userId; // Extract userId from the token's decoded data
 
     // Find the primary user by ID
-    const users = await User.find({ status: "Active" });
+    const users = await User.find({ status: "Active", isDeleted: false });
     // Send the response including the user and their full family tree
     res.status(200).json({
       message: "Active User details retrieved successfully",

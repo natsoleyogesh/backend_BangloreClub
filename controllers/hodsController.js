@@ -185,7 +185,7 @@ const getAllHODs = async (req, res) => {
             name: hod.userId.name,
             contactNumber: hod.userId.mobileNumber,
             image: hod.userId.profilePicture,
-            department: hod.department ? hod.department.name : 'N/A', // Handle missing department
+            department: hod.department ? hod.department.departmentName : 'N/A', // Handle missing department
             status: hod.status,
             createdAt: hod.createdAt,
             updatedAt: hod.updatedAt,
@@ -215,7 +215,7 @@ const getActiveHODs = async (req, res) => {
             name: hod.userId.name,
             contactNumber: hod.userId.mobileNumber,
             image: hod.userId.profilePicture,
-            department: hod.department ? hod.department.name : 'N/A', // Handle missing department
+            department: hod.department ? hod.department.departmentName : 'N/A', // Handle missing department
             status: hod.status,
             createdAt: hod.createdAt,
             updatedAt: hod.updatedAt,
