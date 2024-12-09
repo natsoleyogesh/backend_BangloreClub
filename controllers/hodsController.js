@@ -174,7 +174,7 @@ const getAllHODs = async (req, res) => {
         // Fetch HODs and populate user and department details
         const data = await HOD.find()
             .populate('userId', 'name mobileNumber profilePicture') // Populating user details
-            .populate('department', 'name'); // Populating department name
+            .populate('department', 'departmentName'); // Populating department name
 
         // Map the data for the desired response format
         const hods = data.reverse().map(hod => ({
@@ -204,7 +204,7 @@ const getActiveHODs = async (req, res) => {
         // Fetch HODs and populate user and department details
         const data = await HOD.find({ status: "Active" })
             .populate('userId', 'name mobileNumber profilePicture') // Populating user details
-            .populate('department', 'name'); // Populating department name
+            .populate('department', 'departmentName'); // Populating department name
 
         // Map the data for the desired response format
         const hods = data.reverse().map(hod => ({
