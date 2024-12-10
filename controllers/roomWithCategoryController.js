@@ -3,29 +3,165 @@ const path = require("path");
 const fs = require("fs");
 const RoomBooking = require('../models/roomBooking');
 
+// const addRoomWithCategory = async (req, res) => {
+//     try {
+//         const {
+//             categoryName,
+//             description,
+//             checkInTime,
+//             checkOutTime,
+//             maxAllowedPerRoom,
+//             totalAvailableRoom, // From the request body
+//             roomDetails,
+//             priceRange,
+//             pricingDetails,
+//             pricingDetailDescription,
+//             extraBedPrice,
+//             specialDayTariff,
+//             taxTypes,
+//             amenities,
+//             cancellationPolicy,
+//             breakfastIncluded,
+//             roomSize,
+//             bedType,
+//             features,
+//             status,
+//         } = req.body;
+
+//         // Validate and parse the priceRange
+//         if (priceRange.minPrice < 0 || priceRange.maxPrice < 0) {
+//             return res.status(400).json({ message: 'Price range cannot be negative' });
+//         }
+//         const parsedPriceRange = {
+//             minPrice: parseFloat(priceRange.minPrice),
+//             maxPrice: parseFloat(priceRange.maxPrice),
+//         };
+
+//         // Validate and parse pricingDetails
+//         if (!Array.isArray(pricingDetails) || pricingDetails.length === 0) {
+//             return res.status(400).json({ message: 'Pricing details must be an array and cannot be empty' });
+//         }
+//         const parsedPricingDetails = pricingDetails.map(detail => ({
+//             guestType: detail.guestType,
+//             price: parseFloat(detail.price),
+//             description: detail.description || '',
+//         }));
+
+//         // Parse amenities (no validation, just store the array or comma-separated string)
+//         const parsedAmenities = Array.isArray(amenities) ? amenities : amenities.split(',').map(item => item.trim());
+
+//         // Parse features (booleans for smokingAllowed, petFriendly, accessible)
+//         const parsedFeatures = {
+//             smokingAllowed: Boolean(features.smokingAllowed),
+//             petFriendly: Boolean(features.petFriendly),
+//             accessible: Boolean(features.accessible),
+//         };
+
+//         let parsedTax;
+//         if (taxRate) {
+//             parsedTax = parseFloat(taxRate)
+
+//         }
+//         let primaryMemberParsedPrice;
+//         if (primaryMemberPrice) {
+//             primaryMemberParsedPrice = parseFloat(primaryMemberPrice)
+
+//         }
+//         let guestParsedPrice;
+//         if (guestPrice) {
+//             guestParsedPrice = parseFloat(guestPrice)
+
+//         }
+
+
+//         // Validate roomDetails array
+//         if (!Array.isArray(roomDetails) || roomDetails.length === 0) {
+//             return res.status(400).json({ message: 'Room details must be provided as an array' });
+//         }
+
+//         // Validate that each room has a roomNumber and status
+//         for (const room of roomDetails) {
+//             if (!room.roomNumber || !room.status) {
+//                 return res.status(400).json({ message: 'Each room must have a roomNumber and status' });
+//             }
+//             if (!['Available', 'Booked', 'Under Maintenance'].includes(room.status)) {
+//                 return res.status(400).json({ message: `Invalid status for room ${room.roomNumber}. Valid statuses are: Available, Booked, Under Maintenance.` });
+//             }
+//         }
+
+//         // Count the number of rooms with status 'Available'
+//         const availableRoomCount = roomDetails.length;
+
+//         // Check if totalAvailableRoom provided in the request matches the count of available rooms
+//         const totalcount = parseFloat(totalAvailableRoom);
+//         if (totalcount !== availableRoomCount) {
+//             return res.status(400).json({
+//                 message: 'The totalAvailableRoom count does not match the number of available rooms in roomDetails',
+//             });
+//         }
+
+//         // Get image file paths
+//         const images = req.files.map((file) => `/${file.path.replace(/\\/g, '/')}`);
+
+//         // Create the new RoomWithCategory document
+//         const newRoomWithCategory = new RoomWithCategory({
+//             categoryName,
+//             code,
+//             taxRate,
+//             description: description || '', // Default to empty if not provided
+//             priceRange: parsedPriceRange,
+//             pricingDetails: parsedPricingDetails,
+//             capacity: parseInt(capacity),
+//             amenities: parsedAmenities,  // Store amenities as they are
+//             roomSize: parseInt(roomSize),
+//             bedType,
+//             features: parsedFeatures,
+//             status,
+//             images,
+//             roomDetails,
+//             taxRate: parsedTax,
+//             totalAvailableRoom: availableRoomCount, // Ensure this matches the count of available rooms
+//             primaryMemberPrice: primaryMemberParsedPrice,
+//             guestPrice: guestParsedPrice
+//         });
+
+//         // Save the new room category to the database
+//         await newRoomWithCategory.save();
+
+//         // Return success message
+//         return res.status(201).json({ message: 'Room category added successfully', roomWithCategory: newRoomWithCategory });
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({ message: 'Server error while adding room category', error: error.message });
+//     }
+// };
+
+
 const addRoomWithCategory = async (req, res) => {
     try {
         const {
             categoryName,
-            code,
             description,
+            checkInTime,
+            checkOutTime,
+            maxAllowedPerRoom,
+            roomDetails,
             priceRange,
             pricingDetails,
-            capacity,
-            amenities,  // No validation, just parse as it is
+            pricingDetailDescription,
+            extraBedPrice,
+            specialDayTariff,
+            taxTypes,
+            amenities,
+            cancellationPolicy,
+            breakfastIncluded,
             roomSize,
             bedType,
             features,
             status,
-            taxRate,
-            // images,
-            roomDetails,
-            totalAvailableRoom, // From the request body
-            primaryMemberPrice,
-            guestPrice
         } = req.body;
 
-        // Validate and parse the priceRange
+        // Validate price range
         if (priceRange.minPrice < 0 || priceRange.maxPrice < 0) {
             return res.status(400).json({ message: 'Price range cannot be negative' });
         }
@@ -34,7 +170,7 @@ const addRoomWithCategory = async (req, res) => {
             maxPrice: parseFloat(priceRange.maxPrice),
         };
 
-        // Validate and parse pricingDetails
+        // Validate pricing details
         if (!Array.isArray(pricingDetails) || pricingDetails.length === 0) {
             return res.status(400).json({ message: 'Pricing details must be an array and cannot be empty' });
         }
@@ -44,39 +180,23 @@ const addRoomWithCategory = async (req, res) => {
             description: detail.description || '',
         }));
 
-        // Parse amenities (no validation, just store the array or comma-separated string)
-        const parsedAmenities = Array.isArray(amenities) ? amenities : amenities.split(',').map(item => item.trim());
-
-        // Parse features (booleans for smokingAllowed, petFriendly, accessible)
-        const parsedFeatures = {
-            smokingAllowed: Boolean(features.smokingAllowed),
-            petFriendly: Boolean(features.petFriendly),
-            accessible: Boolean(features.accessible),
-        };
-
-        let parsedTax;
-        if (taxRate) {
-            parsedTax = parseFloat(taxRate)
-
-        }
-        let primaryMemberParsedPrice;
-        if (primaryMemberPrice) {
-            primaryMemberParsedPrice = parseFloat(primaryMemberPrice)
-
-        }
-        let guestParsedPrice;
-        if (guestPrice) {
-            guestParsedPrice = parseFloat(guestPrice)
-
-        }
+        const parsedSpecialDayDetails = specialDayTariff.map(detail => {
+            // Ensure valid default values in case some fields are missing
+            return {
+                special_day_name: detail.special_day_name || '',
+                startDate: detail.startDate ? new Date(detail.startDate) : null,  // Handling potential undefined values
+                endDate: detail.endDate ? new Date(detail.endDate) : null,  // Handling potential undefined values
+                extraCharge: detail.extraCharge ? parseFloat(detail.extraCharge) : 0,  // Default to 0 if not a valid number
+            };
+        });
 
 
-        // Validate roomDetails array
+        // Validate room details
         if (!Array.isArray(roomDetails) || roomDetails.length === 0) {
-            return res.status(400).json({ message: 'Room details must be provided as an array' });
+            return res.status(400).json({ message: 'Room details must be an array and cannot be empty' });
         }
 
-        // Validate that each room has a roomNumber and status
+        // Validate each room detail
         for (const room of roomDetails) {
             if (!room.roomNumber || !room.status) {
                 return res.status(400).json({ message: 'Each room must have a roomNumber and status' });
@@ -86,46 +206,65 @@ const addRoomWithCategory = async (req, res) => {
             }
         }
 
-        // Count the number of rooms with status 'Available'
-        const availableRoomCount = roomDetails.length;
-
-        // Check if totalAvailableRoom provided in the request matches the count of available rooms
-        const totalcount = parseFloat(totalAvailableRoom);
-        if (totalcount !== availableRoomCount) {
+        // Count available rooms
+        const availableRoomCount = roomDetails.filter(room => room.status === 'Available').length;
+        const totalAvailableRoom = parseFloat(req.body.totalAvailableRoom);
+        if (totalAvailableRoom !== availableRoomCount) {
             return res.status(400).json({
                 message: 'The totalAvailableRoom count does not match the number of available rooms in roomDetails',
             });
         }
 
-        // Get image file paths
-        const images = req.files.map((file) => `/${file.path.replace(/\\/g, '/')}`);
+        // Handle image file paths
+        const images = req.files ? req.files.map(file => `uploads/rooms/${file.path.replace(/\\/g, '/')}`) : [];
 
-        // Create the new RoomWithCategory document
+
+        // Handle tax types and amenities as arrays of ObjectIds
+        const parsedTaxTypes = Array.isArray(taxTypes) ? taxTypes : taxTypes.split(',').map(id => id.trim());
+        const parsedAmenities = Array.isArray(amenities) ? amenities : amenities.split(',').map(id => id.trim());
+
+        // Handle features (boolean fields)
+        const parsedFeatures = {
+            smokingAllowed: Boolean(features.smokingAllowed),
+            petFriendly: Boolean(features.petFriendly),
+            accessible: Boolean(features.accessible),
+        };
+
+        // Validate cancellation policy
+        const validCancellationPolicy = cancellationPolicy ? {
+            before7Days: cancellationPolicy.before7Days || 0,
+            between7To2Days: cancellationPolicy.between7To2Days || 25,
+            between48To24Hours: cancellationPolicy.between48To24Hours || 50,
+            lessThan24Hours: cancellationPolicy.lessThan24Hours || 100,
+        } : {};
+
+        // Create new RoomWithCategory instance
         const newRoomWithCategory = new RoomWithCategory({
             categoryName,
-            code,
-            taxRate,
-            description: description || '', // Default to empty if not provided
+            description: description || '',
+            checkInTime,
+            checkOutTime,
+            maxAllowedPerRoom,
+            roomDetails,
             priceRange: parsedPriceRange,
             pricingDetails: parsedPricingDetails,
-            capacity: parseInt(capacity),
-            amenities: parsedAmenities,  // Store amenities as they are
-            roomSize: parseInt(roomSize),
+            pricingDetailDescription: pricingDetailDescription || '',
+            extraBedPrice: parseFloat(extraBedPrice) || 0,
+            specialDayTariff: parsedSpecialDayDetails || [],
+            taxTypes: parsedTaxTypes,
+            amenities: parsedAmenities,
+            cancellationPolicy: validCancellationPolicy,
+            breakfastIncluded: breakfastIncluded || false,
+            roomSize: parseFloat(roomSize),
             bedType,
             features: parsedFeatures,
-            status,
+            status: status || 'Active',
             images,
-            roomDetails,
-            taxRate: parsedTax,
-            totalAvailableRoom: availableRoomCount, // Ensure this matches the count of available rooms
-            primaryMemberPrice: primaryMemberParsedPrice,
-            guestPrice: guestParsedPrice
         });
 
-        // Save the new room category to the database
+        // Save the new room category
         await newRoomWithCategory.save();
 
-        // Return success message
         return res.status(201).json({ message: 'Room category added successfully', roomWithCategory: newRoomWithCategory });
     } catch (error) {
         console.error(error);
@@ -133,13 +272,17 @@ const addRoomWithCategory = async (req, res) => {
     }
 };
 
+
 const getAllRoomWithCategories = async (req, res) => {
     try {
         // Fetch all room categories, excluding deleted ones by default
         const { includeDeleted } = req.query; // Optional query parameter to include deleted records
         const filter = includeDeleted === 'true' ? {} : { isDeleted: false };
 
-        const roomWithCategories = await RoomWithCategory.find(filter);
+        const roomWithCategories = await RoomWithCategory.find(filter)
+            .populate('categoryName')
+            .populate('taxTypes')
+            .populate('amenities');
 
         return res.status(200).json({
             message: 'Room categories fetched successfully',
@@ -155,7 +298,10 @@ const getRoomWithCategoryById = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const roomWithCategory = await RoomWithCategory.findById(id);
+        const roomWithCategory = await RoomWithCategory.findById(id)
+            .populate('categoryName')
+            .populate('taxTypes')
+            .populate('amenities');
 
         if (!roomWithCategory || roomWithCategory.isDeleted) {
             return res.status(404).json({ message: 'Room category not found or has been deleted' });
@@ -194,128 +340,128 @@ const deleteRoomWithCategory = async (req, res) => {
     }
 };
 
-const updateRoomWithCategory = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const {
-            categoryName,
-            code,
-            description,
-            priceRange,
-            pricingDetails,
-            capacity,
-            amenities,  // No validation, just parse as it is
-            roomSize,
-            bedType,
-            features,
-            status,
-            roomDetails,
-            taxRate,
-            totalAvailableRoom,  // From the request body
-            primaryMemberPrice,
-            guestPrice
-        } = req.body;
+// const updateRoomWithCategory = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const {
+//             categoryName,
+//             code,
+//             description,
+//             priceRange,
+//             pricingDetails,
+//             capacity,
+//             amenities,  // No validation, just parse as it is
+//             roomSize,
+//             bedType,
+//             features,
+//             status,
+//             roomDetails,
+//             taxRate,
+//             totalAvailableRoom,  // From the request body
+//             primaryMemberPrice,
+//             guestPrice
+//         } = req.body;
 
-        // Find the room category by ID
-        const roomWithCategory = await RoomWithCategory.findById(id);
+//         // Find the room category by ID
+//         const roomWithCategory = await RoomWithCategory.findById(id);
 
-        if (!roomWithCategory || roomWithCategory.isDeleted) {
-            return res.status(404).json({ message: 'Room category not found or has been deleted' });
-        }
+//         if (!roomWithCategory || roomWithCategory.isDeleted) {
+//             return res.status(404).json({ message: 'Room category not found or has been deleted' });
+//         }
 
-        // Validate and parse the priceRange
-        if (priceRange && (priceRange.minPrice < 0 || priceRange.maxPrice < 0)) {
-            return res.status(400).json({ message: 'Price range cannot be negative' });
-        }
-        const parsedPriceRange = priceRange ? {
-            minPrice: parseFloat(priceRange.minPrice),
-            maxPrice: parseFloat(priceRange.maxPrice),
-        } : roomWithCategory.priceRange;
+//         // Validate and parse the priceRange
+//         if (priceRange && (priceRange.minPrice < 0 || priceRange.maxPrice < 0)) {
+//             return res.status(400).json({ message: 'Price range cannot be negative' });
+//         }
+//         const parsedPriceRange = priceRange ? {
+//             minPrice: parseFloat(priceRange.minPrice),
+//             maxPrice: parseFloat(priceRange.maxPrice),
+//         } : roomWithCategory.priceRange;
 
-        const parsedTax = taxRate ? parseFloat(taxRate) : roomWithCategory.taxRate;
-        const primaryMemberParsedPrice = primaryMemberPrice ? parseFloat(primaryMemberPrice) : roomWithCategory.primaryMemberPrice;
-        const guestParsedPrice = guestPrice ? parseFloat(guestPrice) : roomWithCategory.guestPrice;
+//         const parsedTax = taxRate ? parseFloat(taxRate) : roomWithCategory.taxRate;
+//         const primaryMemberParsedPrice = primaryMemberPrice ? parseFloat(primaryMemberPrice) : roomWithCategory.primaryMemberPrice;
+//         const guestParsedPrice = guestPrice ? parseFloat(guestPrice) : roomWithCategory.guestPrice;
 
-        // Validate and parse pricingDetails
-        const parsedPricingDetails = pricingDetails && Array.isArray(pricingDetails) && pricingDetails.length > 0
-            ? pricingDetails.map(detail => ({
-                guestType: detail.guestType,
-                price: parseFloat(detail.price),
-                description: detail.description || '',
-            }))
-            : roomWithCategory.pricingDetails;
+//         // Validate and parse pricingDetails
+//         const parsedPricingDetails = pricingDetails && Array.isArray(pricingDetails) && pricingDetails.length > 0
+//             ? pricingDetails.map(detail => ({
+//                 guestType: detail.guestType,
+//                 price: parseFloat(detail.price),
+//                 description: detail.description || '',
+//             }))
+//             : roomWithCategory.pricingDetails;
 
-        // Parse amenities (no validation, just store the array or comma-separated string)
-        const parsedAmenities = amenities ?
-            (Array.isArray(amenities) ? amenities : amenities.split(',').map(item => item.trim()))
-            : roomWithCategory.amenities;
+//         // Parse amenities (no validation, just store the array or comma-separated string)
+//         const parsedAmenities = amenities ?
+//             (Array.isArray(amenities) ? amenities : amenities.split(',').map(item => item.trim()))
+//             : roomWithCategory.amenities;
 
-        // Parse features (booleans for smokingAllowed, petFriendly, accessible)
-        const parsedFeatures = features ? {
-            smokingAllowed: Boolean(features.smokingAllowed),
-            petFriendly: Boolean(features.petFriendly),
-            accessible: Boolean(features.accessible),
-        } : roomWithCategory.features;
+//         // Parse features (booleans for smokingAllowed, petFriendly, accessible)
+//         const parsedFeatures = features ? {
+//             smokingAllowed: Boolean(features.smokingAllowed),
+//             petFriendly: Boolean(features.petFriendly),
+//             accessible: Boolean(features.accessible),
+//         } : roomWithCategory.features;
 
-        // Validate roomDetails array
-        if (roomDetails && (!Array.isArray(roomDetails) || roomDetails.length === 0)) {
-            return res.status(400).json({ message: 'Room details must be provided as an array' });
-        }
+//         // Validate roomDetails array
+//         if (roomDetails && (!Array.isArray(roomDetails) || roomDetails.length === 0)) {
+//             return res.status(400).json({ message: 'Room details must be provided as an array' });
+//         }
 
-        // Validate that each room has a roomNumber and status
-        if (roomDetails) {
-            for (const room of roomDetails) {
-                if (!room.roomNumber || !room.status) {
-                    return res.status(400).json({ message: 'Each room must have a roomNumber and status' });
-                }
-                if (!['Available', 'Booked', 'Under Maintenance'].includes(room.status)) {
-                    return res.status(400).json({ message: `Invalid status for room ${room.roomNumber}. Valid statuses are: Available, Booked, Under Maintenance.` });
-                }
-            }
-        }
+//         // Validate that each room has a roomNumber and status
+//         if (roomDetails) {
+//             for (const room of roomDetails) {
+//                 if (!room.roomNumber || !room.status) {
+//                     return res.status(400).json({ message: 'Each room must have a roomNumber and status' });
+//                 }
+//                 if (!['Available', 'Booked', 'Under Maintenance'].includes(room.status)) {
+//                     return res.status(400).json({ message: `Invalid status for room ${room.roomNumber}. Valid statuses are: Available, Booked, Under Maintenance.` });
+//                 }
+//             }
+//         }
 
-        // Count the number of rooms with status 'Available'
-        const availableRoomCount = roomDetails ? roomDetails.filter(room => room.status === 'Available').length : roomWithCategory.totalAvailableRoom;
+//         // Count the number of rooms with status 'Available'
+//         const availableRoomCount = roomDetails ? roomDetails.filter(room => room.status === 'Available').length : roomWithCategory.totalAvailableRoom;
 
-        // Check if totalAvailableRoom provided in the request matches the count of available rooms
-        if (totalAvailableRoom !== undefined && totalAvailableRoom !== availableRoomCount) {
-            return res.status(400).json({
-                message: 'The totalAvailableRoom count does not match the number of available rooms in roomDetails',
-            });
-        }
+//         // Check if totalAvailableRoom provided in the request matches the count of available rooms
+//         if (totalAvailableRoom !== undefined && totalAvailableRoom !== availableRoomCount) {
+//             return res.status(400).json({
+//                 message: 'The totalAvailableRoom count does not match the number of available rooms in roomDetails',
+//             });
+//         }
 
 
-        // Update the room category fields
-        roomWithCategory.categoryName = categoryName || roomWithCategory.categoryName;
-        roomWithCategory.code = code || roomWithCategory.code;
-        roomWithCategory.description = description || roomWithCategory.description;
-        roomWithCategory.priceRange = parsedPriceRange;
-        roomWithCategory.pricingDetails = parsedPricingDetails;
-        roomWithCategory.capacity = capacity !== undefined ? parseInt(capacity) : roomWithCategory.capacity;
-        roomWithCategory.amenities = parsedAmenities;
-        roomWithCategory.roomSize = roomSize !== undefined ? parseInt(roomSize) : roomWithCategory.roomSize;
-        roomWithCategory.bedType = bedType || roomWithCategory.bedType;
-        roomWithCategory.features = parsedFeatures;
-        roomWithCategory.status = status || roomWithCategory.status;
-        roomWithCategory.roomDetails = roomDetails || roomWithCategory.roomDetails;
-        roomWithCategory.totalAvailableRoom = availableRoomCount;
-        roomWithCategory.taxRate = parsedTax;
-        roomWithCategory.primaryMemberPrice = primaryMemberParsedPrice;
-        roomWithCategory.guestPrice = guestParsedPrice;
+//         // Update the room category fields
+//         roomWithCategory.categoryName = categoryName || roomWithCategory.categoryName;
+//         roomWithCategory.code = code || roomWithCategory.code;
+//         roomWithCategory.description = description || roomWithCategory.description;
+//         roomWithCategory.priceRange = parsedPriceRange;
+//         roomWithCategory.pricingDetails = parsedPricingDetails;
+//         roomWithCategory.capacity = capacity !== undefined ? parseInt(capacity) : roomWithCategory.capacity;
+//         roomWithCategory.amenities = parsedAmenities;
+//         roomWithCategory.roomSize = roomSize !== undefined ? parseInt(roomSize) : roomWithCategory.roomSize;
+//         roomWithCategory.bedType = bedType || roomWithCategory.bedType;
+//         roomWithCategory.features = parsedFeatures;
+//         roomWithCategory.status = status || roomWithCategory.status;
+//         roomWithCategory.roomDetails = roomDetails || roomWithCategory.roomDetails;
+//         roomWithCategory.totalAvailableRoom = availableRoomCount;
+//         roomWithCategory.taxRate = parsedTax;
+//         roomWithCategory.primaryMemberPrice = primaryMemberParsedPrice;
+//         roomWithCategory.guestPrice = guestParsedPrice;
 
-        // Save the updated room category
-        await roomWithCategory.save();
+//         // Save the updated room category
+//         await roomWithCategory.save();
 
-        // Return success message
-        return res.status(200).json({
-            message: 'Room category updated successfully',
-            roomWithCategory,
-        });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Server error while updating room category', error: error.message });
-    }
-};
+//         // Return success message
+//         return res.status(200).json({
+//             message: 'Room category updated successfully',
+//             roomWithCategory,
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({ message: 'Server error while updating room category', error: error.message });
+//     }
+// };
 
 
 // const getActiveRoomsWithCategory = async (req, res) => {
@@ -454,6 +600,271 @@ const updateRoomWithCategory = async (req, res) => {
 //     }
 // };
 
+//llllllllllllllllllllllllllllllllllllllllllllllllllll
+
+// const updateRoomWithCategory = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const {
+//             categoryName,
+//             description,
+//             checkInTime,
+//             checkOutTime,
+//             maxAllowedPerRoom,
+//             roomDetails,
+//             priceRange,
+//             pricingDetails,
+//             pricingDetailDescription,
+//             extraBedPrice,
+//             specialDayTariff,
+//             taxTypes,
+//             amenities,
+//             cancellationPolicy,
+//             breakfastIncluded,
+//             roomSize,
+//             bedType,
+//             features,
+//             status,
+//         } = req.body;
+
+//         // Find the room category by ID
+
+//         const roomWithCategory = await RoomWithCategory.findById(id);
+
+//         if (!roomWithCategory || roomWithCategory.isDeleted) {
+//             return res.status(404).json({ message: 'Room category not found or has been deleted' });
+//         }
+
+//         // Validate price range
+//         if (priceRange && (priceRange.minPrice < 0 || priceRange.maxPrice < 0)) {
+//             return res.status(400).json({ message: 'Price range cannot be negative' });
+//         }
+//         const parsedPriceRange = {
+//             minPrice: parseFloat(priceRange.minPrice),
+//             maxPrice: parseFloat(priceRange.maxPrice),
+//         };
+
+//         // Validate pricing details
+//         if (!Array.isArray(pricingDetails) || pricingDetails.length === 0) {
+//             return res.status(400).json({ message: 'Pricing details must be an array and cannot be empty' });
+//         }
+//         const parsedPricingDetails = pricingDetails.map(detail => ({
+//             guestType: detail.guestType,
+//             price: parseFloat(detail.price),
+//             description: detail.description || '',
+//         }));
+
+//         const parsedSpecialDayDetails = specialDayTariff.map(detail => ({
+//             special_day_name: detail.special_day_name || '',
+//             startDate: detail.startDate ? new Date(detail.startDate) : null,
+//             endDate: detail.endDate ? new Date(detail.endDate) : null,
+//             extraCharge: detail.extraCharge ? parseFloat(detail.extraCharge) : 0,
+//         }));
+
+//         // Validate room details
+//         if (!Array.isArray(roomDetails) || roomDetails.length === 0) {
+//             return res.status(400).json({ message: 'Room details must be an array and cannot be empty' });
+//         }
+
+//         for (const room of roomDetails) {
+//             if (!room.roomNumber || !room.status) {
+//                 return res.status(400).json({ message: 'Each room must have a roomNumber and status' });
+//             }
+//             if (!['Available', 'Booked', 'Under Maintenance'].includes(room.status)) {
+//                 return res.status(400).json({ message: `Invalid status for room ${room.roomNumber}. Valid statuses are: Available, Booked, Under Maintenance.` });
+//             }
+//         }
+
+//         // Count available rooms
+//         const availableRoomCount = roomDetails.filter(room => room.status === 'Available').length;
+//         const totalAvailableRoom = parseFloat(req.body.totalAvailableRoom);
+//         if (totalAvailableRoom !== availableRoomCount) {
+//             return res.status(400).json({
+//                 message: 'The totalAvailableRoom count does not match the number of available rooms in roomDetails',
+//             });
+//         }
+
+//         // Handle image file paths
+//         // const images = req.files ? req.files.map(file => `uploads/rooms/${file.path.replace(/\\/g, '/')}`) : [];
+
+//         // Handle tax types and amenities as arrays of ObjectIds
+//         const parsedTaxTypes = Array.isArray(taxTypes) ? taxTypes : taxTypes.split(',').map(id => id.trim());
+//         const parsedAmenities = Array.isArray(amenities) ? amenities : amenities.split(',').map(id => id.trim());
+
+//         // Handle features (boolean fields)
+//         const parsedFeatures = {
+//             smokingAllowed: Boolean(features.smokingAllowed),
+//             petFriendly: Boolean(features.petFriendly),
+//             accessible: Boolean(features.accessible),
+//         };
+
+//         // Validate cancellation policy
+//         const validCancellationPolicy = cancellationPolicy ? {
+//             before7Days: cancellationPolicy.before7Days || 0,
+//             between7To2Days: cancellationPolicy.between7To2Days || 25,
+//             between48To24Hours: cancellationPolicy.between48To24Hours || 50,
+//             lessThan24Hours: cancellationPolicy.lessThan24Hours || 100,
+//         } : {};
+
+//         // Update the room category fields
+//         roomWithCategory.categoryName = categoryName || roomWithCategory.categoryName;
+//         roomWithCategory.description = description || roomWithCategory.description;
+//         roomWithCategory.checkInTime = checkInTime || roomWithCategory.checkInTime;
+//         roomWithCategory.checkOutTime = checkOutTime || roomWithCategory.checkOutTime;
+//         roomWithCategory.maxAllowedPerRoom = maxAllowedPerRoom || roomWithCategory.maxAllowedPerRoom;
+//         roomWithCategory.roomDetails = roomDetails || roomWithCategory.roomDetails;
+//         roomWithCategory.priceRange = parsedPriceRange;
+//         roomWithCategory.pricingDetails = parsedPricingDetails;
+//         roomWithCategory.pricingDetailDescription = pricingDetailDescription || roomWithCategory.pricingDetailDescription;
+//         roomWithCategory.extraBedPrice = parseFloat(extraBedPrice) || roomWithCategory.extraBedPrice;
+//         roomWithCategory.specialDayTariff = parsedSpecialDayDetails || roomWithCategory.specialDayTariff;
+//         roomWithCategory.taxTypes = parsedTaxTypes;
+//         roomWithCategory.amenities = parsedAmenities;
+//         roomWithCategory.cancellationPolicy = validCancellationPolicy;
+//         roomWithCategory.breakfastIncluded = breakfastIncluded || roomWithCategory.breakfastIncluded;
+//         roomWithCategory.roomSize = parseFloat(roomSize) || roomWithCategory.roomSize;
+//         roomWithCategory.bedType = bedType || roomWithCategory.bedType;
+//         roomWithCategory.features = parsedFeatures;
+//         roomWithCategory.status = status || roomWithCategory.status;
+//         // roomWithCategory.images = images.length > 0 ? images : roomWithCategory.images;
+
+//         // Save the updated room category
+//         await roomWithCategory.save();
+
+//         // Return success message
+//         return res.status(200).json({
+//             message: 'Room category updated successfully',
+//             roomWithCategory,
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({ message: 'Server error while updating room category', error: error.message });
+//     }
+// };
+const updateRoomWithCategory = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            categoryName,
+            description,
+            checkInTime,
+            checkOutTime,
+            maxAllowedPerRoom,
+            roomDetails,
+            priceRange,
+            pricingDetails,
+            pricingDetailDescription,
+            extraBedPrice,
+            specialDayTariff,
+            taxTypes,
+            amenities,
+            cancellationPolicy,
+            breakfastIncluded,
+            roomSize,
+            bedType,
+            features,
+            status,
+        } = req.body;
+
+        // Find the room category by ID
+        const roomWithCategory = await RoomWithCategory.findById(id);
+
+        if (!roomWithCategory || roomWithCategory.isDeleted) {
+            return res.status(404).json({ message: 'Room category not found or has been deleted' });
+        }
+
+        // Validate price range
+        if (priceRange && (priceRange.minPrice < 0 || priceRange.maxPrice < 0)) {
+            return res.status(400).json({ message: 'Price range cannot be negative' });
+        }
+        const parsedPriceRange = priceRange ? {
+            minPrice: parseFloat(priceRange.minPrice),
+            maxPrice: parseFloat(priceRange.maxPrice),
+        } : undefined;
+
+        // Validate pricing details
+        const parsedPricingDetails = pricingDetails && Array.isArray(pricingDetails) && pricingDetails.length > 0 ? pricingDetails.map(detail => ({
+            guestType: detail.guestType,
+            price: parseFloat(detail.price),
+            description: detail.description || '',
+        })) : undefined;
+
+        // Parse special day tariff
+        const parsedSpecialDayDetails = specialDayTariff && Array.isArray(specialDayTariff) ? specialDayTariff.map(detail => ({
+            special_day_name: detail.special_day_name || '',
+            startDate: detail.startDate ? new Date(detail.startDate) : null,
+            endDate: detail.endDate ? new Date(detail.endDate) : null,
+            extraCharge: detail.extraCharge ? parseFloat(detail.extraCharge) : 0,
+        })) : undefined;
+
+        // Validate room details
+        const parsedRoomDetails = roomDetails && Array.isArray(roomDetails) && roomDetails.length > 0 ? roomDetails : undefined;
+
+        const availableRoomCount = parsedRoomDetails ? parsedRoomDetails.filter(room => room.status === 'Available').length : 0;
+        const totalAvailableRoom = req.body.totalAvailableRoom ? parseFloat(req.body.totalAvailableRoom) : undefined;
+
+        if (totalAvailableRoom && totalAvailableRoom !== availableRoomCount) {
+            return res.status(400).json({
+                message: 'The totalAvailableRoom count does not match the number of available rooms in roomDetails',
+            });
+        }
+
+        // Handle tax types and amenities
+        const parsedTaxTypes = taxTypes ? (Array.isArray(taxTypes) ? taxTypes : taxTypes.split(',').map(id => id.trim())) : undefined;
+        const parsedAmenities = amenities ? (Array.isArray(amenities) ? amenities : amenities.split(',').map(id => id.trim())) : undefined;
+
+        // Handle features (boolean fields)
+        const parsedFeatures = features ? {
+            smokingAllowed: Boolean(features.smokingAllowed),
+            petFriendly: Boolean(features.petFriendly),
+            accessible: Boolean(features.accessible),
+        } : undefined;
+
+        // Validate and parse cancellation policy
+        const validCancellationPolicy = cancellationPolicy ? {
+            before7Days: cancellationPolicy.before7Days || 0,
+            between7To2Days: cancellationPolicy.between7To2Days || 25,
+            between48To24Hours: cancellationPolicy.between48To24Hours || 50,
+            lessThan24Hours: cancellationPolicy.lessThan24Hours || 100,
+        } : undefined;
+
+        // Only update the fields provided in the request body
+        if (categoryName) roomWithCategory.categoryName = categoryName;
+        if (description) roomWithCategory.description = description;
+        if (checkInTime) roomWithCategory.checkInTime = checkInTime;
+        if (checkOutTime) roomWithCategory.checkOutTime = checkOutTime;
+        if (maxAllowedPerRoom) roomWithCategory.maxAllowedPerRoom = maxAllowedPerRoom;
+        if (parsedRoomDetails) roomWithCategory.roomDetails = parsedRoomDetails;
+        if (parsedPriceRange) roomWithCategory.priceRange = parsedPriceRange;
+        if (parsedPricingDetails) roomWithCategory.pricingDetails = parsedPricingDetails;
+        if (pricingDetailDescription) roomWithCategory.pricingDetailDescription = pricingDetailDescription;
+        if (extraBedPrice) roomWithCategory.extraBedPrice = parseFloat(extraBedPrice);
+        if (parsedSpecialDayDetails) roomWithCategory.specialDayTariff = parsedSpecialDayDetails;
+        if (parsedTaxTypes) roomWithCategory.taxTypes = parsedTaxTypes;
+        if (parsedAmenities) roomWithCategory.amenities = parsedAmenities;
+        if (validCancellationPolicy) roomWithCategory.cancellationPolicy = validCancellationPolicy;
+        if (breakfastIncluded) roomWithCategory.breakfastIncluded = breakfastIncluded;
+        if (roomSize) roomWithCategory.roomSize = parseFloat(roomSize);
+        if (bedType) roomWithCategory.bedType = bedType;
+        if (parsedFeatures) roomWithCategory.features = parsedFeatures;
+        if (status) roomWithCategory.status = status;
+
+        // Save the updated room category
+        await roomWithCategory.save();
+
+        // Return success message
+        return res.status(200).json({
+            message: 'Room category updated successfully',
+            roomWithCategory,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Server error while updating room category', error: error.message });
+    }
+};
+
+
+
 const getActiveRoomsWithCategory = async (req, res) => {
     try {
         const { checkIn, checkOut, roomCount } = req.query;
@@ -479,7 +890,11 @@ const getActiveRoomsWithCategory = async (req, res) => {
         const roomsWithCategory = await RoomWithCategory.find({
             isDeleted: false,
             totalAvailableRoom: { $gte: roomCountNumber },
-        }).sort({ categoryName: 1 });
+        })
+            .populate('categoryName')
+            .populate('taxTypes')
+            .populate('amenities')
+            .sort({ categoryName: 1 });
 
         if (roomsWithCategory.length === 0) {
             return res.status(404).json({ message: 'No rooms available for the specified criteria' });
