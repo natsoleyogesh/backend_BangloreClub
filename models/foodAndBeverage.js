@@ -24,7 +24,8 @@ const TimingSchema = new mongoose.Schema({
 
 const SubCategorySchema = new mongoose.Schema({
     name: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Restaurant", // Linking the HOD with the User schema
         required: true, // Subcategory name (e.g., "Buttery Bar")
     },
     description: {
@@ -56,7 +57,8 @@ const SubCategorySchema = new mongoose.Schema({
 const foodAndBeverageSchema = new mongoose.Schema(
     {
         name: {
-            type: String,
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Restaurant", // Linking the HOD with the User schema
             required: true, // Main category name (e.g., "Main Dining Hall")
         },
         description: {
@@ -66,6 +68,22 @@ const foodAndBeverageSchema = new mongoose.Schema(
         bannerImage: {
             type: String, // Path to the banner image
             required: false,
+        },
+        timings: {
+            type: [TimingSchema], // Array of timings for flexibility
+            required: true,
+        },
+        location: {
+            type: String,
+            default: ""
+        },
+        extansion_no: {
+            type: String,
+            default: ""
+        },
+        mainmenu: {
+            type: String, // Path to the menu file (PDF)
+            default: null,
         },
         subCategories: {
             type: [SubCategorySchema], // Nested subcategories
