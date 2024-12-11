@@ -1,40 +1,11 @@
 const Room = require("../models/room");
 const RoomBooking = require('../models/roomBooking');  // Path to your RoomBooking model
 const RoomWithCategory = require('../models/roomWithCategory');
+const QRCodeHelper = require('../utils/helper');
 const moment = require('moment');
 const mongoose = require("mongoose");
 const path = require("path");
 const fs = require("fs")
-
-// // Helper function to parse pricing details
-// const parsePricingDetails = (body) => {
-//     const pricingDetails = [];
-//     const guestTypes = body['pricingDetails[guestType]'];
-//     const prices = body['pricingDetails[price]'];
-//     const descriptions = body['pricingDetails[description]'];
-
-//     if (Array.isArray(guestTypes)) {
-//         // Multiple pricing details provided
-//         guestTypes.forEach((guestType, index) => {
-//             if (guestType && prices[index] !== undefined) {
-//                 pricingDetails.push({
-//                     guestType,
-//                     price: parseFloat(prices[index]),
-//                     description: descriptions[index] || '',
-//                 });
-//             }
-//         });
-//     } else if (guestTypes) {
-//         // Single pricing detail provided
-//         pricingDetails.push({
-//             guestType: guestTypes,
-//             price: parseFloat(prices),
-//             description: descriptions || '',
-//         });
-//     }
-
-//     return pricingDetails;
-// };
 
 // Add Room Function
 const addRoom = async (req, res) => {
@@ -711,6 +682,28 @@ const createRoomBooking = async (req, res) => {
 
         const finalTotalTaxAmount = totalTaxAmount;
 
+        const uniqueNumber = Math.floor(Math.random() * 10000000000); // Generates a random 10-digit number
+        const uniqueQRCode = `QR${uniqueNumber}`; // The unique QR code string (QR + 10-digit number)
+        // Generate QR code for all details
+        const allDetailsQRCodeData = {
+            uniqueQRCode,
+            primaryMemberId,
+            memberType,
+            memberDetails,
+            guestContact,
+            roomCategoryCounts,
+            bookingDates,
+            paymentMode,
+            'pricingDetails.final_totalAmount': finalTotalAmount, // Fixed key
+            'pricingDetails.final_totalTaxAmount': finalTotalTaxAmount, // Fixed key
+            'pricingDetails.extraBedTotal': extraBedTotal,
+            'pricingDetails.specialDayExtraCharge': specialDayExtraCharge,
+            paymentStatus: 'Pending',
+            bookingStatus: 'Pending',
+        };
+        const allDetailsQRCode = await QRCodeHelper.generateQRCode(allDetailsQRCodeData);
+
+
         // Create room booking object
         const roomBooking = new RoomBooking({
             primaryMemberId,
@@ -726,6 +719,8 @@ const createRoomBooking = async (req, res) => {
             'pricingDetails.specialDayExtraCharge': specialDayExtraCharge,
             paymentStatus: 'Pending',
             bookingStatus: 'Pending',
+            allDetailsQRCode,
+            uniqueQRCode
         });
 
         // Save the room booking
