@@ -236,7 +236,7 @@ const getHODById = async (req, res) => {
         // Find HOD by ID and populate user and department details
         const hod = await HOD.findById(id)
             .populate('userId', 'name mobileNumber profilePicture')
-            .populate('department', 'name');
+            .populate('department', 'departmentName');
 
         if (!hod) return res.status(404).json({ message: "HOD not found" });
 
@@ -250,7 +250,7 @@ const getHODById = async (req, res) => {
                 name: hod.userId.name,
                 contactNumber: hod.userId.mobileNumber,
                 image: hod.userId.profilePicture,
-                department: hod.department ? hod.department.name : 'N/A',
+                department: hod.department ? hod.department.departmentName : 'N/A',
                 status: hod.status,
                 createdAt: hod.createdAt,
                 updatedAt: hod.updatedAt
