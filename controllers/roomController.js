@@ -598,6 +598,17 @@ const createRoomBooking = async (req, res) => {
         let extraBedTotal = 0;
         let specialDayExtraCharge = 0;
 
+          // Calculate the total number of days of stay
+          const checkInDate = moment(bookingDates.checkIn);
+          const checkOutDate = moment(bookingDates.checkOut);
+  
+          const stayDuration = checkOutDate.diff(checkInDate, 'days');
+  
+          // Check if stay duration is valid
+          if (stayDuration <= 0) {
+              return res.status(400).json({ message: 'Invalid booking dates. Check-out date must be after check-in date.' });
+          }
+
         for (const roomCategoryCount of roomCategoryCounts) {
             const { roomType, roomCount, extraBedCount, memberCounts } = roomCategoryCount;
 
@@ -628,7 +639,9 @@ const createRoomBooking = async (req, res) => {
             roomCategoryCount.roomPrice = roomPrice;
             roomCategoryCount.extraBedCharge = extraBedCharge;
 
-            const roomTotalPrice = roomPrice * roomCount;
+            // const roomTotalPrice = roomPrice * roomCount;
+            const roomTotalPrice = roomPrice * roomCount * stayDuration; // Multiply by stay duration
+
             let roomTaxAmount = 0;
             let taxTypes = [];
 
@@ -771,6 +784,17 @@ const createRoomBookingDetails = async (req, res) => {
         let extraBedTotal = 0;
         let specialDayExtraCharge = 0;
 
+        // Calculate the total number of days of stay
+        const checkInDate = moment(bookingDates.checkIn);
+        const checkOutDate = moment(bookingDates.checkOut);
+
+        const stayDuration = checkOutDate.diff(checkInDate, 'days');
+
+        // Check if stay duration is valid
+        if (stayDuration <= 0) {
+            return res.status(400).json({ message: 'Invalid booking dates. Check-out date must be after check-in date.' });
+        }
+
         for (const roomCategoryCount of roomCategoryCounts) {
             const { roomType, roomCount, extraBedCount, memberCounts } = roomCategoryCount;
 
@@ -801,7 +825,9 @@ const createRoomBookingDetails = async (req, res) => {
             roomCategoryCount.roomPrice = roomPrice;
             roomCategoryCount.extraBedCharge = extraBedCharge;
 
-            const roomTotalPrice = roomPrice * roomCount;
+            // const roomTotalPrice = roomPrice * roomCount;
+            // Calculate the room's total price for the stay duration
+            const roomTotalPrice = roomPrice * roomCount * stayDuration; // Multiply by stay duration
             let roomTaxAmount = 0;
             let taxTypes = [];
 
