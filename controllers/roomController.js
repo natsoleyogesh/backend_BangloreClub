@@ -865,10 +865,12 @@ const createRoomBookingDetails = async (req, res) => {
             roomCategoryCounts,
             bookingDates,
             paymentMode,
-            'pricingDetails.final_totalAmount': finalTotalAmount, // Fixed key
-            'pricingDetails.final_totalTaxAmount': finalTotalTaxAmount, // Fixed key
-            'pricingDetails.extraBedTotal': extraBedTotal,
-            'pricingDetails.specialDayExtraCharge': specialDayExtraCharge,
+            pricingDetails: {
+                final_totalAmount: finalTotalAmount,
+                final_totalTaxAmount: finalTotalTaxAmount,
+                specialDayExtraCharge: specialDayExtraCharge,
+                extraBedTotal: extraBedTotal
+            },
             paymentStatus: 'Pending',
             bookingStatus: 'Pending',
         };
