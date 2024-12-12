@@ -231,12 +231,14 @@ const addRoomWithCategory = async (req, res) => {
             accessible: Boolean(features.accessible),
         };
 
+        const updateCancellation = JSON.parse(cancellationPolicy);
+
         // Validate cancellation policy
-        const validCancellationPolicy = cancellationPolicy ? {
-            before7Days: cancellationPolicy.before7Days || 0,
-            between7To2Days: cancellationPolicy.between7To2Days || 25,
-            between48To24Hours: cancellationPolicy.between48To24Hours || 50,
-            lessThan24Hours: cancellationPolicy.lessThan24Hours || 100,
+        const validCancellationPolicy = updateCancellation ? {
+            before7Days: updateCancellation.before7Days || 0,
+            between7To2Days: updateCancellation.between7To2Days || 25,
+            between48To24Hours: updateCancellation.between48To24Hours || 50,
+            lessThan24Hours: updateCancellation.lessThan24Hours || 100,
         } : {};
 
         // Create new RoomWithCategory instance
@@ -283,7 +285,8 @@ const getAllRoomWithCategories = async (req, res) => {
         const roomWithCategories = await RoomWithCategory.find(filter)
             .populate('categoryName')
             .populate('taxTypes')
-            .populate('amenities');
+            .populate('amenities')
+            .sort({ createdAt: -1 });
 
         return res.status(200).json({
             message: 'Room categories fetched successfully',
