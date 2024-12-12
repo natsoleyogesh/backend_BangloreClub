@@ -162,12 +162,13 @@ const addRoomWithCategory = async (req, res) => {
         } = req.body;
 
         // Validate price range
-        if (priceRange.minPrice < 0 || priceRange.maxPrice < 0) {
+        const updatepricing = JSON.parse(priceRange);
+        if (updatepricing.minPrice < 0 || updatepricing.maxPrice < 0) {
             return res.status(400).json({ message: 'Price range cannot be negative' });
         }
         const parsedPriceRange = {
-            minPrice: parseFloat(priceRange.minPrice),
-            maxPrice: parseFloat(priceRange.maxPrice),
+            minPrice: parseFloat(updatepricing.minPrice),
+            maxPrice: parseFloat(updatepricing.maxPrice),
         };
 
         // Validate pricing details
