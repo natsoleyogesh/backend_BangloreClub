@@ -217,7 +217,7 @@ const addRoomWithCategory = async (req, res) => {
         }
 
         // Handle image file paths
-        const images = req.files ? req.files.map(file => `uploads/rooms/${file.path.replace(/\\/g, '/')}`) : [];
+        const images = req.files ? req.files.map(file => `/${file.path.replace(/\\/g, '/')}`) : [];
 
 
         // Handle tax types and amenities as arrays of ObjectIds
