@@ -274,4 +274,33 @@ const ICONupload = multer({
 }).single('icon'); // Field name should match the form input field name
 
 
-module.exports = { upload, eventupload, roomUpload, offerupload, hodupload, downloadUpload, noticeUpload, FBupload, ICONupload };
+
+// Ensure the uploads/rooms directory exists
+const banquetUploadDir = 'uploads/banquets/';
+if (!fs.existsSync(banquetUploadDir)) {
+    fs.mkdirSync(banquetUploadDir, { recursive: true });
+}
+
+// Storage configuration
+const banquetStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, banquetUploadDir); // Save files to 'uploads/benquets/' directory
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const timestamp = Date.now();
+        const randomNum = Math.floor(Math.random() * 100000);
+        const uniqueName = `banquetImage-${timestamp}-${randomNum}${ext}`;
+        cb(null, uniqueName);
+    },
+});
+
+// Multer configuration with file filter and size limit
+const banquetUpload = multer({
+    storage: banquetStorage,
+    fileFilter,
+    limits: { fileSize: 100 * 1024 }, // 100 KB limit (in bytes)
+
+});
+
+module.exports = { upload, eventupload, roomUpload, offerupload, hodupload, downloadUpload, noticeUpload, FBupload, ICONupload, banquetUpload };
