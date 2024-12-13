@@ -897,7 +897,7 @@ const getActiveRoomsWithCategory = async (req, res) => {
         // Step 1: Find room categories with available rooms
         const roomsWithCategory = await RoomWithCategory.find({
             isDeleted: false,
-            totalAvailableRoom: { $gte: roomCountNumber },
+            // totalAvailableRoom: { $gte: roomCountNumber },
         })
             .populate('categoryName')
             .populate('taxTypes')
