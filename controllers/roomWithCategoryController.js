@@ -929,7 +929,8 @@ const getActiveRoomsWithCategory = async (req, res) => {
             }, 0);
 
             // Check if sufficient rooms are available
-            if (category.totalAvailableRoom - bookedRoomCount >= roomCountNumber) {
+            // if (category.totalAvailableRoom - bookedRoomCount >= roomCountNumber) {
+            if (category.totalAvailableRoom - bookedRoomCount > 0) {
                 availableRooms.push(category);
             }
         }
