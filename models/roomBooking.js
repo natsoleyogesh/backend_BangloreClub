@@ -387,6 +387,35 @@ const roomBookingSchema = new mongoose.Schema(
             ref: 'RoomWithCategory',
           },
         ],
+
+        memberCounts: {
+
+          adults: {
+            type: Number,
+            required: true,
+            default: 0
+          },
+
+          children: {
+            type: Number,
+            required: true,
+            default: 0
+          },
+
+          infants: {
+            type: Number,
+            required: true,
+            default: 0
+          },
+
+          totalOccupants: {
+            type: Number,
+            required: true,
+            default: 0
+          }
+
+        },
+
         extraBedCount: {
           type: Number,
           required: true,
@@ -401,6 +430,23 @@ const roomBookingSchema = new mongoose.Schema(
           },
         },
         extraBedCharge: {
+          type: Number,
+          required: true,
+        },
+        extraBedTotalCharges: {
+          type: Number,
+          required: true,
+          default: 0
+        },
+        totalAmount: {
+          type: Number,
+          required: true,
+        },
+        totalTaxAmount: {
+          type: Number,
+          required: true,
+        },
+        final_amount: {
           type: Number,
           required: true,
         },
