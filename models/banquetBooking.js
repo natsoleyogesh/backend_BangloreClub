@@ -142,7 +142,7 @@ const banquetBookingSchema = new mongoose.Schema(
 
         banquetType: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Benquet',
+            ref: 'banquet',
             required: true,
         },
         banquetPrice: {
