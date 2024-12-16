@@ -138,6 +138,7 @@ const createBanquet = async (req, res) => {
             banquetHallSize,
             features,
             status,
+            pricingDetailDescription
         } = req.body;
 
         // Validate banquet name
@@ -154,7 +155,7 @@ const createBanquet = async (req, res) => {
         // Check if banquet already exists
         const existingBanquet = await Banquet.findOne({ banquetName });
         if (existingBanquet) {
-            return res.status(409).json({ message: 'Banquet with this name already exists.' });
+            return res.status(400).json({ message: 'Banquet with this name already exists.' });
         }
 
         // Validate and parse price range
@@ -250,6 +251,7 @@ const createBanquet = async (req, res) => {
             banquetHallSize: parseFloat(banquetHallSize),
             features: parsedFeatures,
             status: status || 'Active',
+            pricingDetailDescription
         });
 
         // Save the new banquet
@@ -304,6 +306,33 @@ const getBanquetById = async (req, res) => {
             .populate('banquetName')
             .populate('taxTypes')
             .populate('amenities');
+
+        // Check if the banquet exists and is not deleted
+        if (!banquet || banquet.isDeleted) {
+            return res.status(404).json({
+                message: 'Banquet not found or has been deleted.',
+            });
+        }
+
+        return res.status(200).json({
+            message: 'Banquet fetched successfully.',
+            data: banquet,
+        });
+    } catch (error) {
+        console.error('Error fetching banquet by ID:', error);
+        return res.status(500).json({
+            message: 'Server error while fetching banquet.',
+            error: error.message,
+        });
+    }
+};
+
+const getBanquetEditDetailsById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Fetch the banquet by ID and populate related fields
+        const banquet = await Banquet.findById(id)
 
         // Check if the banquet exists and is not deleted
         if (!banquet || banquet.isDeleted) {
@@ -458,6 +487,7 @@ const updateBanquet = async (req, res) => {
             banquetHallSize,
             features,
             status,
+            pricingDetailDescription,
         } = req.body;
 
         // Find the banquet by ID
@@ -553,6 +583,7 @@ const updateBanquet = async (req, res) => {
         if (banquetHallSize) banquet.banquetHallSize = parseFloat(banquetHallSize);
         if (parsedFeatures) banquet.features = parsedFeatures;
         if (status) banquet.status = status;
+        if (pricingDetailDescription) banquet.pricingDetailDescription = pricingDetailDescription;
 
         // Save the updated banquet
         await banquet.save();
@@ -862,7 +893,7 @@ const createBanquetBooking = async (req, res) => {
             occasion,
             attendingGuests,
             banquetType,
-            banquetPrice: finalTotalAmount,
+            banquetPrice: totalAmount,
             bookingDates: {
                 checkIn: bookingDates.checkIn,
                 checkOut: bookingDates.checkOut,
@@ -1353,6 +1384,7 @@ module.exports = {
     deleteBanquet,
     uploadBanquetImage,
     updateBanquet,
+    getBanquetEditDetailsById,
 
     // Banquet Booking Functions
     getActiveBanquets,
@@ -1362,5 +1394,6 @@ module.exports = {
     getBookingById,
     getMyBookings,
     deleteBooking,
-    allocateBanquet
+    allocateBanquet,
+
 }

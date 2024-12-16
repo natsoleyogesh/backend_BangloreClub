@@ -244,7 +244,6 @@ const deleteRoomImage = async (req, res) => {
     }
 };
 
-
 const uploadRoomImage = async (req, res) => {
     const { roomId } = req.params;
     try {
@@ -342,7 +341,6 @@ const getAllAvailableRooms = async (req, res) => {
         return res.status(500).json({ message: 'Server error while fetching available rooms', error: error.message });
     }
 };
-
 
 // ALL BOOKING APIS FUNCTIONS
 const createRoomBooking = async (req, res) => {
@@ -540,179 +538,6 @@ const createRoomBooking = async (req, res) => {
     }
 };
 
-// const createRoomBookingDetails = async (req, res) => {
-//     try {
-//         // Destructure the request body
-//         const {
-//             primaryMemberId,
-//             memberType,
-//             memberDetails,
-//             roomCategoryCounts,
-//             bookingDates,
-//             paymentMode,
-//             guestContact
-//         } = req.body;
-
-//         // Validate totalOccupants
-//         const totalMembers = memberDetails.length;
-//         const totalOccupants = roomCategoryCounts.reduce((acc, roomCategoryCount) => acc + roomCategoryCount.memberCounts.totalOccupants, 0);
-
-//         if (totalOccupants !== totalMembers) {
-//             return res.status(400).json({ message: 'Total occupants do not match the number of members provided' });
-//         }
-
-//         // Validate guestContact for guests
-//         if (memberType === 'Guest of Member' && !guestContact) {
-//             return res.status(400).json({ message: "Please provide the guest's contact details" });
-//         }
-
-//         let totalAmount = 0;
-//         let totalTaxAmount = 0;
-//         let extraBedTotal = 0;
-//         let specialDayExtraCharge = 0;
-
-//         // Calculate the total number of days of stay
-//         const checkInDate = moment(bookingDates.checkIn);
-//         const checkOutDate = moment(bookingDates.checkOut);
-
-//         const stayDuration = checkOutDate.diff(checkInDate, 'days');
-
-//         // Check if stay duration is valid
-//         if (stayDuration <= 0) {
-//             return res.status(400).json({ message: 'Invalid booking dates. Check-out date must be after check-in date.' });
-//         }
-
-//         for (const roomCategoryCount of roomCategoryCounts) {
-//             const { roomType, roomCount, extraBedCount } = roomCategoryCount;
-
-//             const roomCategory = await RoomWithCategory.findById(roomType)
-//                 .populate('categoryName') // Ensure this populates the category name
-//                 .populate('taxTypes');
-//             console.log('Populated Room Category:', roomCategory);
-//             if (!roomCategory) {
-//                 return res.status(400).json({ message: `Room type with ID ${roomType} not found.` });
-//             }
-
-//             // Fetch pricing details
-//             const pricingDetails = roomCategory.pricingDetails || [];
-//             const priceDetail = pricingDetails.find(p => p.guestType === memberType);
-
-//             if (!priceDetail) {
-//                 return res.status(400).json({ message: 'Pricing details not found for this member type' });
-//             }
-
-//             const roomPrice = priceDetail.price;
-//             const extraBedCharge = roomCategory.extraBedPrice;
-
-//             // Validate pricing values
-//             if (isNaN(roomPrice) || roomPrice <= 0) {
-//                 return res.status(400).json({ message: 'Invalid room price' });
-//             }
-//             if (isNaN(extraBedCharge) || extraBedCharge < 0) {
-//                 return res.status(400).json({ message: 'Invalid extra bed charge' });
-//             }
-
-//             // Calculate the room's total price for the stay duration
-//             const roomTotalPrice = roomPrice * roomCount * stayDuration; // Multiply by stay duration
-//             const extraBedCategoryTotal = extraBedCount * extraBedCharge * stayDuration;
-
-//             let roomTaxAmount = 0;
-//             let taxTypes = [];
-
-//             roomCategory.taxTypes.forEach((tax) => {
-//                 const taxAmount = (roomTotalPrice * tax.percentage) / 100;
-//                 roomTaxAmount += taxAmount;
-//                 taxTypes.push({
-//                     taxType: tax.name,
-//                     taxRate: tax.percentage,
-//                     taxAmount: taxAmount
-//                 });
-//             });
-
-//             const categoryTotalAmount = roomTotalPrice + extraBedCategoryTotal; // Include extra bed charges
-//             const categoryFinalAmount = categoryTotalAmount + roomTaxAmount; // Include total tax amount
-
-//             roomCategoryCount.roomPrice = roomPrice;
-//             roomCategoryCount.extraBedCharge = extraBedCharge;
-//             roomCategoryCount.extraBedTotalCharges = extraBedCategoryTotal;
-//             roomCategoryCount.totalAmount = categoryTotalAmount;
-//             roomCategoryCount.totalTaxAmount = roomTaxAmount;
-//             roomCategoryCount.final_amount = categoryFinalAmount; // New field
-
-//             totalAmount += categoryTotalAmount;
-//             totalTaxAmount += roomTaxAmount;
-//             extraBedTotal += extraBedCategoryTotal;
-
-//             roomCategoryCount.taxTypes = taxTypes;
-
-//             // Calculate special day extra charges
-//             if (roomCategory.specialDayTariff && Array.isArray(roomCategory.specialDayTariff)) {
-//                 roomCategory.specialDayTariff.forEach((specialDay) => {
-//                     const { startDate, endDate, extraCharge } = specialDay;
-//                     const start = moment(startDate);
-//                     const end = moment(endDate);
-
-//                     const overlapStartDate = moment.max(checkInDate, start);
-//                     const overlapEndDate = moment.min(checkOutDate, end);
-
-//                     const overlapDays = overlapEndDate.diff(overlapStartDate, 'days') + 1;
-//                     if (overlapDays > 0) {
-//                         specialDayExtraCharge += extraCharge * overlapDays;
-//                     }
-//                 });
-//             }
-//         }
-
-//         const finalTotalAmount = totalAmount + totalTaxAmount + specialDayExtraCharge;
-
-//         // Validate final amount
-//         if (isNaN(finalTotalAmount) || finalTotalAmount <= 0) {
-//             return res.status(400).json({ message: 'Invalid total amount' });
-//         }
-
-//         const finalTotalTaxAmount = totalTaxAmount;
-
-//         // Create room booking object
-//         const roomBooking = {
-//             primaryMemberId,
-//             memberType,
-//             memberDetails,
-//             guestContact,
-//             roomCategoryCounts,
-//             bookingDates: {
-//                 dayStay: stayDuration,
-//                 checkIn: bookingDates.checkIn,
-//                 checkOut: bookingDates.checkOut
-//             },
-//             paymentMode,
-//             pricingDetails: {
-//                 final_totalAmount: finalTotalAmount,
-//                 final_totalTaxAmount: finalTotalTaxAmount,
-//                 specialDayExtraCharge: specialDayExtraCharge,
-//                 extraBedTotal: extraBedTotal
-//             },
-//             paymentStatus: 'Pending',
-//             bookingStatus: 'Pending',
-//         };
-
-//         // Save the room booking
-//         // await roomBooking.save();
-
-//         return res.status(201).json({
-//             message: 'Room booking details fetched successfully',
-//             roomBooking
-//         });
-
-//     } catch (error) {
-//         console.error('Error creating room booking:', error);
-//         return res.status(500).json({
-//             message: 'Internal server error',
-//             error: error.message
-//         });
-//     }
-// };
-
-
 const createRoomBookingDetails = async (req, res) => {
     try {
         const {
@@ -870,7 +695,6 @@ const createRoomBookingDetails = async (req, res) => {
     }
 };
 
-
 function calculateTotalAmount(booking) {
     let totalAmount = 0;
     let totalTaxAmount = 0;
@@ -904,7 +728,14 @@ function calculateTotalTaxAmount(booking) {
 const getAllBookings = async (req, res) => {
     try {
         const bookings = await RoomBooking.find({ isDeleted: false })
-            .populate('roomCategoryCounts.roomType') // Populate RoomWithCategory fields
+            // .populate('roomCategoryCounts.roomType') // Populate RoomWithCategory fields
+            .populate({
+                path: 'roomCategoryCounts.roomType',
+                populate: {
+                    path: 'categoryName', // Assuming banquetName references BanquetCategory
+                    model: 'Category',
+                },
+            })
             .populate('primaryMemberId') // Populate User fields (assuming User model has these fields)
             .sort({ createdAt: -1 });  // Sort by 'createdAt' in descending order
         if (!bookings || bookings.length === 0) {
@@ -929,7 +760,14 @@ const getBookingById = async (req, res) => {
 
         // const booking = await RoomBooking.findById(bookingId)
         const booking = await RoomBooking.findOne({ _id: bookingId, isDeleted: false })  // Exclude soft-deleted bookings
-            .populate('roomCategoryCounts.roomType') // Populate RoomWithCategory fields
+            // .populate('roomCategoryCounts.roomType') // Populate RoomWithCategory fields
+            .populate({
+                path: 'roomCategoryCounts.roomType',
+                populate: {
+                    path: 'categoryName', // Assuming banquetName references BanquetCategory
+                    model: 'Category',
+                },
+            })
             .populate('primaryMemberId') // Populate User fields
             .exec();
 
@@ -1056,7 +894,6 @@ const getMyBookings = async (req, res) => {
     }
 };
 
-
 const deleteBooking = async (req, res) => {
     try {
         const bookingId = req.params.bookingId;
@@ -1089,7 +926,6 @@ const deleteBooking = async (req, res) => {
         return res.status(500).json({ message: 'Error deleting booking', error: err.message });
     }
 };
-
 
 // WORKING CODE BUT ROOM IS NOT STORE 
 const updateRoomAllocation = async (req, res) => {
