@@ -1395,7 +1395,7 @@ const getAllActiveBanquets = async (req, res) => {
         // Return the response with the banquets data
         return res.status(200).json({
             message: 'Banquets fetched successfully.',
-            data: allBanquets,
+            categories: allBanquets,
         });
     } catch (error) {
         // Handle errors and log them for debugging
