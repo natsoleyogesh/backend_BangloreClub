@@ -5,6 +5,7 @@ const BanquetBooking = require("../models/banquetBooking");
 const path = require("path");
 const fs = require("fs");
 const QRCodeHelper = require('../utils/helper');
+const banquet = require("../models/banquets");
 
 // Banquet Category APIs Functions
 
@@ -273,6 +274,7 @@ const createBanquet = async (req, res) => {
 
 const getAllBanquets = async (req, res) => {
     try {
+
         // Define the filter to exclude deleted records
         const filter = { isDeleted: false };
 
@@ -1367,6 +1369,46 @@ const allocateBanquet = async (req, res) => {
     }
 };
 
+const getAllActiveBanquets = async (req, res) => {
+    try {
+        // Extract the 'status' query parameter from the request
+        const { status } = req.query;
+
+        // Define the filter to exclude deleted records and include status filter if provided
+        const filter = { isDeleted: false };
+        if (status) {
+            // Ensure the status filter is handled as a boolean
+            filter.status = status // Assuming status is a string ('true' or 'false')
+        }
+
+        // Fetch all banquets with related data, applying the filter and sorting by creation date
+        const banquets = await Banquet.find(filter)
+            .populate('banquetName') // Populate the 'banquetName' field with related data
+            .sort({ createdAt: -1 }); // Sort by creation date in descending order
+
+        // Transform the banquets data to include the 'name' field
+        const allBanquets = banquets.map((banquet) => ({
+            ...banquet.toObject(), // Convert the mongoose document to a plain object
+            name: banquet.banquetName ? banquet.banquetName.name : '', // Add 'name' field from the populated data
+        }));
+
+        // Return the response with the banquets data
+        return res.status(200).json({
+            message: 'Banquets fetched successfully.',
+            data: allBanquets,
+        });
+    } catch (error) {
+        // Handle errors and log them for debugging
+        console.error('Error fetching banquets:', error);
+
+        // Return an error response
+        return res.status(500).json({
+            message: 'Server error while fetching banquets.',
+            error: error.message,
+        });
+    }
+};
+
 
 
 module.exports = {
@@ -1386,6 +1428,7 @@ module.exports = {
     uploadBanquetImage,
     updateBanquet,
     getBanquetEditDetailsById,
+    getAllActiveBanquets,
 
     // Banquet Booking Functions
     getActiveBanquets,

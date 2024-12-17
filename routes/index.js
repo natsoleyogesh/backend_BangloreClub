@@ -26,6 +26,8 @@ const departmentRoutes = require("./masterRoutes/departmentRoutes");
 const restaurantRoutes = require("./masterRoutes/restaurantRoutes");
 const amenitiesRoutes = require("./masterRoutes/amenitiesRoutes");
 const taxTypeRoutes = require("./masterRoutes/taxTypeRoutes");
+const billingRoutes = require("./billingRoutes");
+const transactionRoutes = require("./transactionRoutes");
 
 adminRoutes(router);
 userRoutes(router);
@@ -45,6 +47,8 @@ foodAndBeverageRoutes(router);
 membershipWaitingListRoutes(router);
 roomWithCategoryRoutes(router);
 banquetRoutes(router);
+billingRoutes(router);
+transactionRoutes(router);
 
 // master data
 departmentRoutes(router);

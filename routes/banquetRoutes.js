@@ -1,4 +1,4 @@
-const { addCategory, getAllCategory, getCategoryById, updateCategory, deleteCategory, getAllBanquets, createBanquet, getBanquetById, deleteBanquet, deleteBanquetImage, uploadBanquetImage, updateBanquet, getActiveBanquets, createBanquetBooking, createBanquetBookingDetails, getAllBanquetBookings, getBookingById, deleteBooking, getMyBookings, allocateBanquet, getBanquetEditDetailsById } = require("../controllers/banquetController");
+const { addCategory, getAllCategory, getCategoryById, updateCategory, deleteCategory, getAllBanquets, createBanquet, getBanquetById, deleteBanquet, deleteBanquetImage, uploadBanquetImage, updateBanquet, getActiveBanquets, createBanquetBooking, createBanquetBookingDetails, getAllBanquetBookings, getBookingById, deleteBooking, getMyBookings, allocateBanquet, getBanquetEditDetailsById, getAllActiveBanquets } = require("../controllers/banquetController");
 const { verifyToken } = require("../utils/common");
 const { banquetUpload } = require("../utils/upload");
 
@@ -6,7 +6,7 @@ const { banquetUpload } = require("../utils/upload");
 module.exports = (router) => {
     // Benquet Category Routes
     router.post("/banquet-category", addCategory);
-    router.get("/banquet-categories", getAllCategory);
+    router.get("/all-banquet-categories", getAllCategory);
     router.get("/banquet-category/:id", getCategoryById);
     router.put("/banquet-category/:id", updateCategory);
     router.delete("/banquet-category/:id", deleteCategory);
@@ -22,6 +22,9 @@ module.exports = (router) => {
     router.put("/banquet/upload-image/:banquetId", banquetUpload.array('images', 5), uploadBanquetImage);
 
     router.get("/banquet-editDetails/:id", getBanquetEditDetailsById);
+
+    router.get("/banquet-categories", getAllActiveBanquets);
+
 
 
     // banquet Booking Routes
