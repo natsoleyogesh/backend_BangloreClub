@@ -1105,6 +1105,7 @@ const createBanquetBookingDetails = async (req, res) => {
             paymentMode,
             paymentStatus: 'Pending',
             bookingStatus: 'Pending',
+            images: banquet.images,
         };
 
         // Save banquet booking
