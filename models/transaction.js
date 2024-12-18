@@ -15,7 +15,7 @@ const transactionSchema = new mongoose.Schema(
         },
         paymentMethod: {
             type: String,
-            enum: ['Credit Card', 'PayPal', 'Bank Transfer', 'Cash'],
+            enum: ['card','upi', 'payPal', 'Bank Transfer', 'cash'],
             required: true
         },
         taxAmount: {
