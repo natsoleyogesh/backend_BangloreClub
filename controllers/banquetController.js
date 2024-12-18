@@ -6,6 +6,7 @@ const path = require("path");
 const fs = require("fs");
 const QRCodeHelper = require('../utils/helper');
 const banquet = require("../models/banquets");
+const moment = require('moment')
 
 // Banquet Category APIs Functions
 
@@ -619,10 +620,12 @@ const getActiveBanquets = async (req, res) => {
         const checkInDate = new Date(checkIn);
         const checkOutDate = new Date(checkOut);
 
+        // Validate date range
         if (isNaN(checkInDate) || isNaN(checkOutDate) || checkInDate > checkOutDate) {
             return res.status(400).json({ message: 'Invalid check-in or check-out dates.' });
         }
 
+        // Parse and validate time inputs
         const [fromHours, fromMinutes] = from.split(':').map(Number);
         const [toHours, toMinutes] = to.split(':').map(Number);
 
@@ -635,55 +638,97 @@ const getActiveBanquets = async (req, res) => {
             return res.status(400).json({ message: 'Invalid attending guest count.' });
         }
 
-        // Filter by banquet size and type
+        // Filter banquets by type and size
         const filter = {
             isDeleted: false,
-            banquetHallSize: { $gte: guestCount }, // Ensure banquet hall can accommodate the guests
+            maxAllowedPerRoom: { $gte: guestCount },
         };
 
         if (banquetType) {
-            filter.banquetName = banquetType; // Filter by banquetType if provided
+            filter._id = banquetType;
         }
 
-        const banquets = await Banquet.find(filter)
-            .populate('banquetName')
-            .populate('taxTypes')
-            .populate('amenities')
-            .sort({ banquetName: 1 });
+        const banquets = await Banquet.find(filter).populate('banquetName taxTypes amenities').sort({ banquetName: 1 });
 
         if (banquets.length === 0) {
             return res.status(404).json({ message: 'No banquets available for the specified criteria.' });
         }
 
-        // Check for overlapping bookings
+        // Filter available banquets based on pricing details and bookings
         const availableBanquets = [];
 
         for (const banquet of banquets) {
+            const bookingDay = checkInDate.toLocaleString('en-US', { weekday: 'long' });
+
+            // Check if the check-in day matches banquet pricing details
+            const applicablePricing = banquet.pricingDetails.find(pricing => pricing.days.includes(bookingDay));
+
+            if (!applicablePricing) continue;
+
+            // Check if the time slots are available
+            const isTimeSlotAvailable = applicablePricing.timeSlots.some(slot => {
+                const [slotStartHours, slotStartMinutes] = slot.start.split(':').map(Number);
+                const [slotEndHours, slotEndMinutes] = slot.end.split(':').map(Number);
+
+                const slotStart = slotStartHours * 60 + slotStartMinutes;
+                const slotEnd = slotEndHours * 60 + slotEndMinutes;
+
+                const requestedStart = fromHours * 60 + fromMinutes;
+                const requestedEnd = toHours * 60 + toMinutes;
+
+                return requestedStart >= slotStart && requestedEnd <= slotEnd;
+            });
+
+            if (!isTimeSlotAvailable) continue;
+
+
+            console.log(checkInDate, checkOutDate, "utcformat")
+            // Check for overlapping bookings
             const overlappingBookings = await BanquetBooking.find({
                 banquetType: banquet._id,
-                'bookingDates.checkIn': { $lte: checkOutDate }, // Overlap check for dates
-                'bookingDates.checkOut': { $gte: checkInDate },
+                // 'bookingDates.checkIn': { $lt: endOfCheckOut },
+                // 'bookingDates.checkOut': { $gt: startOfCheckIn },
                 isDeleted: false,
             });
 
-            const isTimeSlotAvailable = !overlappingBookings.some((booking) => {
+            const isBookingTimeAvailable = !overlappingBookings.some(booking => {
+                console.log("Booking CheckIn:", booking.bookingDates.checkIn, "Booking CheckOut:", booking.bookingDates.checkOut);
+
+                // Convert booking dates to only date parts for comparison
+                const bookingCheckInDate = new Date(booking.bookingDates.checkIn).toISOString().split('T')[0];
+                const bookingCheckOutDate = new Date(booking.bookingDates.checkOut).toISOString().split('T')[0];
+
+                const requestedCheckInDate = new Date(checkInDate).toISOString().split('T')[0];
+                const requestedCheckOutDate = new Date(checkOutDate).toISOString().split('T')[0];
+
+                // Check if dates overlap
+                const isDateOverlap =
+                    requestedCheckInDate <= bookingCheckOutDate &&
+                    requestedCheckOutDate >= bookingCheckInDate;
+
+                if (!isDateOverlap) {
+                    return false; // Skip if the dates do not overlap
+                }
+
+                // Extract time components and compare
                 const [bookingFromHours, bookingFromMinutes] = booking.bookingTime.from.split(':').map(Number);
                 const [bookingToHours, bookingToMinutes] = booking.bookingTime.to.split(':').map(Number);
 
-                const bookingFromTotalMinutes = bookingFromHours * 60 + bookingFromMinutes;
-                const bookingToTotalMinutes = bookingToHours * 60 + bookingToMinutes;
+                const bookingStart = bookingFromHours * 60 + bookingFromMinutes;
+                const bookingEnd = bookingToHours * 60 + bookingToMinutes;
 
-                const fromTotalMinutes = fromHours * 60 + fromMinutes;
-                const toTotalMinutes = toHours * 60 + toMinutes;
+                const requestedStart = fromHours * 60 + fromMinutes;
+                const requestedEnd = toHours * 60 + toMinutes;
 
-                // Check for overlapping time slots on the same date
-                return (
-                    (fromTotalMinutes < bookingToTotalMinutes && toTotalMinutes > bookingFromTotalMinutes) &&
-                    booking.bookingDates.checkIn.toISOString().slice(0, 10) === checkInDate.toISOString().slice(0, 10)
-                );
+                // Check if time ranges overlap
+                const isTimeOverlap = requestedStart < bookingEnd && requestedEnd > bookingStart;
+
+                console.log("Date Overlap:", isDateOverlap, "Time Overlap:", isTimeOverlap);
+
+                return isDateOverlap && isTimeOverlap; // Return true only if both date and time overlap
             });
 
-            if (isTimeSlotAvailable) {
+            if (isBookingTimeAvailable) {
                 availableBanquets.push(banquet);
             }
         }
@@ -704,7 +749,6 @@ const getActiveBanquets = async (req, res) => {
         });
     }
 };
-
 
 const createBanquetBooking = async (req, res) => {
     try {
