@@ -120,6 +120,75 @@ const getBillingById = async (req, res) => {
     }
 };
 
+
+// getBillingById
+
+const getBillingByIdAdmin = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const billing = await Billing.findById(id)
+            .populate('memberId')
+            .populate('serviceDetails')
+            .populate({
+                path: 'serviceDetails',
+                populate: [
+                    {
+                        path: 'roomBooking',
+                        model: 'RoomBooking', // Assuming roomBooking is referenced in billing
+                        populate: [
+                            {
+                                path: 'roomCategoryCounts.roomType', // Populate roomType inside roomCategoryCounts
+                                model: 'RoomWithCategory',
+                                populate: [
+                                    {
+                                        path: 'categoryName', // Populate categoryName inside RoomWithCategory
+                                        model: 'Category' // Category model
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        path: 'banquetBooking',
+                        model: 'BanquetBooking', // Populate banquetBooking
+                        populate: [
+                            {
+                                path: 'banquetType', // Populate roomType inside roomCategoryCounts
+                                model: 'banquet',
+                                populate: [
+                                    {
+                                        path: 'banquetName', // Populate categoryName inside RoomWithCategory
+                                        model: 'BanquetCategory' // Category model
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        path: 'eventBooking',
+                        model: 'eventBooking', // Populate eventBooking
+                        populate: [
+                            {
+                                path: 'eventId', // Populate roomType inside roomCategoryCounts
+                                model: 'Event',
+                            }
+                        ]
+                    }
+                ]
+            });
+        if (!billing) {
+            return res.status(404).json({ message: 'Billing record not found.' });
+        }
+        return res.status(200).json({
+            message: 'Billing record fetched successfully.',
+            billing
+        });
+    } catch (error) {
+        console.error('Error fetching billing by ID:', error);
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+};
+
 // Soft delete a billing record
 const deleteBilling = async (req, res) => {
     try {
@@ -265,4 +334,5 @@ module.exports = {
     getBillingById,
     deleteBilling,
     getActiveBill,
+    getBillingByIdAdmin,
 };
