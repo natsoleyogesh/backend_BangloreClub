@@ -20,7 +20,7 @@ module.exports = (router) => {
     router.delete("/room-booking/:bookingId", deleteBooking);
     router.get("/roombooking/myBookings", verifyToken, getMyBookings);
 
-    router.put("/room-booking/allocate-room/:bookingId", updateRoomAllocation);
+    router.put("/room-booking/allocate-room/:bookingId", verifyToken, updateRoomAllocation);
     router.post("/room-booking/create-details", createRoomBookingDetails);
 
 }

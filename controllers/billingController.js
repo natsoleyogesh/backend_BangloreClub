@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Billing = require('../models/billings'); // Assuming the Billing model is in the models folder
+const moment = require('moment')
 
 // Helper function to generate invoice number
 const generateInvoiceNumber = async () => {
@@ -337,6 +338,100 @@ const getActiveBill = async (req, res) => {
 };
 
 
+const getMemberBill = async (req, res) => {
+    try {
+        const { userId } = req.params; // Extract user ID and payment status from request parameters
+        const { filterType, customStartDate, customEndDate, paymentStatus } = req.query; // Extract filter type and custom date range from query
+
+        let filter = { memberId: userId, isDeleted: false };
+
+        // Add paymentStatus to filter if provided
+        if (paymentStatus) {
+            filter.paymentStatus = paymentStatus;
+        }
+
+        // Handle date filters
+        if (filterType) {
+            const today = moment().startOf('day');
+
+            switch (filterType) {
+                case 'today':
+                    filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() };
+                    break;
+                case 'last7days':
+                    filter.createdAt = { $gte: moment(today).subtract(7, 'days').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last30days':
+                    filter.createdAt = { $gte: moment(today).subtract(30, 'days').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last3months':
+                    filter.createdAt = { $gte: moment(today).subtract(3, 'months').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last6months':
+                    filter.createdAt = { $gte: moment(today).subtract(6, 'months').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last1year':
+                    filter.createdAt = { $gte: moment(today).subtract(1, 'year').toDate(), $lt: today.toDate() };
+                    break;
+                case 'custom':
+                    if (!customStartDate || !customEndDate) {
+                        return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
+                    }
+                    filter.createdAt = {
+                        // $gte: moment(customStartDate, 'YYYY-MM-DD').startOf('day').toDate(),
+                        // $lt: moment(customEndDate, 'YYYY-MM-DD').endOf('day').toDate()
+                        $lt: moment(customStartDate, 'YYYY-MM-DD').endOf('day').toDate(),
+                        $gte: moment(customEndDate, 'YYYY-MM-DD').startOf('day').toDate()
+                    };
+                    break;
+                default:
+                    break; // No filter applied if no valid filterType
+            }
+        }
+
+        // Query to find bills based on the filter
+        const bills = await Billing.find(filter).sort({ createdAt: -1 });
+
+        // Aggregate pipeline to calculate total outstanding amount
+        const totalOutstandingAmount = await Billing.aggregate([
+            {
+                $match: {
+                    memberId: new mongoose.Types.ObjectId(userId), // Ensure memberId is treated as an ObjectId
+                    isDeleted: false,
+                    ...(filter.paymentStatus ? { paymentStatus: filter.paymentStatus } : {}),
+                    ...(filter.createdAt ? { createdAt: filter.createdAt } : {}) // Apply date filter in aggregation if applicable
+                }
+            },
+            {
+                $group: {
+                    _id: 'null', // Group by payment status
+                    totalOutstandingAmount: { $sum: '$totalAmount' }
+                }
+            }
+        ]);
+
+        const totalAmount = totalOutstandingAmount[0] ? totalOutstandingAmount[0].totalOutstandingAmount : 0;
+
+
+        // Prepare response object
+        const response = {
+            message: "Total Outstanding & Filtered Bills!",
+            bills,
+            totalOutstandingAmount: totalAmount
+        };
+
+        // Send response
+        return res.status(200).json(response);
+    } catch (error) {
+        console.error('Error fetching bills:', error);
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+};
+
+
+
+
+
 
 module.exports = {
     createBilling,
@@ -348,4 +443,5 @@ module.exports = {
     deleteBilling,
     getActiveBill,
     getBillingByIdAdmin,
+    getMemberBill
 };

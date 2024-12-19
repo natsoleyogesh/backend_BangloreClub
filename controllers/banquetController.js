@@ -6,7 +6,8 @@ const path = require("path");
 const fs = require("fs");
 const QRCodeHelper = require('../utils/helper');
 const banquet = require("../models/banquets");
-const moment = require('moment')
+const moment = require('moment');
+const { addBilling } = require("./billingController");
 
 // Banquet Category APIs Functions
 
@@ -1332,6 +1333,12 @@ const deleteBooking = async (req, res) => {
 const allocateBanquet = async (req, res) => {
     try {
         const { bookingId, bookingStatus } = req.body;
+        const { userId, role } = req.user;
+
+        if (!userId || role !== 'admin') {
+            return res.status(400).json({ message: 'Alert You are not update the details!.' });
+
+        }
 
         // Validate booking ID
         if (!mongoose.Types.ObjectId.isValid(bookingId)) {
@@ -1398,6 +1405,11 @@ const allocateBanquet = async (req, res) => {
         booking.bookingStatus = bookingStatus;
         booking.allDetailsQRCode = allDetailsQRCode;
         await booking.save();
+
+        if (booking.bookingStatus === 'Confirmed') {
+            await addBilling(booking.primaryMemberId, 'Banquet', { banquetBooking: booking._id }, booking.pricingDetails.totalAmount, 0, booking.pricingDetails.totalTaxAmount, booking.pricingDetails.final_totalAmount, userId)
+        }
+
 
         return res.status(200).json({
             message: `Booking status updated successfully to '${bookingStatus}'.`,

@@ -2,6 +2,7 @@
 const Event = require('../models/event');
 const EventBooking = require('../models/eventBooking');
 const QRCodeHelper = require('../utils/helper');
+const { addBilling } = require('./billingController');
 
 const createEvent = async (req, res) => {
     try {
@@ -417,6 +418,12 @@ const bookEvent = async (req, res) => {
         });
 
         await newBooking.save();
+
+        if (newBooking.bookingStatus === 'Confirmed') {
+            await addBilling(primaryMemberId, 'Event', { eventBooking: newBooking._id }, newBooking.ticketDetails.subtotal, 0, newBooking.ticketDetails.taxAmount, newBooking.ticketDetails.totalAmount, primaryMemberId)
+
+        }
+
 
         // Update the available tickets in the Event schema
         event.availableTickets -= (primaryMemberCount + dependentMemberCount + guestMemberCount);

@@ -37,5 +37,5 @@ module.exports = (router) => {
     router.delete("/banquet-booking/:bookingId", deleteBooking);
     router.get("/my-banquet-bookings", verifyToken, getMyBookings);
 
-    router.post("/banquet-booking-allocate", allocateBanquet)
+    router.post("/banquet-booking-allocate", verifyToken, allocateBanquet)
 }

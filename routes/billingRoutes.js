@@ -1,4 +1,4 @@
-const { createBilling, getAllBillings, getBillingById, deleteBilling, getActiveBill, updateBilling, getBillingByIdAdmin } = require("../controllers/billingController");
+const { createBilling, getAllBillings, getBillingById, deleteBilling, getActiveBill, updateBilling, getBillingByIdAdmin, getMemberBill } = require("../controllers/billingController");
 const { verifyToken } = require("../utils/common");
 
 module.exports = (router) => {
@@ -9,5 +9,7 @@ module.exports = (router) => {
     router.put("/billing/:id", updateBilling);
     router.get("/active-billings", verifyToken, getActiveBill);
     router.get("/billing-details/:id", getBillingByIdAdmin);
+    router.get("/biiling/member/:userId", getMemberBill);
+
 
 };

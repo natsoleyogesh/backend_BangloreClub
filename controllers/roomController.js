@@ -5,7 +5,8 @@ const QRCodeHelper = require('../utils/helper');
 const moment = require('moment');
 const mongoose = require("mongoose");
 const path = require("path");
-const fs = require("fs")
+const fs = require("fs");
+const { addBilling } = require("./billingController");
 
 // Add Room Function
 const addRoom = async (req, res) => {
@@ -931,13 +932,33 @@ const deleteBooking = async (req, res) => {
 const updateRoomAllocation = async (req, res) => {
     try {
         const bookingId = req.params.bookingId; // Booking ID from URL
-        const { allocatedRooms } = req.body; // Data sent in the body for update (array of room allocations)
+        const { allocatedRooms, bookingStatus } = req.body; // Data sent in the body for update (array of room allocations)
+        const { userId, role } = req.user;
+
+        if (!userId || role !== 'admin') {
+            return res.status(400).json({ message: 'Alert You are not update the details!.' });
+
+        }
+        // Validate booking status
+        const validStatuses = ['Pending', 'Confirmed', 'Cancelled'];
+        if (!validStatuses.includes(bookingStatus)) {
+            return res.status(400).json({ message: `Invalid booking status. Valid statuses are: ${validStatuses.join(', ')}.` });
+        }
 
         // 1. Find the booking by ID
         const booking = await RoomBooking.findById(bookingId);
         if (!booking) {
             return res.status(404).json({ message: 'Booking not found' });
         }
+
+        if (booking.isDeleted) {
+            return res.status(400).json({ message: 'Cannot allocate a deleted booking.' });
+        }
+
+        if (booking.bookingStatus === 'Confirmed') {
+            return res.status(400).json({ message: 'This Request is already Confirmed.' });
+        }
+
 
         // 2. Loop through each room allocation and validate each category
         for (const allocation of allocatedRooms) {
@@ -998,8 +1019,16 @@ const updateRoomAllocation = async (req, res) => {
             });
         }
 
+        booking.bookingStatus = bookingStatus;
+
         // Save the updated booking
         await booking.save();
+        if (booking.bookingStatus === 'Confirmed') {
+            const subtotal = booking.pricingDetails.final_totalTaxAmount - booking.pricingDetails.final_totalAmount;
+
+            await addBilling(booking.primaryMemberId, 'Room', { roomBooking: booking._id }, subtotal, 0, booking.pricingDetails.final_totalTaxAmount, booking.pricingDetails.final_totalAmount, userId)
+
+        }
 
         return res.status(200).json({ message: 'Room allocation updated successfully', booking });
     } catch (err) {
