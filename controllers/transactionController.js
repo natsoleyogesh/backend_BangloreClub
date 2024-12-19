@@ -213,6 +213,7 @@ const updateTransaction = async (req, res) => {
 
 
 const getAllFilterTransactions = async (req, res) => {
+    const { userId } = req.user;
     const { type, startDate, endDate, page = 1, limit = 10 } = req.query;
 
     // Parse the page and limit parameters as integers
@@ -221,6 +222,9 @@ const getAllFilterTransactions = async (req, res) => {
 
     // Default filter conditions
     let filter = {};
+    if (userId) {
+        filter.memberId = userId;
+    }
     const currentDate = moment();
 
     try {
@@ -316,7 +320,9 @@ const getAllFilterTransactions = async (req, res) => {
             .skip(skip)  // Skip the first (pageNumber - 1) * pageSize documents
             .limit(pageSize)  // Limit to the page size
             .populate('billingId')  // Populate memberId (User)
-            .where('isDeleted').equals(false);  // Ensure transactions are not deleted
+            .where('isDeleted').equals(false)
+            .sort({ createdAt: -1 }); // Sort by creation date, most recent first
+
 
         // Calculate the total number of pages
         const totalPages = Math.ceil(totalTransactions / pageSize);
