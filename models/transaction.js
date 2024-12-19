@@ -15,8 +15,11 @@ const transactionSchema = new mongoose.Schema(
         },
         paymentMethod: {
             type: String,
-            enum: ['card','upi', 'payPal', 'Bank Transfer', 'cash'],
-            required: true
+            enum: ['card', 'upi', 'payPal', 'Bank Transfer', 'cash'],
+            // required: true
+            required: function () {
+                return this.paymentStatus !== 'Failed'; // Make required only if paymentStatus is not 'Failed'
+            },
         },
         taxAmount: {
             type: Number,
