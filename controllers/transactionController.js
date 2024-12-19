@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const Transaction = require('../models/transaction'); // Import the Transaction model
+const Billing = require('../models/billings'); // Assuming the Billing model is in the models folder
+
 const moment = require('moment');
 // Create a new transaction
 const createTransaction = async (req, res) => {
@@ -29,6 +31,15 @@ const createTransaction = async (req, res) => {
         });
 
         await transaction.save();
+
+        // If paymentStatus is "Success", update the corresponding Billing record
+        if (paymentStatus === 'Success') {
+            await Billing.findByIdAndUpdate(
+                billingId,
+                { paymentStatus: 'Paid' },
+                { new: true }
+            );
+        }
 
         return res.status(201).json({
             message: 'Transaction created successfully.',

@@ -264,11 +264,12 @@ const updateBilling = async (req, res) => {
 };
 
 
-// Get active billing records with paymentStatus 'Due', pagination, and total outstanding amount
+// // Get active billing records with paymentStatus 'Due', pagination, and total outstanding amount
+
 const getActiveBill = async (req, res) => {
     try {
+        const { userId } = req.user; // Extract user ID from the authenticated user
 
-        const { userId } = req.user;
         // Destructure query parameters for pagination
         const { page = 1, limit = 10 } = req.query; // Default to page 1, limit 10
 
@@ -287,28 +288,41 @@ const getActiveBill = async (req, res) => {
         // Calculate the skip value for pagination
         const skip = (pageNumber - 1) * pageLimit;
 
-        // Query to find all active bills with paymentStatus 'Due'
+        // Query to find all active bills for the specific memberId with paymentStatus 'Due'
         const bills = await Billing.find({ memberId: userId, paymentStatus: 'Due', isDeleted: false })
-            .skip(skip)  // Skip records for pagination
-            .limit(pageLimit)  // Limit number of records
+            .skip(skip) // Skip records for pagination
+            .limit(pageLimit) // Limit number of records
             .sort({ createdAt: -1 }); // Optionally, sort by createdAt in descending order
 
-        // Calculate total outstanding amount (sum of totalAmount for 'Due' paymentStatus)
+        // Aggregate pipeline to calculate total outstanding amount
         const totalOutstandingAmount = await Billing.aggregate([
-            { $match: { paymentStatus: 'Due', isDeleted: false } },
-            { $group: { _id: null, totalOutstandingAmount: { $sum: '$totalAmount' } } }
+            {
+                $match: {
+                    memberId: new mongoose.Types.ObjectId(userId),  // Ensure memberId is treated as an ObjectId
+                    // paymentStatus: 'Due',
+                    isDeleted: false
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalOutstandingAmount: { $sum: '$totalAmount' }
+                }
+            }
         ]);
-
         const totalAmount = totalOutstandingAmount[0] ? totalOutstandingAmount[0].totalOutstandingAmount : 0;
 
         // Prepare response object
         const response = {
-            message: " Total OutStanding & All Bills!.",
+            message: "Total Outstanding & All Bills!",
             bills,
             pagination: {
                 currentPage: pageNumber,
-                totalPages: Math.ceil(await Billing.countDocuments({ paymentStatus: 'Due', isDeleted: false }) / pageLimit),
-                totalRecords: await Billing.countDocuments({ paymentStatus: 'Due', isDeleted: false }),
+                totalPages: Math.ceil(
+                    await Billing.countDocuments({ memberId: userId, paymentStatus: 'Due', isDeleted: false }) /
+                    pageLimit
+                ),
+                totalRecords: await Billing.countDocuments({ memberId: userId, paymentStatus: 'Due', isDeleted: false }),
                 recordsPerPage: pageLimit
             },
             totalOutstandingAmount: totalAmount
@@ -316,7 +330,6 @@ const getActiveBill = async (req, res) => {
 
         // Send response
         return res.status(200).json(response);
-
     } catch (error) {
         console.error('Error fetching active bills:', error);
         return res.status(500).json({ message: 'Internal server error', error: error.message });

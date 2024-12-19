@@ -62,12 +62,12 @@ const billingSchema = new mongoose.Schema(
         },
         paymentStatus: {
             type: String,
-            enum: ['Due', 'Paid', 'Overdue'],
+            enum: ['Due', 'Paid', 'Overdue', 'Cancelled'],
             default: 'Due'
         },
         status: {
             type: String,
-            enum: ['Active', 'Paid', 'Overdue', 'Cancelled'],
+            enum: ['Active', 'Paid', 'Overdue', 'Cancelled', 'Inactive'],
             default: 'Active'
         },
         createdBy: {
