@@ -21,7 +21,7 @@ const createTransaction = async (req, res) => {
         const transaction = new Transaction({
             memberId,
             billingId,
-            paymentMethod,
+            paymentMethod: paymentMethod ? paymentMethod : '',
             taxAmount,
             other_service_charge,
             paymentAmount,
