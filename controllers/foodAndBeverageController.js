@@ -935,6 +935,44 @@ const deleteFoodAndBeverage = async (req, res) => {
     }
 };
 
+// const getActiveFoodAndBeverages = async (req, res) => {
+//     try {
+//         const { page = 1, limit = 5 } = req.query;
+
+//         // Convert query parameters to integers
+//         const pageNumber = parseInt(page, 10) || 1;
+//         const limitNumber = parseInt(limit, 10) || 5;
+//         const skip = (pageNumber - 1) * limitNumber;
+
+//         // Fetch active Food and Beverage categories
+//         const activeFoodAndBeverages = await FoodAndBeverage.find({ status: "Active" })
+//             .sort({ createdAt: -1 }) // Sort by creation date (newest first)
+//             .skip(skip)
+//             .limit(limitNumber);
+
+//         // Count total active categories for pagination
+//         const totalItems = await FoodAndBeverage.countDocuments({ status: "Active" });
+
+//         // Prepare the response
+//         res.status(200).json({
+//             message: "Active Food and Beverage categories fetched successfully.",
+//             foodAndBeverages: activeFoodAndBeverages,
+//             pagination: {
+//                 totalItems,
+//                 currentPage: pageNumber,
+//                 totalPages: Math.ceil(totalItems / limitNumber),
+//                 limit: limitNumber,
+//             },
+//         });
+//     } catch (error) {
+//         console.error("Error fetching active Food and Beverage categories:", error);
+//         res.status(500).json({
+//             message: "Failed to fetch active Food and Beverage categories.",
+//             error: error.message,
+//         });
+//     }
+// };
+
 const getActiveFoodAndBeverages = async (req, res) => {
     try {
         const { page = 1, limit = 5 } = req.query;
@@ -944,19 +982,56 @@ const getActiveFoodAndBeverages = async (req, res) => {
         const limitNumber = parseInt(limit, 10) || 5;
         const skip = (pageNumber - 1) * limitNumber;
 
-        // Fetch active Food and Beverage categories
-        const activeFoodAndBeverages = await FoodAndBeverage.find({ status: "Active" })
-            .sort({ createdAt: -1 }) // Sort by creation date (newest first)
+        // Fetch active Food and Beverage categories with necessary populations
+        const activeFoodAndBeveragesData = await FoodAndBeverage.find({ status: "Active" })
+            .populate('name', '_id name') // Populate the Restaurant reference in the "name" field
+            .populate('subCategories.name', '_id name') // Populate the "name" field in each subCategory
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limitNumber);
 
         // Count total active categories for pagination
         const totalItems = await FoodAndBeverage.countDocuments({ status: "Active" });
 
-        // Prepare the response
+        // Structure the response to match the desired format
+        const responseData = activeFoodAndBeveragesData.map(fb => ({
+            _id: fb._id,
+            name: fb.name ? fb.name.name : "N/A",
+            nameId: fb.name ? fb.name._id : null,
+            location: fb.location || "",
+            extansion_no: fb.extansion_no || "",
+            description: fb.description || "",
+            bannerImage: fb.bannerImage || "",
+            mainmenu: fb.mainmenu || null,
+            timings: fb.timings || [],
+            subCategories: fb.subCategories.map(sub => ({
+                _id: sub._id,
+                name: sub.name ? sub.name.name : "N/A",
+                nameId: sub.name ? sub.name._id : null,
+                description: sub.description || "",
+                location: sub.location || "",
+                extansion_no: sub.extansion_no || "",
+                images: sub.images || [],
+                menu: sub.menu || "",
+                timings: sub.timings.map(timing => ({
+                    title: timing.title || "",
+                    startDay: timing.startDay || "",
+                    endDay: timing.endDay || "",
+                    startTime: timing.startTime || "",
+                    endTime: timing.endTime || "",
+                    _id: timing._id,
+                })),
+            })),
+            status: fb.status || "Active",
+            createdAt: fb.createdAt,
+            updatedAt: fb.updatedAt,
+            __v: fb.__v || 0,
+        }));
+
+        // Send the structured response with pagination
         res.status(200).json({
             message: "Active Food and Beverage categories fetched successfully.",
-            foodAndBeverages: activeFoodAndBeverages,
+            foodAndBeverages: responseData,
             pagination: {
                 totalItems,
                 currentPage: pageNumber,
@@ -972,7 +1047,6 @@ const getActiveFoodAndBeverages = async (req, res) => {
         });
     }
 };
-
 module.exports = {
     addFoodAndBeverage,
     updateFoodAndBeverage,

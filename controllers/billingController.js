@@ -97,7 +97,7 @@ const getAllBillings = async (req, res) => {
             filter.paymentStatus = paymentStatus;
         }
         if (userId) {
-            filter.userId = userId
+            filter.memberId = userId
         }
 
         // Handle date filters
