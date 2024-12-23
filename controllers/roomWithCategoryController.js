@@ -340,9 +340,9 @@ const getActiveRoomsWithCategory = async (req, res) => {
             return res.status(400).json({ message: 'Missing required fields: checkIn, checkOut, roomCount' });
         }
 
-        // if (roomCount > 2) {
-        //     return res.status(400).json({ message: 'Not Applicable greater than 2 rooms Booking!' });
-        // }
+        if (roomCount > 3) {
+            return res.status(400).json({ message: 'Not Applicable greater than 3 rooms Booking!' });
+        }
 
         const checkInDate = new Date(checkIn);
         const checkOutDate = new Date(checkOut);
@@ -359,7 +359,7 @@ const getActiveRoomsWithCategory = async (req, res) => {
         // Step 1: Find room categories with available rooms
         const roomsWithCategory = await RoomWithCategory.find({
             isDeleted: false,
-            // totalAvailableRoom: { $gte: roomCountNumber },
+            totalAvailableRoom: { $gte: roomCountNumber },
         })
             .populate('categoryName')
             .populate('taxTypes')
