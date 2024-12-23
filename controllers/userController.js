@@ -197,7 +197,7 @@ const loginRequest = async (req, res) => {
 // Step 2: Verify OTP, generate token, and log in
 const verifyOtp = async (req, res) => {
     try {
-        const { userId, otp } = req.body;
+        const { userId, otp, fcmToken } = req.body;
 
         // Find user by ID
         const user = await User.findById(userId);
@@ -218,6 +218,7 @@ const verifyOtp = async (req, res) => {
 
         // OTP is valid; clear it and update the last login time
         user.otp = null;
+        user.fcmToken = fcmToken;
         user.lastLogin = Date.now();
         await user.save();
 
