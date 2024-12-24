@@ -370,9 +370,9 @@ const getAllFilterTransactions = async (req, res) => {
 
         // Fetch the transactions with pagination
         const transactions = await Transaction.find(filter)
+            .populate('billingId')  // Populate memberId (User)
             .skip(skip)  // Skip the first (pageNumber - 1) * pageSize documents
             .limit(pageSize)  // Limit to the page size
-            .populate('billingId')  // Populate memberId (User)
             .where('isDeleted').equals(false)
             .sort({ createdAt: -1 }); // Sort by creation date, most recent first
 

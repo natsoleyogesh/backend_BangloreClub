@@ -37,4 +37,20 @@ const generateMultipleQRCodes = async (members) => {
     return qrCodes;
 };
 
-module.exports = { generateQRCode, generateMultipleQRCodes };
+
+const formatTimeTo12Hour = (time24) => {
+    // Split the 24-hour time into hours and minutes
+    const [hour, minute] = time24.split(':').map(Number);
+
+    // Determine AM or PM
+    const period = hour >= 12 ? 'PM' : 'AM';
+
+    // Convert to 12-hour format
+    const hour12 = hour % 12 || 12;
+
+    // Return the formatted time
+    return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+};
+
+
+module.exports = { generateQRCode, generateMultipleQRCodes, formatTimeTo12Hour };

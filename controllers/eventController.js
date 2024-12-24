@@ -1,8 +1,12 @@
 // const 
 const Event = require('../models/event');
+const User = require("../models/user")
 const EventBooking = require('../models/eventBooking');
 const QRCodeHelper = require('../utils/helper');
 const { addBilling } = require('./billingController');
+const sendEmail = require('../utils/sendMail');
+const emailTemplates = require('../utils/emailTemplates');
+const { eventrenderTemplate } = require('../utils/templateRenderer');
 
 const createEvent = async (req, res) => {
     try {
@@ -389,14 +393,14 @@ const bookEvent = async (req, res) => {
                 uniqueQRCode: qrCodes.find(qr => qr.userId.toString() === dep.userId.toString()).uniqueQRCodeData,
 
             })),
-            guests: guests.map(guest => ({
+            guests: guests ? guests.map(guest => ({
                 name: guest.name,
                 email: guest.email,
                 phone: guest.phone,
                 qrCode: qrCodes.find(qr => qr.userId === guest.name).qrCode,
                 uniqueQRCode: qrCodes.find(qr => qr.userId === guest.name).uniqueQRCodeData,
 
-            })),
+            })) : [],
             counts: {
                 primaryMemberCount,
                 dependentMemberCount,
@@ -421,6 +425,61 @@ const bookEvent = async (req, res) => {
 
         if (newBooking.bookingStatus === 'Confirmed') {
             await addBilling(primaryMemberId, 'Event', { eventBooking: newBooking._id }, newBooking.ticketDetails.subtotal, 0, newBooking.ticketDetails.taxAmount, newBooking.ticketDetails.totalAmount, primaryMemberId)
+            // Send a booking confirmation email
+            const memberData = await EventBooking.findById(newBooking._id)
+                .populate("eventId")
+                .populate("primaryMemberId")
+                .populate("dependents.userId") // Populate dependentsexec();
+            // const emailTemplateId = "eventBooking";
+
+            // Prepare template data
+            const templateData = {
+                uniqueQRCode: newBooking.allDetailsUniqueQRCode,
+                qrCode: allDetailsQRCode, // Base64 string for QR Code
+                eventTitle: event.eventTitle,
+                eventDate: event.eventDate.toDateString(),
+                primaryname: memberData.primaryMemberId.name,
+                primaryemail: memberData.primaryMemberId.email,
+                primarycontact: memberData.primaryMemberId.mobileNumber,
+                familyMembers: memberData.dependents && memberData.dependents.length > 0 ? memberData.dependents.map(dep => ({ name: dep.userId.name })) : [],
+                guests: memberData.guests && memberData.guests.length > 0 ? memberData.guests.map(guest => ({
+                    name: guest.name,
+                    email: guest.email,
+                    contact: guest.phone,
+                })) : [],
+                subtotal: newBooking.ticketDetails.subtotal.toFixed(2),
+                taxRate: newBooking.ticketDetails.taxRate,
+                taxAmount: newBooking.ticketDetails.taxAmount.toFixed(2),
+                totalAmount: newBooking.ticketDetails.totalAmount.toFixed(2),
+
+            };
+
+
+            console.log(templateData, "templaedate")
+            // Call the sendEmail function
+            // await sendEmail(memberData.primaryMemberId.email, emailTemplateId, templateData);
+            // Get template
+            const template = emailTemplates.eventBooking;
+
+            // Render template
+            const htmlBody = eventrenderTemplate(template.body, templateData);
+            const subject = eventrenderTemplate(template.subject, templateData);
+
+            // Send email
+            await sendEmail(
+                memberData.primaryMemberId.email,
+                subject,
+                htmlBody,
+                [
+                    {
+                        filename: "qrcode.png",
+                        content: newBooking.allDetailsQRCode.split(",")[1],
+                        encoding: "base64",
+                        cid: "qrCodeImage",
+                    },
+                ]
+            );
+
 
         }
 

@@ -1,45 +1,37 @@
-const nodemailer = require("nodemailer");
-const emailTemplates = require("./emailTemplates");
 
-// Create a reusable transporter
+require("dotenv").config(); // Use dotenv for secure environment variable management
+const nodemailer = require("nodemailer");
+
+// Create a reusable transporter using SMTP settings
 const transporter = nodemailer.createTransport({
-    service: "gmail", // or use your email service (SMTP settings)
+    host: process.env.SMTP_SERVER_NAME || "pro.turbo-smtp.com",
+    port: process.env.SMTP_PORT || 25,
+    secure: false, // For port 25, secure should be false
     auth: {
-        user: "your-email@gmail.com",
-        pass: "your-email-password", // Use environment variables for security
+        user: process.env.SMTP_USERNAME || "kiran@mindworks.co.in",
+        pass: process.env.SMTP_PASSWORD || "XWGpMM28", // Default password, replace with environment variable
     },
 });
 
-// Function to send email with a template
-const sendEmail = async (to, templateId, templateData = {}) => {
+const sendEmail = async (to, subject, htmlBody, attachments = []) => {
     try {
-        // Get the email template
-        const template = emailTemplates[templateId];
-
-        if (!template) {
-            throw new Error(`Template ID '${templateId}' not found.`);
-        }
-
-        // Replace placeholders in subject and body
-        const subject = template.subject.replace(/{{(.*?)}}/g, (_, key) => templateData[key] || "");
-        const body = template.body.replace(/{{(.*?)}}/g, (_, key) => templateData[key] || "");
-
-        // Send the email
         const mailOptions = {
-            from: '"Your App Name" <your-email@gmail.com>',
+            from: `"Bangalore Club" <${process.env.SMTP_FROM || "secretary@bangaloreclub.com"}>`,
             to,
             subject,
-            html: body,
+            html: htmlBody,
+            attachments,
         };
 
         const info = await transporter.sendMail(mailOptions);
-
         console.log("Email sent successfully:", info.messageId);
+
         return info;
     } catch (error) {
-        console.error("Error sending email:", error);
+        console.error("Error sending email:", error.message);
         throw error;
     }
 };
+
 
 module.exports = sendEmail;

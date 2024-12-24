@@ -28,6 +28,7 @@ const amenitiesRoutes = require("./masterRoutes/amenitiesRoutes");
 const taxTypeRoutes = require("./masterRoutes/taxTypeRoutes");
 const billingRoutes = require("./billingRoutes");
 const transactionRoutes = require("./transactionRoutes");
+const notificationRoutes = require("./notificationRoutes");
 
 adminRoutes(router);
 userRoutes(router);
@@ -49,6 +50,7 @@ roomWithCategoryRoutes(router);
 banquetRoutes(router);
 billingRoutes(router);
 transactionRoutes(router);
+notificationRoutes(router)
 
 // master data
 departmentRoutes(router);
