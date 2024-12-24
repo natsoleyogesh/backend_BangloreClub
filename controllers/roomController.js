@@ -416,12 +416,13 @@ const createRoomBooking = async (req, res) => {
             // Calculate the room's total price for the stay duration
             const roomTotalPrice = roomPrice * roomCount * stayDuration; // Multiply by stay duration
             const extraBedCategoryTotal = extraBedCount * extraBedCharge * stayDuration;
+            const finalRoomAmount = roomTotalPrice + extraBedCategoryTotal
 
             let roomTaxAmount = 0;
             let taxTypes = [];
 
             roomCategory.taxTypes.forEach((tax) => {
-                const taxAmount = (roomTotalPrice * tax.percentage) / 100;
+                const taxAmount = (finalRoomAmount * tax.percentage) / 100;
                 roomTaxAmount += taxAmount;
                 taxTypes.push({
                     taxType: tax.name,
@@ -605,12 +606,12 @@ const createRoomBookingDetails = async (req, res) => {
 
             const roomTotalPrice = roomPrice * roomCount * stayDuration;
             const extraBedCategoryTotal = extraBedCount * extraBedCharge * stayDuration;
-
+            const finalRoomAmount = roomTotalPrice + extraBedCategoryTotal
             let roomTaxAmount = 0;
             let taxTypes = [];
 
             roomCategory.taxTypes.forEach((tax) => {
-                const taxAmount = (roomTotalPrice * tax.percentage) / 100;
+                const taxAmount = ((finalRoomAmount) * tax.percentage) / 100;
                 roomTaxAmount += taxAmount;
                 taxTypes.push({
                     taxType: tax.name,
