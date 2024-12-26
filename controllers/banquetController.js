@@ -11,6 +11,7 @@ const { addBilling } = require("./billingController");
 const emailTemplates = require("../utils/emailTemplates");
 const { banquetrenderTemplate } = require("../utils/templateRenderer");
 const sendEmail = require("../utils/sendMail");
+const { createNotification } = require("../utils/pushNotification");
 
 // Banquet Category APIs Functions
 
@@ -1355,7 +1356,15 @@ const allocateBanquet = async (req, res) => {
         }
 
         // Find the booking by ID
-        const booking = await BanquetBooking.findById(bookingId).populate('banquetType', '_id')
+        const booking = await BanquetBooking.findById(bookingId)
+            .populate({
+                path: 'banquetType',
+                populate: {
+                    path: 'banquetName', // Assuming banquetName references BanquetCategory
+                    model: 'BanquetCategory',
+                },
+            })
+        // .populate('banquetType', '_id')
 
         if (!booking) {
             return res.status(404).json({ message: 'Booking not found.' });
@@ -1397,6 +1406,14 @@ const allocateBanquet = async (req, res) => {
             booking.bookingStatus = bookingStatus;
             booking.allDetailsQRCode = allDetailsQRCode;
             await booking.save();
+            // Call the createNotification function
+            await createNotification({
+                title: `${booking.banquetType.banquetName.name}Banquet Booking Is Rejected`,
+                send_to: "User",
+                push_message: "Your banquet Booking Is Rejected For Some Details Are Not Validate!",
+                department: "BanquetBooking",
+                departmentId: booking._id
+            });
             return res.status(200).json({
                 message: `Booking status updated successfully to '${bookingStatus}'.`,
                 booking,
@@ -1474,6 +1491,15 @@ const allocateBanquet = async (req, res) => {
                     },
                 ]
             );
+
+            // Call the createNotification function
+            await createNotification({
+                title: `${memberData.banquetType.banquetName.name}Banquet Booking Is ${booking.bookingStatus}`,
+                send_to: "User",
+                push_message: "Your banquet Booking Is Confirmed.",
+                department: "BanquetBooking",
+                departmentId: booking._id
+            });
         }
 
 

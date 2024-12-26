@@ -1,4 +1,5 @@
 const Offer = require("../models/offers");
+const { createNotification } = require("../utils/pushNotification");
 
 // const addOffer = async (req, res) => {
 //     try {
@@ -102,6 +103,15 @@ const addOffer = async (req, res) => {
 
         // Save the offer to the database
         await newOffer.save();
+
+        // Call the createNotification function
+        await createNotification({
+            title: `${newOffer.title} Is Created`,
+            send_to: "All",
+            push_message: `${newOffer.description}`,
+            department: "Offer",
+            image: bannerImagePath, // Assign the value directly
+        });
 
         res.status(201).json({ message: "Offer added successfully", offer: newOffer });
     } catch (error) {
