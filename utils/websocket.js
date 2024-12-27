@@ -1,11 +1,12 @@
 const { Server } = require('socket.io');
 
 let io;
+let isDevelopment = true;
 
 const initWebSocket = (server) => {
     io = new Server(server, {
         cors: {
-            origin: '*', // Allow all origins in development
+            origin: isDevelopment ? "*" : ["https://your-production-domain.com"],
             methods: ['GET', 'POST'], // Adjust for your app
             credentials: true, // Allow credentials if needed
         },
