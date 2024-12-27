@@ -526,6 +526,7 @@ const createRoomBooking = async (req, res) => {
             uniqueQRCode
         });
 
+        await roomBooking.save();
         await createRequest({
             primaryMemberId: roomBooking.primaryMemberId,
             departmentId: roomBooking._id,
@@ -534,7 +535,6 @@ const createRoomBooking = async (req, res) => {
             description: "This is a Room Booking Request."
         });
         // Save the room booking
-        await roomBooking.save();
 
         return res.status(201).json({
             message: 'Room booking created successfully',
