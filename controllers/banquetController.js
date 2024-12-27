@@ -12,6 +12,8 @@ const emailTemplates = require("../utils/emailTemplates");
 const { banquetrenderTemplate } = require("../utils/templateRenderer");
 const sendEmail = require("../utils/sendMail");
 const { createNotification } = require("../utils/pushNotification");
+const { createRequest, updateRequest } = require("./allRequestController");
+const AllRequest = require("../models/allRequest");
 
 // Banquet Category APIs Functions
 
@@ -972,6 +974,14 @@ const createBanquetBooking = async (req, res) => {
         // Save banquet booking
         await banquetBooking.save();
 
+        await createRequest(req, {
+            primaryMemberId: banquetBooking.primaryMemberId,
+            departmentId: banquetBooking._id,
+            department: "BanquetBooking",
+            status: banquetBooking.bookingStatus,
+            description: "This is a Banquet Booking Request."
+        });
+
         return res.status(201).json({
             message: 'Banquet booking created successfully.',
             banquetBooking
@@ -1401,6 +1411,15 @@ const allocateBanquet = async (req, res) => {
 
         const allDetailsQRCode = await QRCodeHelper.generateQRCode(JSON.stringify(allDetailsQRCodeData));
 
+        let requestId = null;
+
+        // Find the request by departmentId instead of using findById
+        const findRequest = await AllRequest.findOne({ departmentId: bookingId }).exec();
+
+        if (findRequest) {
+            requestId = findRequest._id;
+        }
+
         if (bookingStatus === 'Pending' || bookingStatus === 'Cancelled') {
             // Update the booking status
             booking.bookingStatus = bookingStatus;
@@ -1414,6 +1433,15 @@ const allocateBanquet = async (req, res) => {
                 department: "BanquetBooking",
                 departmentId: booking._id
             });
+
+            if (requestId !== null) {
+                await updateRequest(requestId, {
+                    status: bookingStatus,
+                    adminResponse: "The Booking Is Cancelled Due To Some Reason"
+                });
+            }
+
+
             return res.status(200).json({
                 message: `Booking status updated successfully to '${bookingStatus}'.`,
                 booking,
@@ -1500,6 +1528,10 @@ const allocateBanquet = async (req, res) => {
                 department: "BanquetBooking",
                 departmentId: booking._id
             });
+
+            if (requestId !== null) {
+                updateRequest(requestId, { status: bookingStatus, adminResponse: "The Booking Is Confirmed !" })
+            }
         }
 
 

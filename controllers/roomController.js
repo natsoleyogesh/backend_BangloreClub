@@ -7,6 +7,9 @@ const mongoose = require("mongoose");
 const path = require("path");
 const fs = require("fs");
 const { addBilling } = require("./billingController");
+const { createRequest, updateRequest } = require("./allRequestController");
+const AllRequest = require("../models/allRequest");
+const { createNotification } = require("../utils/pushNotification");
 
 // Add Room Function
 const addRoom = async (req, res) => {
@@ -523,6 +526,13 @@ const createRoomBooking = async (req, res) => {
             uniqueQRCode
         });
 
+        await createRequest({
+            primaryMemberId: roomBooking.primaryMemberId,
+            departmentId: roomBooking._id,
+            department: "RoomBooking",
+            status: roomBooking.bookingStatus,
+            description: "This is a Room Booking Request."
+        });
         // Save the room booking
         await roomBooking.save();
 
@@ -978,6 +988,40 @@ const updateRoomAllocation = async (req, res) => {
                 return res.status(404).json({ message: 'Room category not found in RoomWithCategory' });
             }
 
+            let requestId = null;
+
+            // Find the request by departmentId instead of using findById
+            const findRequest = await AllRequest.findOne({ departmentId: bookingId }).exec();
+
+            if (findRequest) {
+                requestId = findRequest._id;
+            }
+
+
+            if (bookingStatus === 'Pending' || bookingStatus === 'Cancelled') {
+                // Update the booking status
+                booking.bookingStatus = bookingStatus;
+                // booking.allDetailsQRCode = allDetailsQRCode;
+                await booking.save();
+                // Call the createNotification function
+                await createNotification({
+                    title: `Your Room Booking Is Rejected`,
+                    send_to: "User",
+                    push_message: "Your Room Booking Is Rejected For Some Details Are Not Validate!",
+                    department: "RoomBooking",
+                    departmentId: booking._id
+                });
+
+
+                if (requestId !== null) {
+                    await updateRequest(requestId, {
+                        status: bookingStatus,
+                        adminResponse: "The Booking Is Cancelled Due To Some Reason"
+                    });
+                }
+
+            }
+
             // 4. Check available rooms that meet the date and status requirements
             const checkAvailabilityForDates = async (roomId) => {
                 // Fetch all bookings for this room
@@ -1028,6 +1072,18 @@ const updateRoomAllocation = async (req, res) => {
             const subtotal = booking.pricingDetails.final_totalTaxAmount - booking.pricingDetails.final_totalAmount;
 
             await addBilling(booking.primaryMemberId, 'Room', { roomBooking: booking._id }, subtotal, 0, booking.pricingDetails.final_totalTaxAmount, booking.pricingDetails.final_totalAmount, userId)
+
+            await createNotification({
+                title: `Your Room Booking Is Confirmed`,
+                send_to: "User",
+                push_message: "Your Room Booking Is Confirmed Please Pay The Amount!",
+                department: "RoomBooking",
+                departmentId: booking._id
+            });
+
+            if (requestId !== null) {
+                updateRequest(requestId, { status: bookingStatus, adminResponse: "The Booking Is Confirmed !" })
+            }
 
         }
 

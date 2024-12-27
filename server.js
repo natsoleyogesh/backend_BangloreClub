@@ -4,6 +4,8 @@ const bodyParser = require("body-parser");
 const connectDB = require("./database/db");
 const routes = require("./routes");
 const isAuthenticated = require("./utils/auth");
+const { initWebSocket } = require("./utils/websocket");
+const http = require("http"); // Import http to create server
 require("dotenv").config();
 
 const app = express();
@@ -46,8 +48,21 @@ app.use("/api/*", (req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
 
+// // Start server
+// const PORT = process.env.PORT || 3005;
+// app.listen(PORT, () => {
+//   console.log(`Server running on port ${PORT}`);
+// });
+
+// Create HTTP server and integrate WebSocket
+const server = http.createServer(app); // Create an HTTP server
+const io = initWebSocket(server); // Initialize WebSocket server
+
+// Expose `io` for use in other modules
+app.set("io", io); // Attach the `io` instance to the Express app for reuse
+
 // Start server
 const PORT = process.env.PORT || 3005;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
