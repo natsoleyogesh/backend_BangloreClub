@@ -527,7 +527,7 @@ const createRoomBooking = async (req, res) => {
         });
 
         await roomBooking.save();
-        await createRequest({
+        await createRequest(req, {
             primaryMemberId: roomBooking.primaryMemberId,
             departmentId: roomBooking._id,
             department: "RoomBooking",
