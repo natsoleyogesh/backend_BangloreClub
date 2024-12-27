@@ -5,7 +5,7 @@ let io;
 const initWebSocket = (server) => {
     io = new Server(server, {
         cors: {
-            origin: '*', // Allow all origins in development
+            origin: ["http://localhost:3000", '*'], // Allow all origins in development
             methods: ['GET', 'POST'], // Adjust for your app
         },
     });
