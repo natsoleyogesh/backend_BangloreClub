@@ -1,5 +1,5 @@
 const firebase = require('firebase-admin');
-const serviceAccount = require('./bangaloreclub-599ec-firebase-adminsdk-ojfrm-90c9274f82.json');
+const serviceAccount = require('./bangaloreclub-599ec-firebase-adminsdk-ojfrm-1932ad7754.json');
 
 
 const Notification = require('../models/notification');
