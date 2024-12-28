@@ -1,12 +1,16 @@
 const Restaurant = require("../../models/restaurant");
+const { toTitleCase } = require("../../utils/common");
 
 // Create a new restaurant
 const createRestaurant = async (req, res) => {
     try {
         const { name, status } = req.body;
 
+        const normalizedName = toTitleCase(name);
+
+
         // Check if restaurant already exists
-        const existingRestaurant = await Restaurant.findOne({ name });
+        const existingRestaurant = await Restaurant.findOne({ name: normalizedName, isDeleted: false });
         if (existingRestaurant) {
             return res.status(400).json({ message: 'Restaurant already exists.' });
         }
@@ -53,11 +57,33 @@ const getRestaurantById = async (req, res) => {
 const updateRestaurant = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, status } = req.body;
+        let { name, status } = req.body;
+
+        const updateData = {};
+        if (name) {
+            name = toTitleCase(name);
+
+            // Check if a category with the same name (case-insensitive) already exists (excluding current category)
+            const existingAmenities = await Restaurant.findOne({
+                name,
+                _id: { $ne: id }, // Exclude the current category
+                isDeleted: false // Check only non-deleted categories
+            });
+
+            if (existingAmenities) {
+                return res.status(400).json({ message: 'Reastaurant with this name already exists.' });
+            }
+
+            // Add normalized name to updates
+            updateData.name = name;
+        }
+        if (status) {
+            updateData.status = status
+        }
 
         const updatedRestaurant = await Restaurant.findByIdAndUpdate(
             id,
-            { name, status },
+            updateData,
             { new: true }  // Return the updated document
         );
 
@@ -67,6 +93,7 @@ const updateRestaurant = async (req, res) => {
 
         return res.status(200).json({ message: "Restaurant Update Successfully", updatedRestaurant });
     } catch (err) {
+        console.log(err, "err")
         return res.status(500).json({ message: 'Server error', error: err });
     }
 };

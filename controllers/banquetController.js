@@ -14,17 +14,19 @@ const sendEmail = require("../utils/sendMail");
 const { createNotification } = require("../utils/pushNotification");
 const { createRequest, updateRequest } = require("./allRequestController");
 const AllRequest = require("../models/allRequest");
+const { toTitleCase } = require("../utils/common");
 
 // Banquet Category APIs Functions
 
 const addCategory = async (req, res) => {
     try {
         const { name, description, status } = req.body;
-
+        // Normalize the name to Title Case
+        const normalizedName = toTitleCase(name);
         // Check if category already exists
-        const existingCategory = await BanquetCategory.findOne({ name, status, isDeleted: false });
+        const existingCategory = await BanquetCategory.findOne({ name: normalizedName, isDeleted: false });
         if (existingCategory) {
-            return res.status(400).json({ message: 'Category already exists.' });
+            return res.status(400).json({ message: 'Category already exists but Inactive.' });
         }
 
         const newCategory = new BanquetCategory({
@@ -78,10 +80,61 @@ const getCategoryById = async (req, res) => {
     }
 }
 
+// const updateCategory = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const updates = req.body;
+
+//         // Filter the updates to include only the fields provided in the request body
+//         const filteredUpdates = Object.keys(updates).reduce((acc, key) => {
+//             if (updates[key] !== undefined) {
+//                 acc[key] = updates[key];
+//             }
+//             return acc;
+//         }, {});
+
+//         // Update the category with the filtered updates
+//         const updatedCategory = await BanquetCategory.findByIdAndUpdate(id, filteredUpdates, {
+//             new: true, // Return the updated document
+//             runValidators: true, // Ensure validation rules are applied
+//         });
+
+//         if (!updatedCategory) {
+//             return res.status(404).json({ message: 'Category not found.' });
+//         }
+
+//         res.json({ message: 'Category updated successfully.', category: updatedCategory });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'Server error while updating category.' });
+//     }
+// }
+
 const updateCategory = async (req, res) => {
     try {
         const { id } = req.params;
-        const updates = req.body;
+        let { name, ...updates } = req.body;
+
+        // Normalize the name to Title Case if it's being updated
+        if (name) {
+            name = toTitleCase(name);
+
+            // Check if a category with the same name already exists (excluding the current category)
+            const existingCategory = await BanquetCategory.findOne({
+                name,
+                _id: { $ne: id }, // Exclude the current category from the search
+                isDeleted: false // Ensure it's not a deleted category
+            });
+
+            if (existingCategory) {
+                return res.status(400).json({ message: 'Category with this name already exists.' });
+            }
+        }
+
+        // Include normalized name in the updates if it exists
+        if (name) {
+            updates.name = name;
+        }
 
         // Filter the updates to include only the fields provided in the request body
         const filteredUpdates = Object.keys(updates).reduce((acc, key) => {
@@ -106,7 +159,7 @@ const updateCategory = async (req, res) => {
         console.error(error);
         res.status(500).json({ message: 'Server error while updating category.' });
     }
-}
+};
 
 const deleteCategory = async (req, res) => {
     try {

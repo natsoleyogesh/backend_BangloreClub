@@ -79,6 +79,19 @@ const offerSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+// Pre-save middleware to format the `name` field
+offerSchema.pre('save', function (next) {
+    if (this.title) {
+        // Convert to title case (e.g., "OTHER Tax" → "Other Tax")
+        this.title = this.title
+            .toLowerCase() // Convert all to lowercase first
+            .split(' ') // Split the title into words
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize the first letter of each word
+            .join(' '); // Join words back with spaces
+    }
+    next();
+});
+
 const Offer = mongoose.model("Offer", offerSchema);
 
 module.exports = Offer;

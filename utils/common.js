@@ -81,4 +81,13 @@ const generateOtp = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-module.exports = { generateToken, verifyToken, decodeToken, generatePrimaryMemberId, generateFamilyMemberId, generateOtp };
+
+const toTitleCase = (str) => {
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+module.exports = { generateToken, verifyToken, decodeToken, generatePrimaryMemberId, generateFamilyMemberId, generateOtp, toTitleCase };

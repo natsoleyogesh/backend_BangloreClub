@@ -28,7 +28,7 @@ const addRoomWithCategory = async (req, res) => {
         } = req.body;
 
         // Validate price range
-        const updatepricing = JSON.parse(priceRange);
+        const updatepricing  = JSON.parse(priceRange);
         if (updatepricing.minPrice < 0 || updatepricing.maxPrice < 0) {
             return res.status(400).json({ message: 'Price range cannot be negative' });
         }

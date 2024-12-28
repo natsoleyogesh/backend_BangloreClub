@@ -23,7 +23,6 @@ const createUser = async (req, res) => {
             email,
             mobileNumber,
             relation,
-            age,
             parentUserId,
             address,
             address1,
@@ -84,10 +83,6 @@ const createUser = async (req, res) => {
             return res.status(400).json({ message: "Only one spouse can be added per user." });
         }
 
-        if (relation === "Child" && (!age || age < 18)) {
-            return res.status(400).json({ message: "Children must be 18 or older to be added." });
-        }
-
         // Generate a unique memberId for the family member
         const memberId = await generateFamilyMemberId(parentUser.memberId, existingRelations.length);
 
@@ -110,7 +105,6 @@ const createUser = async (req, res) => {
             marriageDate,
             title,
             parentUserId: parentUser._id,
-            age: relation === "Child" ? age : undefined,
             profilePicture: profilePicturePath,
         });
 
@@ -316,7 +310,6 @@ const fetchFamilyTree = async (userId) => {
                 state: member.state,
                 country: member.country,
                 pin: member.pin,
-                age: member.age,
                 dateOfBirth: member.dateOfBirth,
                 maritalStatus: member.maritalStatus,
                 marriageDate: member.marriageDate,
@@ -341,7 +334,6 @@ const fetchFamilyTree = async (userId) => {
                 state: member.state,
                 country: member.country,
                 pin: member.pin,
-                age: member.age,
                 dateOfBirth: member.dateOfBirth,
                 maritalStatus: member.maritalStatus,
                 marriageDate: member.marriageDate,
@@ -454,7 +446,6 @@ const getUserDetails = async (req, res) => {
             marriageDate: user.marriageDate,
             title: user.title,
             relation: user.relation,
-            age: user.age,
             status: user.status,
             activatedDate: user.activatedDate,
             profilePicture: user.profilePicture, // Include profile picture
@@ -487,7 +478,6 @@ const getUserDetails = async (req, res) => {
                 marriageDate: user.marriageDate,
                 title: user.title,
                 relation: user.relation,
-                age: user.age,
                 status: user.status,
                 activatedDate: user.activatedDate,
                 qrCode: primaryUserQRCode, // Include the primary user's QR code

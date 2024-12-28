@@ -30,6 +30,7 @@ const billingRoutes = require("./billingRoutes");
 const transactionRoutes = require("./transactionRoutes");
 const notificationRoutes = require("./notificationRoutes");
 const allRequestRoutes = require("./allRequestRoutes");
+const locationRoutes = require("./masterRoutes/locationRoutes");
 
 adminRoutes(router);
 userRoutes(router);
@@ -59,5 +60,6 @@ departmentRoutes(router);
 restaurantRoutes(router);
 amenitiesRoutes(router);
 taxTypeRoutes(router);
+locationRoutes(router);
 
 module.exports = router;

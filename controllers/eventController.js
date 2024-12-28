@@ -7,6 +7,7 @@ const { addBilling } = require('./billingController');
 const sendEmail = require('../utils/sendMail');
 const emailTemplates = require('../utils/emailTemplates');
 const { eventrenderTemplate } = require('../utils/templateRenderer');
+const { toTitleCase } = require('../utils/common');
 
 const createEvent = async (req, res) => {
     try {
@@ -34,6 +35,13 @@ const createEvent = async (req, res) => {
             return res.status(400).json({
                 message: 'Event Banner Image is Required!',
             });
+        }
+
+        const normalizedTitle = toTitleCase(eventTitle);
+        // Check if category already exists
+        const existingNotice = await Event.findOne({ eventTitle: normalizedTitle, isDeleted: false });
+        if (existingNotice) {
+            return res.status(400).json({ message: 'Event Is already exists but Inactive.' });
         }
 
         const eventImage = `/uploads/event/${req.file.filename}`;
@@ -149,7 +157,7 @@ const getEventById = async (req, res) => {
 const updateEvent = async (req, res) => {
     try {
         const { id } = req.params;
-        const {
+        let {
             eventTitle,
             eventSubtitle,
             eventDate,
@@ -174,6 +182,22 @@ const updateEvent = async (req, res) => {
 
         if (!existingEvent) {
             return res.status(404).json({ message: 'Event not found.' });
+        }
+        let normalizedTitle;
+        if (eventTitle) {
+            normalizedTitle = toTitleCase(title);
+
+            const existingEvent = await Event.findOne({
+                eventTitle: normalizedTitle,
+                _id: { $ne: id }, // Exclude the current document by ID
+            });
+
+            if (existingEvent) {
+                return res.status(400).json({ message: 'A Event with this title already exists.' });
+            }
+
+            // Add normalized title to updates
+            normalizedTitle = eventTitle;
         }
 
         // Get the current date and time
@@ -235,7 +259,7 @@ const updateEvent = async (req, res) => {
 
         // Update the event fields only if they are provided in the request
         const updateData = {
-            eventTitle: eventTitle || existingEvent.eventTitle,
+            eventTitle: normalizedTitle || existingEvent.eventTitle,
             eventSubtitle: eventSubtitle || existingEvent.eventSubtitle,
             eventDate: updatedEventDate || existingEvent.eventDate,
             startTime: startTime || existingEvent.startTime,

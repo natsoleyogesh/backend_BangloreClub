@@ -1,4 +1,5 @@
 const COM = require('../models/com'); // The Download model
+const { toTitleCase } = require('../utils/common');
 
 // Middleware function for adding a download
 const addCOM = async (req, res, next) => {
@@ -11,7 +12,12 @@ const addCOM = async (req, res, next) => {
         }
 
         const { title, description, status, expiredDate } = req.body;
-
+        const normalizedTitle = toTitleCase(title);
+        // Check if category already exists
+        const existingNotice = await COM.findOne({ title: normalizedTitle, isDeleted: false });
+        if (existingNotice) {
+            return res.status(400).json({ message: 'Club COM Is already exists but Inactive.' });
+        }
         const fileUrl = req.file ? `/uploads/downloads/${req.file.filename}` : "";
         // Create a new download document
         const newCOM = new COM({
@@ -65,7 +71,7 @@ const COMDetails = async (req, res) => {
 const updateCOM = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, description, status, expiredDate } = req.body;
+        let { title, description, status, expiredDate } = req.body;
         // const updates = req.body;
         if (!id) {
             return res.status(400).json({ message: 'Please Provide the valid id' });
@@ -75,7 +81,22 @@ const updateCOM = async (req, res) => {
 
         // Prepare the update object dynamically
         const updates = {};
-        if (title) updates.title = title;
+        // if (title) updates.title = title;
+        if (title) {
+            title = toTitleCase(title);
+
+            const existingNotice = await COM.findOne({
+                title,
+                _id: { $ne: id }, // Exclude the current document by ID
+            });
+
+            if (existingNotice) {
+                return res.status(400).json({ message: 'A club notice with this title already exists.' });
+            }
+
+            // Add normalized title to updates
+            updates.title = title;
+        }
         if (description) updates.description = description;
         if (status) updates.status = status;
         if (fileUrl) updates.fileUrl = fileUrl; // Update profile image only if uploaded

@@ -1,12 +1,13 @@
 const TaxType = require("../../models/taxType");
+const { toTitleCase } = require("../../utils/common");
 
 // Create a new tax type
 const createTaxType = async (req, res) => {
     try {
         const { name, percentage, status } = req.body;
-
+        const normalizedName = toTitleCase(name);
         // Check if the tax type already exists
-        const existingTaxType = await TaxType.findOne({ name });
+        const existingTaxType = await TaxType.findOne({ name: normalizedName, isDelete: false });
         if (existingTaxType) {
             return res.status(400).json({ message: 'Tax type already exists.' });
         }
@@ -62,7 +63,32 @@ const getTaxTypeById = async (req, res) => {
 const updateTaxType = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, percentage, status } = req.body;
+        let { name, percentage, status } = req.body;
+
+        const updateData = {};
+        if (name) {
+            name = toTitleCase(name);
+
+            // Check if a category with the same name (case-insensitive) already exists (excluding current category)
+            const existingAmenities = await TaxType.findOne({
+                name,
+                _id: { $ne: id }, // Exclude the current category
+                isDeleted: false // Check only non-deleted categories
+            });
+
+            if (existingAmenities) {
+                return res.status(400).json({ message: 'tax type with this name already exists.' });
+            }
+
+            // Add normalized name to updates
+            updateData.name = name;
+        }
+        if (status) {
+            updateData.status = status
+        }
+        if (percentage) {
+            updateData.percentage = percentage
+        }
 
         const updatedTaxType = await TaxType.findByIdAndUpdate(
             id,

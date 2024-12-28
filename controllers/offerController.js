@@ -1,4 +1,5 @@
 const Offer = require("../models/offers");
+const { toTitleCase } = require("../utils/common");
 const { createNotification } = require("../utils/pushNotification");
 
 // const addOffer = async (req, res) => {
@@ -82,6 +83,12 @@ const addOffer = async (req, res) => {
         }
 
         const bannerImagePath = req.file ? `/uploads/offers/${req.file.filename}` : "";
+        const normalizedTitle = toTitleCase(title);
+        // Check if category already exists
+        const existingOffer = await Offer.findOne({ title: normalizedTitle, isDeleted: false });
+        if (existingOffer) {
+            return res.status(400).json({ message: 'Offer Is already exists but Inactive.' });
+        }
 
         // Create a new offer
         const newOffer = new Offer({
@@ -123,10 +130,26 @@ const addOffer = async (req, res) => {
 const updateOffer = async (req, res) => {
     try {
         const { id } = req.params;
+        let { title } = req.body;
 
         // Build the updates object dynamically
         const updates = {};
-        if (req.body.title) updates.title = req.body.title;
+        // if (req.body.title) updates.title = req.body.title;
+        if (title) {
+            title = toTitleCase(title);
+
+            const existingNotice = await Offer.findOne({
+                title,
+                _id: { $ne: id }, // Exclude the current document by ID
+            });
+
+            if (existingNotice) {
+                return res.status(400).json({ message: 'A offer with this title already exists.' });
+            }
+
+            // Add normalized title to updates
+            updates.title = title;
+        }
         if (req.body.description) updates.description = req.body.description;
         if (req.body.couponCode) updates.couponCode = req.body.couponCode;
         if (req.body.discountPercentage) updates.discountPercentage = req.body.discountPercentage;

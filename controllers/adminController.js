@@ -165,7 +165,6 @@ const fetchFamilyTree = async (userId) => {
       state: member.state,
       country: member.country,
       pin: member.pin,
-      age: member.age,
       dateOfBirth: member.dateOfBirth,
       maritalStatus: member.maritalStatus,
       marriageDate: member.marriageDate,
@@ -218,7 +217,6 @@ const getUserDetailsById = async (req, res) => {
         title: user.title,
         relation: user.relation,
         parentUserId: user.parentUserId,
-        age: user.age,
         status: user.status,
         activatedDate: user.activatedDate,
         familyMembers, // Nested family members

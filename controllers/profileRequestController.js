@@ -229,7 +229,6 @@ const updateUserDetailsByAdmin = async (req, res) => {
             state,
             country,
             pin,
-            age,
             dateOfBirth,
             maritalStatus,
             marriageDate,
@@ -268,7 +267,6 @@ const updateUserDetailsByAdmin = async (req, res) => {
                 if (state) user.state = state;
                 if (country) user.country = country;
                 if (pin) user.pin = pin;
-                if (age) user.age = age;
                 if (dateOfBirth) user.dateOfBirth = dateOfBirth;
                 if (maritalStatus) user.maritalStatus = maritalStatus;
                 if (marriageDate) user.marriageDate = marriageDate;
@@ -306,7 +304,6 @@ const updateUserDetailsByAdmin = async (req, res) => {
             if (state) user.state = state;
             if (country) user.country = country;
             if (pin) user.pin = pin;
-            if (age) user.age = age;
             if (dateOfBirth) user.dateOfBirth = dateOfBirth;
             if (maritalStatus) user.maritalStatus = maritalStatus;
             if (marriageDate) user.marriageDate = marriageDate;
@@ -421,7 +418,6 @@ const createFamilyMember = async (req, res) => {
             email,
             mobileNumber,
             relation,
-            age,
             parentUserId,
             address,
             address1,
@@ -472,10 +468,6 @@ const createFamilyMember = async (req, res) => {
             return res.status(400).json({ message: "Only one spouse can be added per user." });
         }
 
-        if (relation === "Child" && (!age || age < 18)) {
-            return res.status(400).json({ message: "Children must be 18 or older to be added." });
-        }
-
         // Generate a unique memberId for the family member
         const memberId = await generateFamilyMemberId(parentUser.memberId, existingRelations.length);
 
@@ -494,7 +486,6 @@ const createFamilyMember = async (req, res) => {
             state,
             country,
             pin,
-            age,
             dateOfBirth,
             maritalStatus,
             marriageDate,

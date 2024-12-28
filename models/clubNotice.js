@@ -38,6 +38,19 @@ clubNoticeSchema.methods.isCurrent = function () {
     return this.createdAt.getFullYear() === currentYear;
 };
 
+// Pre-save middleware to format the `name` field
+clubNoticeSchema.pre('save', function (next) {
+    if (this.title) {
+        // Convert to title case (e.g., "OTHER Tax" → "Other Tax")
+        this.title = this.title
+            .toLowerCase() // Convert all to lowercase first
+            .split(' ') // Split the name into words
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize the first letter of each word
+            .join(' '); // Join words back with spaces
+    }
+    next();
+});
+
 // Export the model
 const ClubNotice = mongoose.model('clubNotice', clubNoticeSchema);
 

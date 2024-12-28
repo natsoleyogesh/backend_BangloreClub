@@ -1,4 +1,5 @@
 const Download = require('../models/download'); // The Download model
+const { toTitleCase } = require('../utils/common');
 
 // Middleware function for adding a download
 const addDownload = async (req, res, next) => {
@@ -11,6 +12,13 @@ const addDownload = async (req, res, next) => {
         }
 
         const { title, description, status, expiredDate } = req.body;
+
+        const normalizedTitle = toTitleCase(title);
+        // Check if category already exists
+        const existingDownload = await Download.findOne({ title: normalizedTitle, isDeleted: false });
+        if (existingDownload) {
+            return res.status(400).json({ message: 'Download Is already exists but Inactive.' });
+        }
 
         const fileUrl = req.file ? `/uploads/downloads/${req.file.filename}` : "";
         // Create a new download document
@@ -65,7 +73,7 @@ const downloadDetails = async (req, res) => {
 const updateDownload = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, description, status, expiredDate } = req.body;
+        let { title, description, status, expiredDate } = req.body;
         // const updates = req.body;
         if (!id) {
             return res.status(400).json({ message: 'Please Providethe valid id' });
@@ -75,7 +83,22 @@ const updateDownload = async (req, res) => {
 
         // Prepare the update object dynamically
         const updates = {};
-        if (title) updates.title = title;
+        // if (title) updates.title = title;
+        if (title) {
+            title = toTitleCase(title);
+
+            const existingNotice = await Download.findOne({
+                title,
+                _id: { $ne: id }, // Exclude the current document by ID
+            });
+
+            if (existingNotice) {
+                return res.status(400).json({ message: 'A download with this title already exists.' });
+            }
+
+            // Add normalized title to updates
+            updates.title = title;
+        }
         if (description) updates.description = description;
         if (status) updates.status = status;
         if (fileUrl) updates.fileUrl = fileUrl; // Update profile image only if uploaded

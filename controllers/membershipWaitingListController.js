@@ -101,7 +101,6 @@ const addWaiting = async (req, res) => {
             email,
             mobileNumber,
             relation,
-            age,
             sponsoredBy, // Array of sponsor IDs (as a string)
             address,
             address1,
@@ -174,7 +173,6 @@ const addWaiting = async (req, res) => {
             applicationId: nextApplicationId,
             applicationStatus: "Pending", // Default status
             relation,
-            age,
             sponsoredBy: validSponsoredBy,
             address,
             address1,
@@ -432,7 +430,6 @@ const updateApplicationStatus = async (req, res) => {
                 email,
                 mobileNumber,
                 relation,
-                age,
                 parentUserId,
                 address,
                 address1,
@@ -498,9 +495,6 @@ const updateApplicationStatus = async (req, res) => {
                 return res.status(400).json({ message: "Only one spouse can be added per user." });
             }
 
-            if (relation === "Child" && (!age || age < 18)) {
-                return res.status(400).json({ message: "Children must be 18 or older to be added." });
-            }
 
             const memberId = await generateFamilyMemberId(parentUser.memberId, existingRelations.length);
 
@@ -522,7 +516,6 @@ const updateApplicationStatus = async (req, res) => {
                 marriageDate,
                 title,
                 parentUserId: parentUser._id,
-                age: relation === "Child" ? age : undefined,
                 profilePicture: profilePicturePath,
             });
 

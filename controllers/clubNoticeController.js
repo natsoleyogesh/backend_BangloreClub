@@ -1,4 +1,5 @@
 const ClubNotice = require('../models/clubNotice'); // The Download model
+const { toTitleCase } = require('../utils/common');
 
 // Middleware function for adding a download
 const addNotice = async (req, res, next) => {
@@ -11,6 +12,13 @@ const addNotice = async (req, res, next) => {
         }
 
         const { title, description, status, expiredDate } = req.body;
+
+        const normalizedTitle = toTitleCase(title);
+        // Check if category already exists
+        const existingNotice = await ClubNotice.findOne({ title: normalizedTitle, isDeleted: false });
+        if (existingNotice) {
+            return res.status(400).json({ message: 'Club Notice Is already exists but Inactive.' });
+        }
 
         const fileUrl = req.file ? `/uploads/notices/${req.file.filename}` : "";
         // Create a new download document
@@ -65,17 +73,34 @@ const clubNoticeDetails = async (req, res) => {
 const updateClubNotice = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, description, status, expiredDate } = req.body;
+        let { title, description, status, expiredDate } = req.body;
         // const updates = req.body;
         if (!id) {
             return res.status(400).json({ message: 'Please Providethe valid id' });
         }
+
+
         // Check if file was uploaded
         const fileUrl = req.file ? `/uploads/notices/${req.file.filename}` : "";
 
         // Prepare the update object dynamically
         const updates = {};
-        if (title) updates.title = title;
+        // if (title) updates.title = title;
+        if (title) {
+            title = toTitleCase(title);
+
+            const existingNotice = await ClubNotice.findOne({
+                title,
+                _id: { $ne: id }, // Exclude the current document by ID
+            });
+
+            if (existingNotice) {
+                return res.status(400).json({ message: 'A club notice with this title already exists.' });
+            }
+
+            // Add normalized title to updates
+            updates.title = title;
+        };
         if (description) updates.description = description;
         if (status) updates.status = status;
         if (fileUrl) updates.fileUrl = fileUrl; // Update profile image only if uploaded

@@ -1,4 +1,5 @@
 const Amenities = require("../../models/amenities");
+const { toTitleCase } = require("../../utils/common");
 const { ICONupload } = require("../../utils/upload");
 
 // Create a new amenity with an uploaded icon file
@@ -10,6 +11,12 @@ const createAmenity = async (req, res) => {
 
         try {
             const { name, status } = req.body;
+
+            const normalizedName = toTitleCase(name);
+            const existingAmenities = await Amenities.findOne({ name: normalizedName, isDeleted: false });
+            if (existingAmenities) {
+                return res.status(400).json({ message: 'Amenity Is already exists but Inactive.' });
+            }
 
             // Ensure the icon file was uploaded
             if (!req.file) {
@@ -77,13 +84,32 @@ const updateAmenity = async (req, res) => {
 
         try {
             const { id } = req.params;
-            const { name, status } = req.body;
+            let { name, status } = req.body;
 
-            const updateData = {
-                name,
-                status,
-            };
 
+            const updateData = {};
+
+            if (name) {
+                name = toTitleCase(name);
+
+                // Check if a category with the same name (case-insensitive) already exists (excluding current category)
+                const existingAmenities = await Amenities.findOne({
+                    name,
+                    _id: { $ne: id }, // Exclude the current category
+                    isDeleted: false // Check only non-deleted categories
+                });
+
+                if (existingAmenities) {
+                    return res.status(400).json({ message: 'Category with this name already exists.' });
+                }
+
+                // Add normalized name to updates
+                updateData.name = name;
+            }
+
+            if (status) {
+                updateData.status = status
+            }
             // If a new icon file is uploaded, update the file path
             if (req.file) {
                 updateData.icon = `/uploads/icons/${req.file.filename}`;
@@ -104,6 +130,7 @@ const updateAmenity = async (req, res) => {
                 data: updatedAmenity
             });
         } catch (err) {
+            console.log(err, "rror")
             return res.status(500).json({ message: 'Server error', error: err });
         }
     });

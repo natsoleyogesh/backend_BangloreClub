@@ -192,6 +192,19 @@ const eventSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+// Pre-save middleware to format the `name` field
+eventSchema.pre('save', function (next) {
+    if (this.eventTitle) {
+        // Convert to title case (e.g., "OTHER Tax" → "Other Tax")
+        this.eventTitle = this.eventTitle
+            .toLowerCase() // Convert all to lowercase first
+            .split(' ') // Split the name into words
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize the first letter of each word
+            .join(' '); // Join words back with spaces
+    }
+    next();
+});
+
 const Event = mongoose.model('Event', eventSchema);
 
 module.exports = Event;

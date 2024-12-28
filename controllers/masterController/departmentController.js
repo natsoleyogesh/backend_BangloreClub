@@ -1,13 +1,16 @@
 
 const Department = require("../../models/department");
+const { toTitleCase } = require("../../utils/common");
 
 // Create a new department
 const createDepartment = async (req, res) => {
     try {
         const { departmentName, status } = req.body;
 
+        const normalizedName = toTitleCase(departmentName);
+
         // Check if department already exists
-        const existingDepartment = await Department.findOne({ departmentName });
+        const existingDepartment = await Department.findOne({ departmentName: normalizedName, isDeleted: false });
         if (existingDepartment) {
             return res.status(400).json({ message: 'Department already exists.' });
         }
@@ -18,6 +21,7 @@ const createDepartment = async (req, res) => {
 
         return res.status(201).json({ message: "Department Add Successfully", department });
     } catch (err) {
+        console.log(err, "rery")
         return res.status(500).json({ message: 'Server error', error: err });
     }
 };
@@ -54,11 +58,33 @@ const getDepartmentById = async (req, res) => {
 const updateDepartment = async (req, res) => {
     try {
         const { id } = req.params;
-        const { departmentName, status } = req.body;
+        let { departmentName, status } = req.body;
+
+        const updateData = {};
+        if (departmentName) {
+            departmentName = toTitleCase(departmentName);
+
+            // Check if a category with the same departmentName (case-insensitive) already exists (excluding current category)
+            const existingAmenities = await Department.findOne({
+                departmentName,
+                _id: { $ne: id }, // Exclude the current category
+                isDeleted: false // Check only non-deleted categories
+            });
+
+            if (existingAmenities) {
+                return res.status(400).json({ message: 'Department with this departmentName already exists.' });
+            }
+
+            // Add normalized departmentName to updates
+            updateData.departmentName = departmentName;
+        }
+        if (status) {
+            updateData.status = status
+        }
 
         const updatedDepartment = await Department.findByIdAndUpdate(
             id,
-            { departmentName, status },
+            updateData,
             { new: true }  // Return the updated document
         );
 

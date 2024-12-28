@@ -1,4 +1,5 @@
 const ClubRuleByelaw = require("../models/ruleByelaw");
+const { toTitleCase } = require("../utils/common");
 
 
 const addRuleBylaw = async (req, res) => {
@@ -10,23 +11,29 @@ const addRuleBylaw = async (req, res) => {
             return res.status(400).json({ message: "Invalid or missing type. Valid types: Rule, Byelaw." });
         }
 
-        // Check if a rule/bylaw with the same type, category, and title already exists
-        const existingRuleBylaw = await ClubRuleByelaw.findOne({
-            type,
-            category,
-            title,
-        });
+        // // Check if a rule/bylaw with the same type, category, and title already exists
+        // const existingRuleBylaw = await ClubRuleByelaw.findOne({
+        // type,
+        // category,
+        //     title,
+        // });
 
+        // if (existingRuleBylaw) {
+        //     return res.status(400).json({
+        //         message: `A ${type} with the same category and title already exists.`,
+        //     });
+        // }
+        const normalizedTitle = toTitleCase(title);
+        // Check if category already exists
+        const existingRuleBylaw = await ClubRuleByelaw.findOne({ title: normalizedTitle, type, isDeleted: false });
         if (existingRuleBylaw) {
-            return res.status(400).json({
-                message: `A ${type} with the same category and title already exists.`,
-            });
+            return res.status(400).json({ message: 'Club Notice Is already exists but Inactive.' });
         }
 
         // Create new rule/bylaw
         const newRuleBylaw = new ClubRuleByelaw({
             type,
-            category,
+            // category,
             title,
             description,
             isExpandable,
@@ -104,7 +111,7 @@ const getRuleBylawById = async (req, res) => {
 const updateRuleBylaw = async (req, res) => {
     try {
         const { id } = req.params;
-
+        let { title } = req.body;
         // Log the incoming request body for debugging
         console.log("Received request body:", req.body);
 
@@ -117,18 +124,33 @@ const updateRuleBylaw = async (req, res) => {
             updates.type = req.body.type;
         }
 
-        if (req.body.category) {
-            if (typeof req.body.category !== "string") {
-                return res.status(400).json({ message: "Category must be a string." });
-            }
-            updates.category = req.body.category;
-        }
+        // if (req.body.category) {
+        //     if (typeof req.body.category !== "string") {
+        //         return res.status(400).json({ message: "Category must be a string." });
+        //     }
+        //     updates.category = req.body.category;
+        // }
 
-        if (req.body.title) {
-            if (typeof req.body.title !== "string") {
+        if (title) {
+            if (typeof title !== "string") {
                 return res.status(400).json({ message: "Title must be a string." });
             }
-            updates.title = req.body.title;
+            // updates.title = req.body.title;
+
+            title = toTitleCase(title);
+
+            const existingRuleBylaw = await ClubRuleByelaw.findOne({
+                title,
+                _id: { $ne: id }, // Exclude the current document by ID
+            });
+
+            if (existingRuleBylaw) {
+                return res.status(400).json({ message: 'A club notice with this title already exists.' });
+            }
+
+            // Add normalized title to updates
+            updates.title = title;
+
         }
 
         if (req.body.description) {
