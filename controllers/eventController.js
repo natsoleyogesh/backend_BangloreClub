@@ -407,9 +407,9 @@ const bookEvent = async (req, res) => {
 
         // Check if the user has already booked this event
         const existingBooking = await EventBooking.findOne({ eventId, primaryMemberId, bookingStatus: "Confirmed" });
-        if (existingBooking) {
-            return res.status(400).json({ message: 'You have already booked this event.' });
-        }
+        // if (existingBooking) {
+        //     return res.status(400).json({ message: 'You have already booked this event.' });
+        // }
 
         // Fetch the event details
         const event = await Event.findById(eventId).populate("taxTypes");
@@ -586,6 +586,9 @@ const bookEvent = async (req, res) => {
                 },
             ]
         );
+
+        await addBilling(newBooking.primaryMemberId, 'Event', { eventBooking: newBooking._id }, newBooking.ticketDetails.subtotal, 0, newBooking.ticketDetails.taxAmount, newBooking.ticketDetails.totalAmount, newBooking.primaryMemberId)
+
 
         // Return the response
         return res.status(201).json({
