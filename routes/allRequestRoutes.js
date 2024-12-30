@@ -1,4 +1,4 @@
-const { saveRequest, getAllRequests, deleteRequest, getRequestById } = require("../controllers/allRequestController");
+const { saveRequest, getAllRequests, deleteRequest, getRequestById, getAllUserRequest } = require("../controllers/allRequestController");
 const { verifyToken } = require("../utils/common");
 
 module.exports = (router) => {
@@ -11,4 +11,6 @@ module.exports = (router) => {
     // router.post("/admin/logout", verifyToken, adminLogout);
     // router.post("/getkeeper/scanqr", verifyToken, qrScanDetails);
     // router.get("/admin/active-members", getAllActiveUsers)
+
+    router.get("/user-requests", verifyToken, getAllUserRequest);
 };

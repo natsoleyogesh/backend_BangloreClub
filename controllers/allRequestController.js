@@ -2,6 +2,7 @@
 // controllers/requestController.js
 
 const AllRequest = require('../models/allRequest');
+const moment = require("moment"); // Install via npm: `npm install moment`
 
 /**
  * Create a new request.
@@ -175,6 +176,67 @@ const getRequestById = async (req, res) => {
     }
 };
 
+const getAllUserRequest = async (req, res) => {
+    try {
+        // Validate user ID
+        const { userId } = req.user;
+        if (!userId) {
+            return res.status(400).json({ success: false, message: "User ID is required." });
+        }
+
+        // Fetch requests for the user with status 'Confirmed' or 'Cancelled'
+        const allRequests = await AllRequest.find({
+            primaryMemberId: userId,
+            status: { $in: ["Confirmed", "Cancelled"] },
+            isDeleted: false,
+        })
+            .sort({ updatedAt: -1 }) // Sort by updatedAt descending
+            .populate("departmentId") // Populate department details if needed
+            .populate('primaryMemberId', 'name email profilePicture')
+            .lean();
+
+        // Transform the response
+        const transformedRequests = allRequests.map((request) => {
+            let message = "";
+            if (request.status === "Confirmed") {
+                message = `APPROVED - Your ${request.department} request is approved. Please make the payment immediately.`;
+            } else if (request.status === "Cancelled") {
+                message = `REJECTED - Your ${request.department} request is rejected.`;
+            }
+
+            // Calculate timeAgo using moment
+            const timeAgo = moment(request.updatedAt).fromNow();
+
+            return {
+                id: request._id,
+                primaryMemberId: request.primaryMemberId,
+                department: request.department,
+                description: request.description,
+                status: request.status,
+                adminResponse: request.adminResponse,
+                message: message || null,
+                timeAgo: timeAgo,
+                createdAt: request.createdAt,
+                updatedAt: request.updatedAt,
+            };
+        });
+
+        // Send response
+        res.status(200).json({
+            success: true,
+            message: "Requests fetched successfully.",
+            data: transformedRequests,
+        });
+    } catch (error) {
+        console.error("Error fetching requests:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+            error: error.message,
+        });
+    }
+}
+
 module.exports = {
     createRequest,
     saveRequest,
@@ -182,4 +244,5 @@ module.exports = {
     updateRequest,
     deleteRequest,
     getRequestById,
+    getAllUserRequest
 }

@@ -11,7 +11,7 @@ const addNotice = async (req, res, next) => {
             });
         }
 
-        const { title, description, status, expiredDate } = req.body;
+        const { title, description, status, expiredDate, showBanner } = req.body;
 
         const normalizedTitle = toTitleCase(title);
         // Check if category already exists
@@ -21,13 +21,15 @@ const addNotice = async (req, res, next) => {
         }
 
         const fileUrl = req.file ? `/uploads/notices/${req.file.filename}` : "";
+
         // Create a new download document
         const newNotice = new ClubNotice({
             title,
             description,
             fileUrl: fileUrl, // Path to the uploaded file
             status: status || 'Active', // Default status is ACTIVE
-            expiredDate
+            expiredDate,
+            showBanner: showBanner
         });
 
         // Save to the database
@@ -73,7 +75,7 @@ const clubNoticeDetails = async (req, res) => {
 const updateClubNotice = async (req, res) => {
     try {
         const { id } = req.params;
-        let { title, description, status, expiredDate } = req.body;
+        let { title, description, status, expiredDate, showBanner } = req.body;
         // const updates = req.body;
         if (!id) {
             return res.status(400).json({ message: 'Please Providethe valid id' });
@@ -105,6 +107,7 @@ const updateClubNotice = async (req, res) => {
         if (status) updates.status = status;
         if (fileUrl) updates.fileUrl = fileUrl; // Update profile image only if uploaded
         if (expiredDate) updates.expiredDate = expiredDate;
+        if (showBanner) updates.showBanner = showBanner;
 
         const updateClubNotice = await ClubNotice.findByIdAndUpdate(id, updates, { new: true });
         if (!updateClubNotice) {

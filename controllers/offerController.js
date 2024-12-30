@@ -66,7 +66,8 @@ const addOffer = async (req, res) => {
             department,
             termsAndConditions,
             showExclusive,
-            discountOffer
+            discountOffer,
+            showBanner
         } = req.body;
         console.log(showExclusive, "showExclusive")
         // Explicitly parse `showExclusive` as a boolean
@@ -105,7 +106,8 @@ const addOffer = async (req, res) => {
             bannerImage: bannerImagePath,
             termsAndConditions,
             showExclusive,
-            discountOffer
+            discountOffer,
+            showBanner: showBanner
         });
 
         // Save the offer to the database
@@ -163,6 +165,7 @@ const updateOffer = async (req, res) => {
         if (req.body.showExclusive !== undefined) updates.showExclusive = req.body.showExclusive; // Boolean check
         if (req.body.discountOffer !== undefined) updates.discountOffer = req.body.discountOffer; // Boolean check
         if (req.file) updates.bannerImage = req.file ? `/uploads/offers/${req.file.filename}` : ""; // Handle uploaded file
+        if (req.body.showBanner !== undefined) updates.showBanner = req.body.showBanner;
         console.log(updates.showExclusive, "showExclusive")
 
         // If updating showExclusive, ensure only one exclusive offer exists

@@ -20,6 +20,7 @@ const foodAndBeverageRoutes = require("./foodAndBeverageRoutes");
 const membershipWaitingListRoutes = require("./membershipWaitingListRoutes");
 const roomWithCategoryRoutes = require("./roomWithCategory");
 const banquetRoutes = require("./banquetRoutes");
+const dashBoardRoutes = require("./dashBoardRoutes");
 
 // master data routes
 const departmentRoutes = require("./masterRoutes/departmentRoutes");
@@ -54,6 +55,7 @@ billingRoutes(router);
 transactionRoutes(router);
 notificationRoutes(router);
 allRequestRoutes(router);
+dashBoardRoutes(router);
 
 // master data
 departmentRoutes(router);

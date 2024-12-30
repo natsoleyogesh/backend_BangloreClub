@@ -21,6 +21,10 @@ const clubNoticeSchema = new mongoose.Schema(
             enum: ['Active', 'Inactive'], // Status can be ACTIVE or INACTIVE
             default: 'Active',
         },
+        showBanner: {
+            type: Boolean,
+            default: false
+        },
         expiredDate: {
             type: Date,
             default: null,

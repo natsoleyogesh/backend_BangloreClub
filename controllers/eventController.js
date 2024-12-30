@@ -8,6 +8,7 @@ const sendEmail = require('../utils/sendMail');
 const emailTemplates = require('../utils/emailTemplates');
 const { eventrenderTemplate } = require('../utils/templateRenderer');
 const { toTitleCase } = require('../utils/common');
+const { default: mongoose } = require('mongoose');
 
 
 const createEvent = async (req, res) => {
@@ -29,6 +30,7 @@ const createEvent = async (req, res) => {
             dependentMemberPrice,
             guestMemberPrice,
             taxTypes,
+            showBanner
         } = req.body;
 
         // Check if image was uploaded
@@ -117,6 +119,7 @@ const createEvent = async (req, res) => {
             dependentMemberPrice,
             guestMemberPrice,
             taxTypes: parsedTaxTypes,
+            showBanner: showBanner
         });
 
         // Save the event to the database
@@ -181,20 +184,63 @@ const getAllEvents = async (req, res) => {
 };
 
 
+// const getEventById = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const { opration } = req.query;
+
+//         if (!id) {
+//             return res.status(400).json({ message: 'Please Provide the Event Id' });
+//         }
+
+//         let event = {};
+//         if (opration == 'edit') {
+//             event = await Event.findById(id);
+
+//         }
+
+//         event = await Event.findById(id).populate("taxTypes");
+
+//         if (!event || event.isDeleted) {
+//             return res.status(404).json({ message: 'Event not found.' });
+//         }
+
+//         res.status(200).json({
+//             message: 'Event fetched successfully.',
+//             event,
+//         });
+//     } catch (error) {
+//         console.error('Error fetching event:', error);
+//         res.status(500).json({ message: 'Internal server error.' });
+//     }
+// }
+
 const getEventById = async (req, res) => {
     try {
         const { id } = req.params;
+        const { operation } = req.query;
 
+        // Validate event ID
         if (!id) {
-            return res.status(400).json({ message: 'Please Provide the Event Id' });
+            return res.status(400).json({ message: 'Please provide the Event ID.' });
         }
 
-        const event = await Event.findById(id).populate("taxTypes");
+        // Fetch event details
+        const query = Event.findById(id);
 
+        // If operation is 'edit', populate tax types
+        if (operation !== 'edit') {
+            query.populate("taxTypes");
+        }
+
+        const event = await query;
+
+        // Check if event exists and is not deleted
         if (!event || event.isDeleted) {
             return res.status(404).json({ message: 'Event not found.' });
         }
 
+        // Respond with the event details
         res.status(200).json({
             message: 'Event fetched successfully.',
             event,
@@ -203,7 +249,8 @@ const getEventById = async (req, res) => {
         console.error('Error fetching event:', error);
         res.status(500).json({ message: 'Internal server error.' });
     }
-}
+};
+
 
 
 const updateEvent = async (req, res) => {
@@ -227,6 +274,7 @@ const updateEvent = async (req, res) => {
             dependentMemberPrice,
             guestMemberPrice,
             taxTypes,
+            showBanner
         } = req.body;
 
         // Find the existing event
@@ -327,6 +375,8 @@ const updateEvent = async (req, res) => {
         // Handle image upload if a new file is provided
         const eventImage = req.file ? `/uploads/event/${req.file.filename}` : existingEvent.eventImage;
 
+        // const parsedShowBanner = typeof showBanner === "boolean" ? showBanner : showBanner === "true";
+
         // Update the event fields only if they are provided in the request
         const updateData = {
             eventTitle: normalizedTitle || existingEvent.eventTitle,
@@ -347,6 +397,7 @@ const updateEvent = async (req, res) => {
             dependentMemberPrice: dependentMemberPrice || existingEvent.dependentMemberPrice,
             guestMemberPrice: guestMemberPrice || existingEvent.guestMemberPrice,
             taxTypes: parsedTaxTypes || existingEvent.taxTypes,
+            showBanner: showBanner || existingEvent.showBanner
         };
 
         // Update the event using findByIdAndUpdate

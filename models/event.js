@@ -82,6 +82,10 @@ const eventSchema = new mongoose.Schema({
         enum: ['Active', 'Inactive', 'Complete'],
         default: 'Active'
     },
+    showBanner: {
+        type: Boolean,
+        default: false
+    },
     isDeleted: {
         type: Boolean,
         default: false

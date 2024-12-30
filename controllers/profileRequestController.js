@@ -1,6 +1,8 @@
+const AllRequest = require('../models/allRequest');
 const ProfileRequest = require('../models/profileRequest');
 const User = require('../models/user');
 const { generateFamilyMemberId } = require('../utils/common');
+const { createRequest, updateRequest } = require('./allRequestController');
 
 // User sends a profile edit request
 const sendProfileRequest = async (req, res) => {
@@ -35,6 +37,14 @@ const sendProfileRequest = async (req, res) => {
         });
 
         const savedRequest = await newRequest.save();
+
+        await createRequest(req, {
+            primaryMemberId: savedRequest.userId,
+            departmentId: savedRequest._id,
+            department: "profileRequest",
+            status: savedRequest.status,
+            description: "This is a Profile Updatetion Request."
+        });
 
         res.status(201).json({
             message: `Profile ${operation} request submitted successfully`,
@@ -86,10 +96,27 @@ const rejectProfileRequest = async (req, res) => {
             return res.status(404).json({ message: 'Profile edit request not found' });
         }
 
+
+        let requestedId = null;
+
+        // Find the request by departmentId instead of using findById
+        const findRequest = await AllRequest.findOne({ departmentId: requestId }).exec();
+
+        if (findRequest) {
+            requestId = findRequest._id;
+        }
+
+
         // Update profile edit request status to 'Rejected' and add admin response
         profileEditRequest.status = 'Rejected';
         profileEditRequest.adminResponse = adminResponse || '';
         await profileEditRequest.save();
+
+        if (requestedId !== null) {
+            updateRequest(requestedId, { status: profileEditRequest.status, adminResponse: "The Profile Edit Request Is rejected !" })
+        }
+
+
 
         res.status(200).json({
             message: 'Profile edit request rejected by admin',
@@ -321,6 +348,8 @@ const updateUserDetailsByAdmin = async (req, res) => {
             // If neither `requestId` nor `userId` is provided
             return res.status(400).json({ message: "Either requestId or userId must be provided." });
         }
+
+
 
         // Response with updated user details
         res.status(200).json({

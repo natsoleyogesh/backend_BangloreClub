@@ -67,7 +67,7 @@ const allRequestSchema = new mongoose.Schema(
         },
         department: {
             type: String,
-            enum: ['eventBooking', 'RoomBooking', 'BanquetBooking'],
+            enum: ['eventBooking', 'RoomBooking', 'BanquetBooking', 'profileRequest'],
             required: [true, 'Department is required'],
         },
         description: {
