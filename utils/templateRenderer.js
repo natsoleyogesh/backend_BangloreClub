@@ -23,6 +23,20 @@ const eventrenderTemplate = (template, data) => {
             : "<p>No guests added.</p>";
     });
 
+    // Replace array placeholders (taxTypes)
+    template = template.replace(/{{taxTypes}}/g, () => {
+        return data.taxTypes.length > 0
+            ? data.taxTypes
+                .map(
+                    (tax, index) => `
+                          <p><strong> ${tax.taxType} (${tax.taxRate}%):</strong> ₹${tax.taxAmount.toFixed(2)}</p>
+                      `
+                )
+                .join("")
+            : "<p>No taxes applicable.</p>";
+    });
+
+
     // Replace other placeholders
     return template.replace(/{{(.*?)}}/g, (_, key) => data[key] || "");
 };

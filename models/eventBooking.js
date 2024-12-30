@@ -101,11 +101,22 @@ const eventBookingSchema = new mongoose.Schema(
                 type: Number,
                 required: true,
             },
-            taxRate: {
-                type: Number,
-                required: true,
-                default: 16,
-            },
+            taxTypes: [
+                {
+                    taxType: {
+                        type: String,
+                        required: true,
+                    },
+                    taxRate: {
+                        type: Number,
+                        required: true,
+                    },
+                    taxAmount: {
+                        type: Number,
+                        required: true,
+                    },
+                },
+            ],
             subtotal: {
                 type: Number,
                 required: true,
