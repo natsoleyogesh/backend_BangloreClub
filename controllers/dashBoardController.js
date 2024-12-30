@@ -36,18 +36,21 @@ const allBannerImages = async (req, res) => {
 
         // Transform the data to include model name
         const eventBanners = events.map((event) => ({
+            _id: event._id,
             image: event.eventImage,
             showBanner: event.showBanner,
             model: "Event",
         }));
 
         const offerBanners = offers.map((offer) => ({
+            _id: offer._id,
             image: offer.bannerImage,
             showBanner: offer.showBanner,
             model: "Offer",
         }));
 
         const clubNoticeBanners = clubNotices.map((notice) => ({
+            _id: notice._id,
             image: notice.fileUrl,
             showBanner: notice.showBanner,
             model: "ClubNotice",
