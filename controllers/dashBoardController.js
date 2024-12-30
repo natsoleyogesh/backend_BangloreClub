@@ -5,10 +5,34 @@ const ClubNotice = require("../models/clubNotice"); // Assuming ClubNotice model
 
 const allBannerImages = async (req, res) => {
     try {
-        // Fetch records with `showBanner: true` from each model
-        const events = await Event.find({ showBanner: true }, { eventImage: 1, showBanner: 1 });
-        const offers = await Offer.find({ showBanner: true }, { bannerImage: 1, showBanner: 1 });
-        const clubNotices = await ClubNotice.find({ showBanner: true }, { fileUrl: 1, showBanner: 1 });
+        const currentDateTime = new Date(); // Get the current date and time
+
+        // Fetch non-expired events with `showBanner: true`
+        const events = await Event.find(
+            {
+                showBanner: true,
+                eventEndDate: { $gte: currentDateTime }, // Check if eventEndDate is not expired
+            },
+            { eventImage: 1, showBanner: 1 }
+        );
+
+        // Fetch non-expired offers with `showBanner: true`
+        const offers = await Offer.find(
+            {
+                showBanner: true,
+                endDate: { $gte: currentDateTime }, // Check if endDate is not expired
+            },
+            { bannerImage: 1, showBanner: 1 }
+        );
+
+        // Fetch non-expired club notices with `showBanner: true`
+        const clubNotices = await ClubNotice.find(
+            {
+                showBanner: true,
+                expiredDate: { $gte: currentDateTime }, // Check if expiredDate is not expired
+            },
+            { fileUrl: 1, showBanner: 1 }
+        );
 
         // Transform the data to include model name
         const eventBanners = events.map((event) => ({
@@ -45,7 +69,7 @@ const allBannerImages = async (req, res) => {
             error: error.message,
         });
     }
-}
+};
 
 module.exports = {
     allBannerImages
