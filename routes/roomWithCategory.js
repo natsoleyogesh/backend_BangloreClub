@@ -5,7 +5,8 @@ const { addRoomWithCategory,
     updateRoomWithCategory,
     getActiveRoomsWithCategory,
     deleteRoomWithCaegoryImage,
-    uploadRoomWithCaegoryImage } = require("../controllers/roomWithCategoryController");
+    uploadRoomWithCaegoryImage,
+    getEditRoomWithCategoryById } = require("../controllers/roomWithCategoryController");
 const { verifyToken } = require("../utils/common");
 const { roomUpload } = require("../utils/upload");
 
@@ -13,6 +14,8 @@ module.exports = (router) => {
     router.post("/roomwithcategory/create", roomUpload.array('images', 5), addRoomWithCategory);
     router.get("/roomwithcategorys", getAllRoomWithCategories);
     router.get("/roomwithcategory/:id", getRoomWithCategoryById);
+    router.get("/edit-roomwithcategory/:id", getEditRoomWithCategoryById);
+
     router.put("/roomwithcategory/update-roomwithcategory/:id", updateRoomWithCategory);
     router.delete("/roomwithcategory/delete-roomwithcategory/:id", deleteRoomWithCategory);
     router.delete("/roomwithcategory/delete-image/:categoryId/:index", deleteRoomWithCaegoryImage);

@@ -1,6 +1,7 @@
 const Event = require("../models/event"); // Assuming Event model is in the models folder
 const Offer = require("../models/offers"); // Assuming Offer model is in the models folder
 const ClubNotice = require("../models/clubNotice"); // Assuming ClubNotice model is in the models folder
+const Billing = require("../models/billings");
 
 
 const allBannerImages = async (req, res) => {
@@ -74,6 +75,52 @@ const allBannerImages = async (req, res) => {
     }
 };
 
+const totalSales = async (req, res) => {
+    try {
+        // Aggregate total sales grouped by serviceType
+        const totalSales = await Billing.aggregate([
+            {
+                $match: {
+                    isDeleted: false, // Exclude deleted records
+                    status: { $in: ['Active', 'Paid'] } // Only include active/paid statuses
+                }
+            },
+            {
+                $group: {
+                    _id: '$serviceType', // Group by serviceType
+                    totalSales: { $sum: '$totalAmount' }, // Calculate total sales
+                    count: { $sum: 1 } // Count number of invoices
+                }
+            }
+        ]);
+
+        // Format the response
+        const formattedSales = {
+            Room: 0,
+            Banquet: 0,
+            Event: 0
+        };
+
+        totalSales.forEach((service) => {
+            formattedSales[service._id] = service.totalSales;
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Total sales retrieved successfully.',
+            data: formattedSales
+        });
+    } catch (error) {
+        console.error('Error fetching total sales:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve total sales.',
+            error: error.message
+        });
+    }
+}
+
 module.exports = {
-    allBannerImages
+    allBannerImages,
+    totalSales
 }

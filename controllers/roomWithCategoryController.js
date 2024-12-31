@@ -28,7 +28,7 @@ const addRoomWithCategory = async (req, res) => {
         } = req.body;
 
         // Validate price range
-        const updatepricing  = JSON.parse(priceRange);
+        const updatepricing = JSON.parse(priceRange);
         if (updatepricing.minPrice < 0 || updatepricing.maxPrice < 0) {
             return res.status(400).json({ message: 'Price range cannot be negative' });
         }
@@ -185,6 +185,27 @@ const getRoomWithCategoryById = async (req, res) => {
         return res.status(500).json({ message: 'Server error while fetching room category', error: error.message });
     }
 };
+
+const getEditRoomWithCategoryById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const roomWithCategory = await RoomWithCategory.findById(id);
+
+        if (!roomWithCategory || roomWithCategory.isDeleted) {
+            return res.status(404).json({ message: 'Room category not found or has been deleted' });
+        }
+
+        return res.status(200).json({
+            message: 'Room category fetched successfully',
+            data: roomWithCategory,
+        });
+    } catch (error) {
+        console.error('Error fetching room category by ID:', error);
+        return res.status(500).json({ message: 'Server error while fetching room category', error: error.message });
+    }
+};
+
 
 const deleteRoomWithCategory = async (req, res) => {
     try {
@@ -482,5 +503,6 @@ module.exports = {
     updateRoomWithCategory,
     getActiveRoomsWithCategory,
     deleteRoomWithCaegoryImage,
-    uploadRoomWithCaegoryImage
+    uploadRoomWithCaegoryImage,
+    getEditRoomWithCategoryById
 };
