@@ -852,6 +852,108 @@ const getFoodAndBeverageById = async (req, res) => {
 };
 
 
+const getEditFoodAndBeverageById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Attempt to find a category by its ID
+        const category = await FoodAndBeverage.findById(id)
+        // .populate('name', '_id name') // Populate the Restaurant reference in the "name" field
+        // .populate('subCategories.name', '_id name') // Populate the "name" field in each subCategory
+
+        if (category) {
+            // Structuring the response to match the required format for a category
+            // const responseCategory = {
+            //     _id: category._id,
+            //     name: category.name ? category.name.name : "N/A",
+            //     nameId: category.name ? category.name._id : null,
+            //     description: category.description || "",
+            //     location: category.location || "",
+            //     extansion_no: category.extansion_no || "",
+            //     bannerImage: category.bannerImage || "",
+            //     mainmenu: category.mainmenu || null,
+            //     subCategories: category.subCategories.map(sub => ({
+            //         _id: sub._id,
+            //         name: sub.name ? sub.name.name : "N/A",
+            //         nameId: sub.name ? sub.name._id : null,
+            //         description: sub.description || "",
+            //         location: sub.location || "",
+            //         extansion_no: sub.extansion_no || "",
+            //         images: sub.images || [],
+            //         menu: sub.menu || "",
+            //         timings: sub.timings.map(timing => ({
+            //             title: timing.title || "",
+            //             startDay: timing.startDay || "",
+            //             endDay: timing.endDay || "",
+            //             startTime: timing.startTime || "",
+            //             endTime: timing.endTime || "",
+            //             _id: timing._id,
+            //         })),
+
+            //     })),
+            //     timings: category.timings || [],
+            //     status: category.status || "Active",
+            //     createdAt: category.createdAt,
+            //     updatedAt: category.updatedAt,
+            //     __v: category.__v || 0,
+            // };
+
+            return res.status(200).json({
+                message: "Food & Beverage category fetched successfully.",
+                foodAndBeverage: category,
+            });
+        }
+
+        // Check subcategories across all categories
+        const categoryWithSubcategory = await FoodAndBeverage.findOne({
+            subCategories: { $elemMatch: { _id: id } },
+        });
+
+        if (categoryWithSubcategory) {
+            const subcategory = categoryWithSubcategory.subCategories.find(
+                (sub) => sub._id.toString() === id
+            );
+
+            // Structuring the response to match the required format for a subcategory
+            const responseSubCategory = {
+                description: subcategory.description || "",
+                timings: subcategory.timings.map(timing => ({
+                    title: timing.title || "",
+                    startDay: timing.startDay || "",
+                    endDay: timing.endDay || "",
+                    startTime: timing.startTime || "",
+                    endTime: timing.endTime || "",
+                    _id: timing._id,
+                })),
+                location: subcategory.location || "",
+                extansion_no: subcategory.extansion_no || "",
+                images: subcategory.images || [],
+                menu: subcategory.menu || "",
+                _id: subcategory._id,
+            };
+
+            return res.status(200).json({
+                message: "Subcategory fetched successfully.",
+                subCategory: responseSubCategory,
+                parentCategory: {
+                    id: categoryWithSubcategory._id,
+                    name: categoryWithSubcategory.name,
+                },
+            });
+        }
+
+        // If neither a category nor a subcategory is found
+        return res.status(404).json({ message: "Category or subcategory not found." });
+
+    } catch (error) {
+        console.error("Error fetching Food & Beverage category or subcategory:", error);
+        res.status(500).json({
+            message: "Failed to fetch Food & Beverage details.",
+            error: error.message,
+        });
+    }
+};
+
 
 const getAllFoodAndBeverages = async (req, res) => {
     try {
@@ -1052,6 +1154,7 @@ module.exports = {
     updateFoodAndBeverage,
     getAllFoodAndBeverages,
     getFoodAndBeverageById,
+    getEditFoodAndBeverageById,
     deleteFoodAndBeverage,
     getActiveFoodAndBeverages
 };

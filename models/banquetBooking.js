@@ -266,14 +266,6 @@ const banquetBookingSchema = new mongoose.Schema(
 
 // Pre-save middleware to calculate `dayStay` and `duration`
 banquetBookingSchema.pre('save', function (next) {
-    // Calculate dayStay for bookingDates
-    // if (this.bookingDates && this.bookingDates.checkIn && this.bookingDates.checkOut) {
-    //     const checkIn = new Date(this.bookingDates.checkIn);
-    //     const checkOut = new Date(this.bookingDates.checkOut);
-    //     const timeDifference = checkOut - checkIn;
-    //     this.bookingDates.dayStay = Math.ceil(timeDifference / (1000 * 3600 * 24)); // Convert milliseconds to days
-    // }
-
     // Calculate duration for bookingTime
     if (this.bookingTime && this.bookingTime.from && this.bookingTime.to) {
         const [fromHours, fromMinutes] = this.bookingTime.from.split(':').map(Number);
