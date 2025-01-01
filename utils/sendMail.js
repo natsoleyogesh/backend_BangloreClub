@@ -6,7 +6,7 @@ const nodemailer = require("nodemailer");
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_SERVER_NAME || "pro.turbo-smtp.com",
     port: process.env.SMTP_PORT || 25, //587
-    secure: false, // For port 25, secure should be false
+    secure: true, // For port 25, secure should be false
     auth: {
         user: process.env.SMTP_USERNAME || "kiran@mindworks.co.in",
         pass: process.env.SMTP_PASSWORD || "XWGpMM28", // Default password, replace with environment variable
@@ -30,7 +30,7 @@ const sendEmail = async (to, subject, htmlBody, attachments = []) => {
 
         return info;
     } catch (error) {
-        console.error("Error sending email:", error.message);
+        console.error("Error sending email:", error);
         throw error;
     }
 };
