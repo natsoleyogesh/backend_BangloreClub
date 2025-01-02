@@ -247,36 +247,151 @@ const updateOffer = async (req, res) => {
 //     }
 // };
 
-// Get all offers
+// // Get all offers
+// const getAllOffers = async (req, res) => {
+//     try {
+//         // Fetch all offers
+//         const offerDetails = await Offer.find({}).populate('department');
+//         const offers = offerDetails.reverse();
+//         res.status(200).json({ message: "Offers retrieved successfully", offers });
+//     } catch (error) {
+//         console.error("Error retrieving offers:", error);
+//         res.status(500).json({ message: "Error retrieving offers", error: error.message });
+//     }
+// };
+
+// // Get offer by ID
+// const getOfferById = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         if (!id) {
+//             return res.status(400).json({ message: "Please Provide valid id" });
+//         }
+//         // Find the offer by ID
+//         const offer = await Offer.findById(id).populate('department');
+//         if (!offer) {
+//             return res.status(404).json({ message: "Offer not found" });
+//         }
+
+//         res.status(200).json({ message: "Offer retrieved successfully", offer });
+//     } catch (error) {
+//         console.error("Error retrieving offer by ID:", error);
+//         res.status(500).json({ message: "Error retrieving offer by ID", error: error.message });
+//     }
+// };
+
+// Fetch all offers
 const getAllOffers = async (req, res) => {
     try {
-        // Fetch all offers
-        const offerDetails = await Offer.find({});
-        const offers = offerDetails.reverse();
-        res.status(200).json({ message: "Offers retrieved successfully", offers });
+        const offerDetails = await Offer.find({})
+            .populate('department')
+            .sort({ createdAt: -1 }); // Sort by newest first
+
+        const offers = offerDetails.map((offer) => ({
+            _id: offer._id,
+            title: offer.title,
+            description: offer.description,
+            couponCode: offer.couponCode,
+            discountPercentage: offer.discountPercentage,
+            discountAmount: offer.discountAmount,
+            startDate: offer.startDate,
+            endDate: offer.endDate,
+            status: offer.status,
+            type: offer.type,
+            department: offer.department.departmentName || "N/A", // Assuming `department.name` exists
+            bannerImage: offer.bannerImage,
+            termsAndConditions: offer.termsAndConditions,
+            showExclusive: offer.showExclusive,
+            discountOffer: offer.discountOffer,
+            showBanner: offer.showBanner,
+            createdAt: offer.createdAt,
+            updatedAt: offer.updatedAt,
+        }));
+
+        res.status(200).json({
+            message: "Offers retrieved successfully",
+            offers,
+        });
     } catch (error) {
         console.error("Error retrieving offers:", error);
-        res.status(500).json({ message: "Error retrieving offers", error: error.message });
+        res.status(500).json({
+            message: "Error retrieving offers",
+            error: error.message,
+        });
     }
 };
 
-// Get offer by ID
+// Fetch offer by ID
 const getOfferById = async (req, res) => {
     try {
         const { id } = req.params;
         if (!id) {
-            return res.status(400).json({ message: "Please Provide valid id" });
+            return res.status(400).json({ message: "Please provide a valid ID" });
         }
-        // Find the offer by ID
+
+        const offer = await Offer.findById(id).populate('department');
+        if (!offer) {
+            return res.status(404).json({ message: "Offer not found" });
+        }
+
+        const formattedOffer = {
+            _id: offer._id,
+            title: offer.title,
+            description: offer.description,
+            couponCode: offer.couponCode,
+            discountPercentage: offer.discountPercentage,
+            discountAmount: offer.discountAmount,
+            startDate: offer.startDate,
+            endDate: offer.endDate,
+            status: offer.status,
+            type: offer.type,
+            department: offer.department.departmentName || "N/A", // Assuming `department.name` exists
+            bannerImage: offer.bannerImage,
+            termsAndConditions: offer.termsAndConditions,
+            showExclusive: offer.showExclusive,
+            discountOffer: offer.discountOffer,
+            showBanner: offer.showBanner,
+            createdAt: offer.createdAt,
+            updatedAt: offer.updatedAt,
+        };
+
+        res.status(200).json({
+            message: "Offer retrieved successfully",
+            offer: formattedOffer,
+        });
+    } catch (error) {
+        console.error("Error retrieving offer by ID:", error);
+        res.status(500).json({
+            message: "Error retrieving offer by ID",
+            error: error.message,
+        });
+    }
+};
+
+
+// Fetch offer by ID
+const getEditOfferById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({ message: "Please provide a valid ID" });
+        }
+
         const offer = await Offer.findById(id);
         if (!offer) {
             return res.status(404).json({ message: "Offer not found" });
         }
 
-        res.status(200).json({ message: "Offer retrieved successfully", offer });
+        res.status(200).json({
+            message: "Offer retrieved successfully",
+            offer,
+        });
     } catch (error) {
         console.error("Error retrieving offer by ID:", error);
-        res.status(500).json({ message: "Error retrieving offer by ID", error: error.message });
+        res.status(500).json({
+            message: "Error retrieving offer by ID",
+            error: error.message,
+        });
     }
 };
 
@@ -301,19 +416,73 @@ const deleteOffer = async (req, res) => {
     }
 };
 
+// const getActiveOffers = async (req, res) => {
+//     try {
+//         // Extract query parameters
+//         const { type } = req.query;
+
+//         // Build the query object
+//         const query = { status: "Active" }; // Only include active offers
+//         if (type) {
+//             query.type = type; // Add type filter if provided (e.g., New or Current)
+//         }
+
+//         // Fetch offers based on the query
+//         const offers = await Offer.find(query)
+//             .populate('department')
+//             .sort({ createdAt: -1 }); // Sort by newest first
+
+//         if (offers.length === 0) {
+//             return res.status(404).json({ message: "No active offers found" });
+//         }
+
+//         res.status(200).json({
+//             message: "Active offers retrieved successfully",
+//             offers,
+//         });
+//     } catch (error) {
+//         console.error("Error retrieving active offers:", error);
+//         res.status(500).json({
+//             message: "Error retrieving active offers",
+//             error: error.message,
+//         });
+//     }
+// };
+
+// Fetch active offers
 const getActiveOffers = async (req, res) => {
     try {
-        // Extract query parameters
         const { type } = req.query;
+        const query = { status: "Active" };
 
-        // Build the query object
-        const query = { status: "Active" }; // Only include active offers
         if (type) {
-            query.type = type; // Add type filter if provided (e.g., New or Current)
+            query.type = type;
         }
 
-        // Fetch offers based on the query
-        const offers = await Offer.find(query).sort({ createdAt: -1 }); // Sort by newest first
+        const offerDetails = await Offer.find(query)
+            .populate('department')
+            .sort({ createdAt: -1 }); // Sort by newest first
+
+        const offers = offerDetails.map((offer) => ({
+            _id: offer._id,
+            title: offer.title,
+            description: offer.description,
+            couponCode: offer.couponCode,
+            discountPercentage: offer.discountPercentage,
+            discountAmount: offer.discountAmount,
+            startDate: offer.startDate,
+            endDate: offer.endDate,
+            status: offer.status,
+            type: offer.type,
+            department: offer.department.departmentName || "N/A", // Assuming `department.name` exists
+            bannerImage: offer.bannerImage,
+            termsAndConditions: offer.termsAndConditions,
+            showExclusive: offer.showExclusive,
+            discountOffer: offer.discountOffer,
+            showBanner: offer.showBanner,
+            createdAt: offer.createdAt,
+            updatedAt: offer.updatedAt,
+        }));
 
         if (offers.length === 0) {
             return res.status(404).json({ message: "No active offers found" });
@@ -332,12 +501,12 @@ const getActiveOffers = async (req, res) => {
     }
 };
 
-
 module.exports = {
     addOffer,
     updateOffer,
     getAllOffers,
     getOfferById,
     deleteOffer,
-    getActiveOffers
+    getActiveOffers,
+    getEditOfferById
 }

@@ -297,7 +297,7 @@ const fetchFamilyTree = async (userId) => {
         familyMembers.map(async (member) => {
             // Generate QR code including the profile picture and additional fields
             const qrData = {
-                _id: member._id,
+                primaryMemberId: member._id,
                 name: member.name,
                 email: member.email,
                 mobileNumber: member.mobileNumber,
@@ -429,7 +429,7 @@ const getUserDetails = async (req, res) => {
 
         // Generate QR code for the primary user including profile picture and additional fields
         const primaryUserQRData = {
-            _id: user._id,
+            primaryMemberId: user._id,
             name: user.name,
             email: user.email,
             mobileNumber: user.mobileNumber,

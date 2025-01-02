@@ -1,4 +1,4 @@
-const { addRoom, getAllRooms, getRoomById, updateRoom, deleteRoom, uploadRoomImage, deleteRoomImage, getAllAvailableRooms, createRoomBooking, getAllBookings, getBookingById, deleteBooking, getMyBookings, updateRoomAllocation, createRoomBookingDetails } = require("../controllers/roomController");
+const { addRoom, getAllRooms, getRoomById, updateRoom, deleteRoom, uploadRoomImage, deleteRoomImage, getAllAvailableRooms, createRoomBooking, getAllBookings, getBookingById, deleteBooking, getMyBookings, updateRoomAllocation, createRoomBookingDetails, findRooms } = require("../controllers/roomController");
 const { verifyToken } = require("../utils/common");
 const { roomUpload } = require("../utils/upload");
 
@@ -22,5 +22,6 @@ module.exports = (router) => {
 
     router.put("/room-booking/allocate-room/:bookingId", verifyToken, updateRoomAllocation);
     router.post("/room-booking/create-details", createRoomBookingDetails);
+    router.post("/room-booking/findAvailableRooms", findRooms);
 
 }

@@ -186,18 +186,6 @@ module.exports = {
                     <h3>Additional Guest Details</h3> 
                     {{guests}}
             </div>
-
-
-
-                <div class="details-section2">
-                    <h3>Payment Details</h3>
-                    <p><strong>Subtotal:</strong> ₹{{subtotal}}</p>
-                     {{taxTypes}}
-                    <p><strong>Total Tax Amount:</strong> ₹{{taxAmount}}</p>
-                    <p><strong>Total Amount:</strong> ₹{{totalAmount}}</p>
-                    <p class="disclaimer"><strong>Important:</strong> The total billed amount will be directly charged
-                        to the member's account.</p>
-                </div>
            
             <div class="icons">
                 <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">

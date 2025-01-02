@@ -595,9 +595,9 @@ const bookEvent = async (req, res) => {
             qrCode: allDetailsQRCode, // Base64 string for QR Code
             eventTitle: event.eventTitle,
             eventDate: event.eventStartDate.toDateString(),
-            primaryName: memberData.primaryMemberId.name,
-            primaryEmail: memberData.primaryMemberId.email,
-            primaryContact: memberData.primaryMemberId.mobileNumber,
+            primaryName: memberData?.primaryMemberId?.name,
+            primaryEmail: memberData?.primaryMemberId?.email,
+            primaryContact: memberData?.primaryMemberId?.mobileNumber,
             familyMembers: memberData.dependents.length > 0
                 ? memberData.dependents.map(dep => ({ name: dep.userId.name }))
                 : [],
@@ -624,6 +624,10 @@ const bookEvent = async (req, res) => {
         const htmlBody = eventrenderTemplate(emailTemplate.body, templateData);
         const subject = eventrenderTemplate(emailTemplate.subject, templateData);
 
+        const emailDependentTemplate = emailTemplates.eventBookingDependentTemplate;
+        const htmlDependentBody = eventrenderTemplate(emailDependentTemplate.body, templateData);
+        const subjectDependent = eventrenderTemplate(emailDependentTemplate.subject, templateData);
+
         await sendEmail(
             memberData.primaryMemberId.email,
             subject,
@@ -637,6 +641,35 @@ const bookEvent = async (req, res) => {
                 },
             ]
         );
+
+        // Send email to dependents
+        for (const dependent of dependents || []) {
+            const user = await User.findById(dependent.userId);
+            if (user) {
+                await sendEmail(user.email, subjectDependent, htmlDependentBody, [
+                    {
+                        filename: "qrcode.png",
+                        content: newBooking.allDetailsQRCode.split(",")[1],
+                        encoding: "base64",
+                        cid: "qrCodeImage",
+                    },
+                ]);
+            }
+        }
+
+        // Send email to guests
+        for (const guest of guests || []) {
+            if (guest.email) {
+                await sendEmail(guest.email, subjectDependent, htmlDependentBody, [
+                    {
+                        filename: "qrcode.png",
+                        content: newBooking.allDetailsQRCode.split(",")[1],
+                        encoding: "base64",
+                        cid: "qrCodeImage",
+                    },
+                ]);
+            }
+        }
 
         await addBilling(newBooking.primaryMemberId, 'Event', { eventBooking: newBooking._id }, newBooking.ticketDetails.subtotal, 0, newBooking.ticketDetails.taxAmount, newBooking.ticketDetails.totalAmount, newBooking.primaryMemberId)
 

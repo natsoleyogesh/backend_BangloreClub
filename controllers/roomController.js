@@ -1177,6 +1177,87 @@ const updateRoomAllocation = async (req, res) => {
 // };
 
 
+const findRooms = async (req, res) => {
+    const { roomCategoryCounts, bookingDates } = req.body;
+
+    if (!roomCategoryCounts || !bookingDates) {
+        return res.status(400).json({ error: "Missing required data" });
+    }
+
+    const { checkIn, checkOut } = bookingDates;
+
+    if (!checkIn || !checkOut) {
+        return res.status(400).json({ error: "Invalid booking dates" });
+    }
+
+    try {
+        // Fetch all RoomWithCategory based on requested roomCategoryCounts
+        const categoryIds = roomCategoryCounts.map((count) => count.roomType);
+        const roomCategories = await RoomWithCategory.find({ _id: { $in: categoryIds } });
+
+        // Fetch all RoomBooking records that overlap with the requested booking dates
+        const overlappingBookings = await RoomBooking.find({
+            "bookingDates.checkIn": { $lt: new Date(checkOut) },
+            "bookingDates.checkOut": { $gt: new Date(checkIn) },
+        });
+
+        // Create a map of booked room IDs during the requested booking dates
+        const bookedRoomIds = new Set();
+        overlappingBookings.forEach((booking) => {
+            booking.roomCategoryCounts.forEach((category) => {
+                category.roomNumbers.forEach((roomId) => {
+                    bookedRoomIds.add(roomId.toString());
+                });
+            });
+        });
+
+        // Prepare the response for available rooms
+        const availableRoomsResponse = [];
+
+        for (const requestedCategory of roomCategoryCounts) {
+            const roomCategory = roomCategories.find(
+                (category) => category._id.toString() === requestedCategory.roomType
+            );
+
+            if (!roomCategory) {
+                return res.status(404).json({
+                    error: `Room category not found for ID: ${requestedCategory.roomType}`,
+                });
+            }
+
+            // Filter available rooms for the current category
+            const availableRooms = roomCategory.roomDetails.filter(
+                (room) => !bookedRoomIds.has(room._id.toString()) && room.status === "Available"
+            );
+
+            // Check if enough rooms are available
+            if (availableRooms.length < requestedCategory.roomCount) {
+                return res.status(400).json({
+                    error: `Not enough rooms available for category: ${roomCategory.categoryName}`,
+                    required: requestedCategory.roomCount,
+                    available: availableRooms.length,
+                });
+            }
+
+            // Add available rooms for the current category to the response
+            availableRoomsResponse.push({
+                roomType: roomCategory.categoryName,
+                availableRooms: availableRooms.slice(0, requestedCategory.roomCount),
+            });
+        }
+
+        // Return the available rooms response
+        res.status(200).json({
+            message: "Available rooms fetched successfully",
+            availableRooms: availableRoomsResponse,
+        });
+    } catch (error) {
+        console.error("Error finding available rooms:", error);
+        res.status(500).json({ error: "An error occurred while finding available rooms" });
+    }
+}
+
+
 module.exports = {
     addRoom,
     getAllRooms,
@@ -1193,6 +1274,7 @@ module.exports = {
     getMyBookings,
     deleteBooking,
     updateRoomAllocation,
-    createRoomBookingDetails
+    createRoomBookingDetails,
+    findRooms
 }
 

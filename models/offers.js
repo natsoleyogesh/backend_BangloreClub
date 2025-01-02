@@ -46,9 +46,14 @@ const offerSchema = new mongoose.Schema(
             enum: ["New", "Current"],
             required: [true, "Offer type is required"], // Indicates if it's a "New Offer" or "Current Offer"
         },
+        // department: {
+        //     type: String,
+        //     enum: ["Recharge", "Purchase", "Subscription", "Entertainment", "Other"],
+        //     required: [true, "Offer department is required"], // Categorizes the offer
+        // },
         department: {
-            type: String,
-            enum: ["Recharge", "Purchase", "Subscription", "Entertainment", "Other"],
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Department', // Reference to the Department model
             required: [true, "Offer department is required"], // Categorizes the offer
         },
         bannerImage: {

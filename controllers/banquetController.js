@@ -15,6 +15,7 @@ const { createNotification } = require("../utils/pushNotification");
 const { createRequest, updateRequest } = require("./allRequestController");
 const AllRequest = require("../models/allRequest");
 const { toTitleCase } = require("../utils/common");
+const Admin = require("../models/Admin");
 
 // Banquet Category APIs Functions
 
@@ -1034,6 +1035,71 @@ const createBanquetBooking = async (req, res) => {
             status: banquetBooking.bookingStatus,
             description: "This is a Banquet Booking Request."
         });
+        const admins = await Admin.find({ role: 'admin', isDeleted: false });
+        if (admins.length > 0) {
+
+
+            // Send a booking confirmation email
+            const memberData = await BanquetBooking.findById(banquetBooking._id)
+                .populate({
+                    path: 'banquetType',
+                    populate: {
+                        path: 'banquetName', // Assuming banquetName references BanquetCategory
+                        model: 'BanquetCategory',
+                    },
+                })
+                .populate('primaryMemberId')
+
+            // Convert times
+            const formattedFrom = QRCodeHelper.formatTimeTo12Hour(banquetBooking.bookingTime.from);
+            const formattedTo = QRCodeHelper.formatTimeTo12Hour(banquetBooking.bookingTime.to);
+            // Prepare template data
+            const templateData = {
+                uniqueQRCode: banquetBooking.uniqueQRCode,
+                qrCode: allDetailsQRCode, // Base64 string for QR Code
+                banquetName: memberData.banquetType.banquetName.name,
+                // eventDate: event.eventDate.toDateString(),
+                primaryName: memberData.primaryMemberId.name,
+                memberId: memberData.primaryMemberId.memberId,
+                primaryEmail: memberData.primaryMemberId.email,
+                primaryContact: memberData.primaryMemberId.mobileNumber,
+                attendingGuests: banquetBooking.attendingGuests,
+                bookingDate: banquetBooking?.bookingDates?.checkIn ? banquetBooking.bookingDates.checkIn.toDateString() : "N/A",
+                from: formattedFrom,
+                to: formattedTo,
+                duration: banquetBooking.bookingTime.duration,
+                taxTypes: memberData?.pricingDetails?.taxTypes?.length > 0
+                    ? memberData.pricingDetails.taxTypes.map(taxType => ({
+                        taxType: taxType.taxType || "N/A",
+                        taxRate: taxType.taxRate || 0,
+                        taxAmount: taxType.taxAmount || 0,
+                    }))
+                    : [],
+                totalAmount: banquetBooking.pricingDetails.totalAmount.toFixed(2),
+                totalTaxAmount: banquetBooking.pricingDetails.totalTaxAmount.toFixed(2),
+                final_totalAmount: banquetBooking.pricingDetails.final_totalAmount.toFixed(2),
+
+            };
+            console.log(templateData, "templaedate")
+            const template = emailTemplates.banquetBooking;
+
+            // Render template
+            const htmlBody = banquetrenderTemplate(template.body, templateData);
+            const subject = `Booking Request for ${templateData.banquetName}`;
+
+
+            for (const admin of admins) {
+                await sendEmail(admin.email, subject, htmlBody, [
+                    {
+                        filename: "qrcode.png",
+                        content: allDetailsQRCode.split(",")[1],
+                        encoding: "base64",
+                        cid: "qrCodeImage",
+                    },
+                ]);
+            }
+
+        }
 
         return res.status(201).json({
             message: 'Banquet booking created successfully.',

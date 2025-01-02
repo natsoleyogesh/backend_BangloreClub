@@ -7,7 +7,7 @@ const createTaxType = async (req, res) => {
         const { name, percentage, status } = req.body;
         const normalizedName = toTitleCase(name);
         // Check if the tax type already exists
-        const existingTaxType = await TaxType.findOne({ name: normalizedName, isDelete: false });
+        const existingTaxType = await TaxType.findOne({ name: normalizedName, isDeleted: false }).exec();
         if (existingTaxType) {
             return res.status(400).json({ message: 'Tax type already exists.' });
         }
