@@ -5,7 +5,7 @@ const nodemailer = require("nodemailer");
 // Create a reusable transporter using SMTP settings
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_SERVER_NAME || "pro.turbo-smtp.com",
-    port: parseInt(process.env.SMTP_PORT, 10) || 25, // Port 25 //587
+    port: parseInt(process.env.SMTP_PORT, 10) || 587, // Port 25 //587
     secure: false, // For port 25, secure should be false
     auth: {
         user: process.env.SMTP_USERNAME || "kiran@mindworks.co.in",
