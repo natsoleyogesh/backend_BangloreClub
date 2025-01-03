@@ -2,154 +2,7 @@ const FoodAndBeverage = require("../models/foodAndBeverage");
 
 // const addFoodAndBeverage = async (req, res) => {
 //     try {
-//         const { name, description, subCategories, status } = req.body;
-//         console.log(req.body, "reqbody");
-//         console.log(req.files, "uploaded files");
-
-//         // Parse `subCategories` from JSON
-//         let parsedSubCategories = [];
-//         if (subCategories) {
-//             parsedSubCategories = JSON.parse(subCategories);
-
-//             // Attach uploaded images and menu files to subcategories
-// parsedSubCategories = parsedSubCategories.map((subCategory, index) => {
-//     const images = req.files.filter((file) =>
-//         file.fieldname === `images_${index}`
-//     );
-//     const menuFile = req.files.find((file) =>
-//         file.fieldname === `menu_${index}`
-//     );
-
-//     const imagePaths = images.map((file) => `/uploads/foodAndBeverage/${file.filename}`);
-//     return {
-//         ...subCategory,
-//         images: imagePaths,
-//         menu: menuFile ? `/uploads/foodAndBeverage/${menuFile.filename}` : null,
-//     };
-// });
-//         }
-
-//         // Handle the banner image
-//         const bannerImage = req.files.find((file) => file.fieldname === "bannerImage");
-
-//         const newCategory = new FoodAndBeverage({
-//             name,
-//             description,
-//             bannerImage: bannerImage ? `/uploads/foodAndBeverage/${bannerImage.filename}` : null,
-//             subCategories: parsedSubCategories,
-//             status,
-//         });
-
-//         const savedCategory = await newCategory.save();
-
-//         res.status(201).json({
-//             message: "Food & Beverage category added successfully.",
-//             foodAndBeverage: savedCategory,
-//         });
-//     } catch (error) {
-//         console.error("Error adding Food & Beverage category:", error);
-//         res.status(500).json({
-//             message: "Failed to add Food & Beverage category.",
-//             error: error.message,
-//         });
-//     }
-// };
-
-// const updateFoodAndBeverage = async (req, res) => {
-//     try {
-//         const { id } = req.params;
-//         const { name, description, subCategories, status } = req.body;
-
-//         console.log(req.body, "req update")
-
-//         // Prepare the updates object
-//         const updates = {};
-
-//         // Dynamically add provided fields to the updates object
-//         if (name) updates.name = name;
-//         if (description) updates.description = description;
-//         if (status) updates.status = status;
-
-//         // Handle `bannerImage` update
-//         const bannerImage = req.files.find((file) => file.fieldname === "bannerImage");
-//         if (bannerImage) {
-//             updates.bannerImage = `/uploads/foodAndBeverage/${bannerImage.filename}`;
-//         }
-
-//         // Handle `subCategories` update if provided
-//         if (subCategories) {
-//             const parsedSubCategories = JSON.parse(subCategories).map((subCategory, index) => {
-//                 // Filter files for current subcategory
-//                 const images = req.files.filter((file) =>
-//                     file.fieldname === `images_${index}`
-//                 );
-//                 const menuFile = req.files.find((file) =>
-//                     file.fieldname === `menu_${index}`
-//                 );
-
-//                 // Map image file paths
-//                 const imagePaths = images.map((file) => `/uploads/foodAndBeverage/${file.filename}`);
-
-//                 return {
-//                     ...subCategory,
-//                     images: imagePaths,
-//                     menu: menuFile ? `/uploads/foodAndBeverage/${menuFile.filename}` : null,
-//                 };
-//             });
-
-//             updates.subCategories = parsedSubCategories;
-//         }
-//         // console.log(updates, "updates")
-
-//         // Update the Food & Beverage category
-//         const updatedCategory = await FoodAndBeverage.findByIdAndUpdate(id, updates, {
-//             new: true, // Return the updated document
-//             runValidators: true, // Validate the updates against the schema
-//         });
-
-//         if (!updatedCategory) {
-//             return res.status(404).json({ message: "Food & Beverage category not found." });
-//         }
-
-//         res.status(200).json({
-//             message: "Food & Beverage category updated successfully.",
-//             foodAndBeverage: updatedCategory,
-//         });
-//     } catch (error) {
-//         console.error("Error updating Food & Beverage category:", error);
-//         res.status(500).json({
-//             message: "Failed to update Food & Beverage category.",
-//             error: error.message,
-//         });
-//     }
-// };
-
-// const getFoodAndBeverageById = async (req, res) => {
-//     try {
-//         const { id } = req.params;
-
-//         const category = await FoodAndBeverage.findById(id);
-//         if (!category) {
-//             return res.status(404).json({ message: "Category not found." });
-//         }
-
-//         res.status(200).json({
-//             message: "Food & Beverage category fetched successfully.",
-//             foodAndBeverage: category,
-//         });
-//     } catch (error) {
-//         console.error("Error fetching Food & Beverage category:", error);
-//         res.status(500).json({
-//             message: "Failed to fetch Food & Beverage category.",
-//             error: error.message,
-//         });
-//     }
-// };
-
-// new code working////////////////////
-// const addFoodAndBeverage = async (req, res) => {
-//     try {
-//         const { name, description, subCategories, status } = req.body;
+//         const { name, description, subCategories, status, location, extansion_no, timings } = req.body;
 //         console.log(req.body, "reqbody");
 //         console.log(req.files, "uploaded files");
 
@@ -160,12 +13,8 @@ const FoodAndBeverage = require("../models/foodAndBeverage");
 
 //             // Process subcategories
 //             parsedSubCategories = parsedSubCategories.map((subCategory, index) => {
-//                 const images = req.files.filter((file) =>
-//                     file.fieldname === `images_${index}`
-//                 );
-//                 const menuFile = req.files.find((file) =>
-//                     file.fieldname === `menu_${index}`
-//                 );
+//                 const images = req.files.filter((file) => file.fieldname === `images_${index}`);
+//                 const menuFile = req.files.find((file) => file.fieldname === `menu_${index}`);
 
 //                 const imagePaths = images.map((file) => `/uploads/foodAndBeverage/${file.filename}`);
 //                 return {
@@ -183,16 +32,16 @@ const FoodAndBeverage = require("../models/foodAndBeverage");
 //         const mainmenuPath = mainmenu ? `/uploads/foodAndBeverage/${mainmenu.filename}` : null;
 
 //         // Convert timings from the request if present
-//         const timings = req.body.timings ? JSON.parse(req.body.timings) : [];
+//         const timingsArray = timings ? JSON.parse(timings) : [];
 
 //         // Create new Food and Beverage category
 //         const newCategory = new FoodAndBeverage({
 //             name, // Name (linking to Restaurant)
 //             description, // Main category description
 //             bannerImage: bannerImagePath, // Banner image path
-//             timings, // Timings array
-//             location: req.body.location || "", // Location (optional)
-//             extansion_no: req.body.extansion_no || "", // Extension number (optional)
+//             timings: timingsArray, // Timings array
+//             location: location || "", // Location (optional)
+//             extansion_no: extansion_no || "", // Extension number (optional)
 //             mainmenu: mainmenuPath, // Menu file path (optional)
 //             subCategories: parsedSubCategories, // Array of subcategories
 //             status, // Active/Inactive
@@ -214,70 +63,6 @@ const FoodAndBeverage = require("../models/foodAndBeverage");
 //         });
 //     }
 // };
-
-const addFoodAndBeverage = async (req, res) => {
-    try {
-        const { name, description, subCategories, status, location, extansion_no, timings } = req.body;
-        console.log(req.body, "reqbody");
-        console.log(req.files, "uploaded files");
-
-        // Parse `subCategories` from JSON if provided
-        let parsedSubCategories = [];
-        if (subCategories) {
-            parsedSubCategories = JSON.parse(subCategories);
-
-            // Process subcategories
-            parsedSubCategories = parsedSubCategories.map((subCategory, index) => {
-                const images = req.files.filter((file) => file.fieldname === `images_${index}`);
-                const menuFile = req.files.find((file) => file.fieldname === `menu_${index}`);
-
-                const imagePaths = images.map((file) => `/uploads/foodAndBeverage/${file.filename}`);
-                return {
-                    ...subCategory,
-                    images: imagePaths,
-                    menu: menuFile ? `/uploads/foodAndBeverage/${menuFile.filename}` : null,
-                };
-            });
-        }
-
-        // Handle the banner image
-        const bannerImage = req.files.find((file) => file.fieldname === "bannerImage");
-        const bannerImagePath = bannerImage ? `/uploads/foodAndBeverage/${bannerImage.filename}` : null;
-        const mainmenu = req.files.find((file) => file.fieldname === "mainmenu");
-        const mainmenuPath = mainmenu ? `/uploads/foodAndBeverage/${mainmenu.filename}` : null;
-
-        // Convert timings from the request if present
-        const timingsArray = timings ? JSON.parse(timings) : [];
-
-        // Create new Food and Beverage category
-        const newCategory = new FoodAndBeverage({
-            name, // Name (linking to Restaurant)
-            description, // Main category description
-            bannerImage: bannerImagePath, // Banner image path
-            timings: timingsArray, // Timings array
-            location: location || "", // Location (optional)
-            extansion_no: extansion_no || "", // Extension number (optional)
-            mainmenu: mainmenuPath, // Menu file path (optional)
-            subCategories: parsedSubCategories, // Array of subcategories
-            status, // Active/Inactive
-        });
-
-        // Save the category to the database
-        const savedCategory = await newCategory.save();
-
-        // Return success response
-        res.status(201).json({
-            message: "Food & Beverage category added successfully.",
-            foodAndBeverage: savedCategory,
-        });
-    } catch (error) {
-        console.error("Error adding Food & Beverage category:", error);
-        res.status(500).json({
-            message: "Failed to add Food & Beverage category.",
-            error: error.message,
-        });
-    }
-};
 
 
 
@@ -635,10 +420,182 @@ const addFoodAndBeverage = async (req, res) => {
 //     }
 // };
 
+
+const addFoodAndBeverage = async (req, res) => {
+    try {
+        const { name, description, status, location, extansion_no, timings } = req.body;
+        console.log(req.body, "reqbody");
+        console.log(req.files, "uploaded files");
+        // Check if Food and Beverage already exists
+        const existingCategory = await FoodAndBeverage.findOne({ name, isDeleted: false });
+        if (existingCategory) {
+            return res.status(400).json({ message: "Food & Beverage category already exists with the same name." });
+        }
+
+
+        // Handle multiple banner images
+        const bannerImages = req.files
+            .filter((file) => file.fieldname === "bannerImage")
+            .map((file) => `/uploads/foodAndBeverage/${file.filename}`);
+
+        // Handle the main menu file
+        const mainmenu = req.files.find((file) => file.fieldname === "mainmenu");
+        const mainmenuPath = mainmenu ? `/uploads/foodAndBeverage/${mainmenu.filename}` : null;
+
+        // Convert timings from the request if present
+        const timingsArray = timings ? JSON.parse(timings) : [];
+
+        // Create new Food and Beverage category
+        const newCategory = new FoodAndBeverage({
+            name, // Name (linking to Restaurant)
+            description, // Main category description
+            bannerImage: bannerImages, // Array of banner image paths
+            timings: timingsArray, // Timings array
+            location: location || "", // Location (optional)
+            extansion_no: extansion_no || "", // Extension number (optional)
+            mainmenu: mainmenuPath, // Menu file path (optional)
+            status, // Active/Inactive
+        });
+
+        // Save the category to the database
+        const savedCategory = await newCategory.save();
+
+        // Return success response
+        res.status(201).json({
+            message: "Food & Beverage category added successfully.",
+            foodAndBeverage: savedCategory,
+        });
+    } catch (error) {
+        console.error("Error adding Food & Beverage category:", error);
+        res.status(500).json({
+            message: "Failed to add Food & Beverage category.",
+            error: error.message,
+        });
+    }
+};
+
+
+// const updateFoodAndBeverage = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const { name, description, subCategories, status, timings, location, extansion_no } = req.body;
+
+//         console.log(req.body, "req update");
+
+//         // Prepare the updates object
+//         const updates = {};
+
+//         // Dynamically add provided fields to the updates object
+//         if (name) updates.name = name;
+//         if (description) updates.description = description;
+//         if (status) updates.status = status;
+//         if (location) updates.location = location;
+//         if (extansion_no) updates.extansion_no = extansion_no;
+
+//         // Handle `bannerImage` update
+//         const bannerImage = req.files.find((file) => file.fieldname === "bannerImage");
+//         if (bannerImage) {
+//             updates.bannerImage = `/uploads/foodAndBeverage/${bannerImage.filename}`;
+//         }
+
+//         // Handle `mainmenu` update
+//         const mainmenu = req.files.find((file) => file.fieldname === "mainmenu");
+//         if (mainmenu) {
+//             updates.mainmenu = `/uploads/foodAndBeverage/${mainmenu.filename}`;
+//         }
+
+//         // Handle the `timings` update
+//         if (timings) {
+//             updates.timings = JSON.parse(timings); // Assuming timings are provided as JSON
+//         }
+
+//         // Handle `subCategories` update if provided
+//         if (subCategories) {
+//             const parsedSubCategories = JSON.parse(subCategories).map((subCategory, index) => {
+//                 const images = req.files.filter((file) => file.fieldname === `images_${index}`);
+//                 const menuFile = req.files.find((file) => file.fieldname === `menu_${index}`);
+
+//                 // For images: If there are new images, use them, otherwise retain the old ones.
+//                 const imagePaths = images.length > 0
+//                     ? images.map((file) => `/uploads/foodAndBeverage/${file.filename}`)
+//                     : subCategory.images; // If no new images, retain the existing ones
+
+//                 // For menu: If there's a new menu file, use it, otherwise retain the old one.
+//                 const menuPath = menuFile ? `/uploads/foodAndBeverage/${menuFile.filename}` : subCategory.menu;
+
+//                 return {
+//                     ...subCategory,
+//                     images: imagePaths, // Updated image paths
+//                     menu: menuPath, // Updated menu file
+//                 };
+//             });
+
+//             updates.subCategories = parsedSubCategories; // Replace the old subcategories with the updated ones
+//         } else {
+//             // If subCategories is not provided in the request, only update the provided fields
+//             const existingCategory = await FoodAndBeverage.findById(id);
+//             if (!existingCategory) {
+//                 return res.status(404).json({ message: "Food & Beverage category not found." });
+//             }
+
+//             // Loop through existing subcategories and update only the provided fields
+//             const updatedSubCategories = existingCategory.subCategories.map((existingSubCategory, index) => {
+//                 const imagesDATA = req.files.filter((file) => file.fieldname === `images_${index}`);
+//                 const menuFile = req.files.find((file) => file.fieldname === `menu_${index}`);
+
+//                 // For images: If there are new images, use them, otherwise retain the old ones.
+//                 const imagePaths = imagesDATA.length > 0
+//                     ? imagesDATA.map((file) => `/uploads/foodAndBeverage/${file.filename}`)
+//                     : existingSubCategory.images; // If no new images, retain the existing ones
+
+//                 // For menu: If there's a new menu file, use it, otherwise retain the old one.
+//                 const menuPath = menuFile ? `/uploads/foodAndBeverage/${menuFile.filename}` : existingSubCategory.menu;
+//                 console.log("Updated image paths for subcategory", index, imagePaths);
+//                 return {
+//                     ...existingSubCategory,
+//                     images: imagePaths, // Updated image paths
+//                     menu: menuPath, // Updated menu file
+//                 };
+//             });
+
+//             console.log("updatedSubCategories", updatedSubCategories)
+
+//             updates.subCategories = updatedSubCategories; // Update subcategories with only the provided fields
+//         }
+
+//         // Update the Food & Beverage category in the database
+//         const updatedCategory = await FoodAndBeverage.findByIdAndUpdate(id, updates, {
+//             new: true, // Return the updated document
+//             runValidators: true, // Validate the updates against the schema
+//         });
+
+//         if (!updatedCategory) {
+//             return res.status(404).json({ message: "Food & Beverage category not found." });
+//         }
+
+//         res.status(200).json({
+//             message: "Food & Beverage category updated successfully.",
+//             foodAndBeverage: updatedCategory,
+//         });
+//     } catch (error) {
+//         console.error("Error updating Food & Beverage category:", error);
+//         res.status(500).json({
+//             message: "Failed to update Food & Beverage category.",
+//             error: error.message,
+//         });
+//     }
+// };
+
 const updateFoodAndBeverage = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, subCategories, status, timings, location, extansion_no } = req.body;
+        const { name, description, status, timings, location, extansion_no } = req.body;
+
+        // Check if Food and Beverage with the same name and location already exists
+        const existingCategory = await FoodAndBeverage.findOne({ name, isDeleted: false, _id: { $ne: id } });
+        if (existingCategory) {
+            return res.status(400).json({ message: "Another Food & Beverage category already exists with the same name ." });
+        }
 
         console.log(req.body, "req update");
 
@@ -652,10 +609,12 @@ const updateFoodAndBeverage = async (req, res) => {
         if (location) updates.location = location;
         if (extansion_no) updates.extansion_no = extansion_no;
 
-        // Handle `bannerImage` update
-        const bannerImage = req.files.find((file) => file.fieldname === "bannerImage");
-        if (bannerImage) {
-            updates.bannerImage = `/uploads/foodAndBeverage/${bannerImage.filename}`;
+        // Handle `bannerImage` update (multiple images as an array)
+        const bannerImages = req.files
+            .filter((file) => file.fieldname === "bannerImage")
+            .map((file) => `/uploads/foodAndBeverage/${file.filename}`);
+        if (bannerImages.length > 0) {
+            updates.bannerImage = bannerImages;
         }
 
         // Handle `mainmenu` update
@@ -667,60 +626,6 @@ const updateFoodAndBeverage = async (req, res) => {
         // Handle the `timings` update
         if (timings) {
             updates.timings = JSON.parse(timings); // Assuming timings are provided as JSON
-        }
-
-        // Handle `subCategories` update if provided
-        if (subCategories) {
-            const parsedSubCategories = JSON.parse(subCategories).map((subCategory, index) => {
-                const images = req.files.filter((file) => file.fieldname === `images_${index}`);
-                const menuFile = req.files.find((file) => file.fieldname === `menu_${index}`);
-
-                // For images: If there are new images, use them, otherwise retain the old ones.
-                const imagePaths = images.length > 0
-                    ? images.map((file) => `/uploads/foodAndBeverage/${file.filename}`)
-                    : subCategory.images; // If no new images, retain the existing ones
-
-                // For menu: If there's a new menu file, use it, otherwise retain the old one.
-                const menuPath = menuFile ? `/uploads/foodAndBeverage/${menuFile.filename}` : subCategory.menu;
-
-                return {
-                    ...subCategory,
-                    images: imagePaths, // Updated image paths
-                    menu: menuPath, // Updated menu file
-                };
-            });
-
-            updates.subCategories = parsedSubCategories; // Replace the old subcategories with the updated ones
-        } else {
-            // If subCategories is not provided in the request, only update the provided fields
-            const existingCategory = await FoodAndBeverage.findById(id);
-            if (!existingCategory) {
-                return res.status(404).json({ message: "Food & Beverage category not found." });
-            }
-
-            // Loop through existing subcategories and update only the provided fields
-            const updatedSubCategories = existingCategory.subCategories.map((existingSubCategory, index) => {
-                const imagesDATA = req.files.filter((file) => file.fieldname === `images_${index}`);
-                const menuFile = req.files.find((file) => file.fieldname === `menu_${index}`);
-
-                // For images: If there are new images, use them, otherwise retain the old ones.
-                const imagePaths = imagesDATA.length > 0
-                    ? imagesDATA.map((file) => `/uploads/foodAndBeverage/${file.filename}`)
-                    : existingSubCategory.images; // If no new images, retain the existing ones
-
-                // For menu: If there's a new menu file, use it, otherwise retain the old one.
-                const menuPath = menuFile ? `/uploads/foodAndBeverage/${menuFile.filename}` : existingSubCategory.menu;
-                console.log("Updated image paths for subcategory", index, imagePaths);
-                return {
-                    ...existingSubCategory,
-                    images: imagePaths, // Updated image paths
-                    menu: menuPath, // Updated menu file
-                };
-            });
-
-            console.log("updatedSubCategories", updatedSubCategories)
-
-            updates.subCategories = updatedSubCategories; // Update subcategories with only the provided fields
         }
 
         // Update the Food & Beverage category in the database
@@ -748,6 +653,107 @@ const updateFoodAndBeverage = async (req, res) => {
 
 
 
+// const getFoodAndBeverageById = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+
+//         // Attempt to find a category by its ID
+//         const category = await FoodAndBeverage.findById(id)
+//             .populate('name', '_id name') // Populate the Restaurant reference in the "name" field
+//             .populate('subCategories.name', '_id name') // Populate the "name" field in each subCategory
+
+//         if (category) {
+//             // Structuring the response to match the required format for a category
+//             const responseCategory = {
+//                 _id: category._id,
+//                 name: category.name ? category.name.name : "N/A",
+//                 nameId: category.name ? category.name._id : null,
+//                 description: category.description || "",
+//                 location: category.location || "",
+//                 extansion_no: category.extansion_no || "",
+//                 bannerImage: category.bannerImage || "",
+//                 mainmenu: category.mainmenu || null,
+//                 subCategories: category.subCategories.map(sub => ({
+//                     _id: sub._id,
+//                     name: sub.name ? sub.name.name : "N/A",
+//                     nameId: sub.name ? sub.name._id : null,
+//                     description: sub.description || "",
+//                     location: sub.location || "",
+//                     extansion_no: sub.extansion_no || "",
+//                     images: sub.images || [],
+//                     menu: sub.menu || "",
+//                     timings: sub.timings.map(timing => ({
+//                         title: timing.title || "",
+//                         startDay: timing.startDay || "",
+//                         endDay: timing.endDay || "",
+//                         startTime: timing.startTime || "",
+//                         endTime: timing.endTime || "",
+//                         _id: timing._id,
+//                     })),
+
+//                 })),
+//                 timings: category.timings || [],
+//                 status: category.status || "Active",
+//                 createdAt: category.createdAt,
+//                 updatedAt: category.updatedAt,
+//                 __v: category.__v || 0,
+//             };
+
+//             return res.status(200).json({
+//                 message: "Food & Beverage category fetched successfully.",
+//                 foodAndBeverage: responseCategory,
+//             });
+//         }
+
+//         // Check subcategories across all categories
+//         const categoryWithSubcategory = await FoodAndBeverage.findOne({
+//             subCategories: { $elemMatch: { _id: id } },
+//         });
+
+//         if (categoryWithSubcategory) {
+//             const subcategory = categoryWithSubcategory.subCategories.find(
+//                 (sub) => sub._id.toString() === id
+//             );
+
+//             // Structuring the response to match the required format for a subcategory
+//             const responseSubCategory = {
+//                 description: subcategory.description || "",
+//                 timings: subcategory.timings.map(timing => ({
+//                     title: timing.title || "",
+//                     startDay: timing.startDay || "",
+//                     endDay: timing.endDay || "",
+//                     startTime: timing.startTime || "",
+//                     endTime: timing.endTime || "",
+//                     _id: timing._id,
+//                 })),
+//                 location: subcategory.location || "",
+//                 extansion_no: subcategory.extansion_no || "",
+//                 images: subcategory.images || [],
+//                 menu: subcategory.menu || "",
+//                 _id: subcategory._id,
+//             };
+
+//             return res.status(200).json({
+//                 message: "Subcategory fetched successfully.",
+//                 subCategory: responseSubCategory,
+//                 parentCategory: {
+//                     id: categoryWithSubcategory._id,
+//                     name: categoryWithSubcategory.name,
+//                 },
+//             });
+//         }
+
+//         // If neither a category nor a subcategory is found
+//         return res.status(404).json({ message: "Category or subcategory not found." });
+
+//     } catch (error) {
+//         console.error("Error fetching Food & Beverage category or subcategory:", error);
+//         res.status(500).json({
+//             message: "Failed to fetch Food & Beverage details.",
+//             error: error.message,
+//         });
+//     }
+// };
 
 const getFoodAndBeverageById = async (req, res) => {
     try {
@@ -755,95 +761,43 @@ const getFoodAndBeverageById = async (req, res) => {
 
         // Attempt to find a category by its ID
         const category = await FoodAndBeverage.findById(id)
-            .populate('name', '_id name') // Populate the Restaurant reference in the "name" field
-            .populate('subCategories.name', '_id name') // Populate the "name" field in each subCategory
+            .populate('name', '_id name'); // Populate the Restaurant reference in the "name" field
 
-        if (category) {
-            // Structuring the response to match the required format for a category
-            const responseCategory = {
-                _id: category._id,
-                name: category.name ? category.name.name : "N/A",
-                nameId: category.name ? category.name._id : null,
-                description: category.description || "",
-                location: category.location || "",
-                extansion_no: category.extansion_no || "",
-                bannerImage: category.bannerImage || "",
-                mainmenu: category.mainmenu || null,
-                subCategories: category.subCategories.map(sub => ({
-                    _id: sub._id,
-                    name: sub.name ? sub.name.name : "N/A",
-                    nameId: sub.name ? sub.name._id : null,
-                    description: sub.description || "",
-                    location: sub.location || "",
-                    extansion_no: sub.extansion_no || "",
-                    images: sub.images || [],
-                    menu: sub.menu || "",
-                    timings: sub.timings.map(timing => ({
-                        title: timing.title || "",
-                        startDay: timing.startDay || "",
-                        endDay: timing.endDay || "",
-                        startTime: timing.startTime || "",
-                        endTime: timing.endTime || "",
-                        _id: timing._id,
-                    })),
-
-                })),
-                timings: category.timings || [],
-                status: category.status || "Active",
-                createdAt: category.createdAt,
-                updatedAt: category.updatedAt,
-                __v: category.__v || 0,
-            };
-
-            return res.status(200).json({
-                message: "Food & Beverage category fetched successfully.",
-                foodAndBeverage: responseCategory,
-            });
+        if (!category) {
+            return res.status(404).json({ message: "Food & Beverage category not found." });
         }
 
-        // Check subcategories across all categories
-        const categoryWithSubcategory = await FoodAndBeverage.findOne({
-            subCategories: { $elemMatch: { _id: id } },
+        // Structuring the response to match the required format for a category
+        const responseCategory = {
+            _id: category._id,
+            name: category.name ? category.name.name : "N/A",
+            nameId: category.name ? category.name._id : null,
+            description: category.description || "",
+            location: category.location || "",
+            extansion_no: category.extansion_no || "",
+            bannerImage: category.bannerImage || [],
+            mainmenu: category.mainmenu || null,
+            timings: category.timings.map(timing => ({
+                title: timing.title || "",
+                startDay: timing.startDay || "",
+                endDay: timing.endDay || "",
+                startTime: timing.startTime || "",
+                endTime: timing.endTime || "",
+                _id: timing._id,
+            })),
+            status: category.status || "Active",
+            createdAt: category.createdAt,
+            updatedAt: category.updatedAt,
+            __v: category.__v || 0,
+        };
+
+        return res.status(200).json({
+            message: "Food & Beverage category fetched successfully.",
+            foodAndBeverage: responseCategory,
         });
 
-        if (categoryWithSubcategory) {
-            const subcategory = categoryWithSubcategory.subCategories.find(
-                (sub) => sub._id.toString() === id
-            );
-
-            // Structuring the response to match the required format for a subcategory
-            const responseSubCategory = {
-                description: subcategory.description || "",
-                timings: subcategory.timings.map(timing => ({
-                    title: timing.title || "",
-                    startDay: timing.startDay || "",
-                    endDay: timing.endDay || "",
-                    startTime: timing.startTime || "",
-                    endTime: timing.endTime || "",
-                    _id: timing._id,
-                })),
-                location: subcategory.location || "",
-                extansion_no: subcategory.extansion_no || "",
-                images: subcategory.images || [],
-                menu: subcategory.menu || "",
-                _id: subcategory._id,
-            };
-
-            return res.status(200).json({
-                message: "Subcategory fetched successfully.",
-                subCategory: responseSubCategory,
-                parentCategory: {
-                    id: categoryWithSubcategory._id,
-                    name: categoryWithSubcategory.name,
-                },
-            });
-        }
-
-        // If neither a category nor a subcategory is found
-        return res.status(404).json({ message: "Category or subcategory not found." });
-
     } catch (error) {
-        console.error("Error fetching Food & Beverage category or subcategory:", error);
+        console.error("Error fetching Food & Beverage category:", error);
         res.status(500).json({
             message: "Failed to fetch Food & Beverage details.",
             error: error.message,
@@ -857,91 +811,15 @@ const getEditFoodAndBeverageById = async (req, res) => {
         const { id } = req.params;
 
         // Attempt to find a category by its ID
-        const category = await FoodAndBeverage.findById(id)
-        // .populate('name', '_id name') // Populate the Restaurant reference in the "name" field
-        // .populate('subCategories.name', '_id name') // Populate the "name" field in each subCategory
+        const category = await FoodAndBeverage.findById(id).exec()
+
 
         if (category) {
-            // Structuring the response to match the required format for a category
-            // const responseCategory = {
-            //     _id: category._id,
-            //     name: category.name ? category.name.name : "N/A",
-            //     nameId: category.name ? category.name._id : null,
-            //     description: category.description || "",
-            //     location: category.location || "",
-            //     extansion_no: category.extansion_no || "",
-            //     bannerImage: category.bannerImage || "",
-            //     mainmenu: category.mainmenu || null,
-            //     subCategories: category.subCategories.map(sub => ({
-            //         _id: sub._id,
-            //         name: sub.name ? sub.name.name : "N/A",
-            //         nameId: sub.name ? sub.name._id : null,
-            //         description: sub.description || "",
-            //         location: sub.location || "",
-            //         extansion_no: sub.extansion_no || "",
-            //         images: sub.images || [],
-            //         menu: sub.menu || "",
-            //         timings: sub.timings.map(timing => ({
-            //             title: timing.title || "",
-            //             startDay: timing.startDay || "",
-            //             endDay: timing.endDay || "",
-            //             startTime: timing.startTime || "",
-            //             endTime: timing.endTime || "",
-            //             _id: timing._id,
-            //         })),
-
-            //     })),
-            //     timings: category.timings || [],
-            //     status: category.status || "Active",
-            //     createdAt: category.createdAt,
-            //     updatedAt: category.updatedAt,
-            //     __v: category.__v || 0,
-            // };
-
             return res.status(200).json({
                 message: "Food & Beverage category fetched successfully.",
                 foodAndBeverage: category,
             });
         }
-
-        // Check subcategories across all categories
-        const categoryWithSubcategory = await FoodAndBeverage.findOne({
-            subCategories: { $elemMatch: { _id: id } },
-        });
-
-        if (categoryWithSubcategory) {
-            const subcategory = categoryWithSubcategory.subCategories.find(
-                (sub) => sub._id.toString() === id
-            );
-
-            // Structuring the response to match the required format for a subcategory
-            const responseSubCategory = {
-                description: subcategory.description || "",
-                timings: subcategory.timings.map(timing => ({
-                    title: timing.title || "",
-                    startDay: timing.startDay || "",
-                    endDay: timing.endDay || "",
-                    startTime: timing.startTime || "",
-                    endTime: timing.endTime || "",
-                    _id: timing._id,
-                })),
-                location: subcategory.location || "",
-                extansion_no: subcategory.extansion_no || "",
-                images: subcategory.images || [],
-                menu: subcategory.menu || "",
-                _id: subcategory._id,
-            };
-
-            return res.status(200).json({
-                message: "Subcategory fetched successfully.",
-                subCategory: responseSubCategory,
-                parentCategory: {
-                    id: categoryWithSubcategory._id,
-                    name: categoryWithSubcategory.name,
-                },
-            });
-        }
-
         // If neither a category nor a subcategory is found
         return res.status(404).json({ message: "Category or subcategory not found." });
 
@@ -954,44 +832,139 @@ const getEditFoodAndBeverageById = async (req, res) => {
     }
 };
 
+// const getEditFoodAndBeverageById = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+
+//         // Attempt to find a category by its ID
+//         const category = await FoodAndBeverage.findById(id);
+
+//         if (!category) {
+//             return res.status(404).json({ message: "Food & Beverage category not found." });
+//         }
+
+//         // Structuring the response to match the required format for a category
+//         const responseCategory = {
+//             _id: category._id,
+//             name: category.name || "N/A",
+//             description: category.description || "",
+//             location: category.location || "",
+//             extansion_no: category.extansion_no || "",
+//             bannerImage: category.bannerImage || [],
+//             mainmenu: category.mainmenu || null,
+//             timings: category.timings.map(timing => ({
+//                 title: timing.title || "",
+//                 startDay: timing.startDay || "",
+//                 endDay: timing.endDay || "",
+//                 startTime: timing.startTime || "",
+//                 endTime: timing.endTime || "",
+//                 _id: timing._id,
+//             })),
+//             status: category.status || "Active",
+//             createdAt: category.createdAt,
+//             updatedAt: category.updatedAt,
+//             __v: category.__v || 0,
+//         };
+
+//         return res.status(200).json({
+//             message: "Food & Beverage category fetched successfully.",
+//             foodAndBeverage: responseCategory,
+//         });
+//     } catch (error) {
+//         console.error("Error fetching Food & Beverage category:", error);
+//         res.status(500).json({
+//             message: "Failed to fetch Food & Beverage details.",
+//             error: error.message,
+//         });
+//     }
+// };
+
+
+
+// const getAllFoodAndBeverages = async (req, res) => {
+//     try {
+//         // Fetch all food and beverages with population of necessary fields
+//         const foodAndBeveragesdata = await FoodAndBeverage.find({})
+//             .populate('name', '_id name') // Populate the Restaurant reference in the "name" field
+//             .populate('subCategories.name', '_id name') // Populate the "name" field in each subCategory
+//             .sort({ createdAt: -1 });
+
+//         // Structuring the response to match the desired format
+//         const responseData = foodAndBeveragesdata.map(fb => ({
+//             _id: fb._id,
+//             name: fb.name ? fb.name.name : "N/A",
+//             nameId: fb.name ? fb.name._id : null,
+//             location: fb.location || "",
+//             extansion_no: fb.extansion_no || "",
+//             description: fb.description || "",
+//             bannerImage: fb.bannerImage || "",
+//             mainmenu: fb.mainmenu || null,
+//             timings: fb.timings || [],
+//             subCategories: fb.subCategories.map(sub => ({
+//                 _id: sub._id,
+//                 name: sub.name ? sub.name.name : "N/A",
+//                 nameId: sub.name ? sub.name._id : null,
+//                 description: sub.description || "",
+//                 location: sub.location || "",
+//                 extansion_no: sub.extansion_no || "",
+//                 images: sub.images || [],
+//                 menu: sub.menu || "",
+//                 timings: sub.timings.map(timing => ({
+//                     title: timing.title || "",
+//                     startDay: timing.startDay || "",
+//                     endDay: timing.endDay || "",
+//                     startTime: timing.startTime || "",
+//                     endTime: timing.endTime || "",
+//                     _id: timing._id,
+//                 })),
+
+//             })),
+//             status: fb.status || "Active",
+//             createdAt: fb.createdAt,
+//             updatedAt: fb.updatedAt,
+//             __v: fb.__v || 0,
+//         }));
+
+//         // Send the structured response
+//         res.status(200).json({
+//             message: "Food & Beverage category fetched successfully.",
+//             foodAndBeverages: responseData,
+//         });
+
+//     } catch (error) {
+//         console.error("Error fetching Food & Beverages:", error);
+//         res.status(500).json({
+//             message: "Failed to fetch Food & Beverages.",
+//             error: error.message,
+//         });
+//     }
+// };
+
 
 const getAllFoodAndBeverages = async (req, res) => {
     try {
-        // Fetch all food and beverages with population of necessary fields
-        const foodAndBeveragesdata = await FoodAndBeverage.find({})
+        // Fetch all food and beverages with necessary fields populated
+        const foodAndBeveragesData = await FoodAndBeverage.find({ isDeleted: false })
             .populate('name', '_id name') // Populate the Restaurant reference in the "name" field
-            .populate('subCategories.name', '_id name') // Populate the "name" field in each subCategory
             .sort({ createdAt: -1 });
 
         // Structuring the response to match the desired format
-        const responseData = foodAndBeveragesdata.map(fb => ({
+        const responseData = foodAndBeveragesData.map(fb => ({
             _id: fb._id,
             name: fb.name ? fb.name.name : "N/A",
             nameId: fb.name ? fb.name._id : null,
             location: fb.location || "",
             extansion_no: fb.extansion_no || "",
             description: fb.description || "",
-            bannerImage: fb.bannerImage || "",
+            bannerImage: fb.bannerImage || [],
             mainmenu: fb.mainmenu || null,
-            timings: fb.timings || [],
-            subCategories: fb.subCategories.map(sub => ({
-                _id: sub._id,
-                name: sub.name ? sub.name.name : "N/A",
-                nameId: sub.name ? sub.name._id : null,
-                description: sub.description || "",
-                location: sub.location || "",
-                extansion_no: sub.extansion_no || "",
-                images: sub.images || [],
-                menu: sub.menu || "",
-                timings: sub.timings.map(timing => ({
-                    title: timing.title || "",
-                    startDay: timing.startDay || "",
-                    endDay: timing.endDay || "",
-                    startTime: timing.startTime || "",
-                    endTime: timing.endTime || "",
-                    _id: timing._id,
-                })),
-
+            timings: fb.timings.map(timing => ({
+                title: timing.title || "",
+                startDay: timing.startDay || "",
+                endDay: timing.endDay || "",
+                startTime: timing.startTime || "",
+                endTime: timing.endTime || "",
+                _id: timing._id,
             })),
             status: fb.status || "Active",
             createdAt: fb.createdAt,
@@ -1001,10 +974,9 @@ const getAllFoodAndBeverages = async (req, res) => {
 
         // Send the structured response
         res.status(200).json({
-            message: "Food & Beverage category fetched successfully.",
+            message: "Food & Beverage categories fetched successfully.",
             foodAndBeverages: responseData,
         });
-
     } catch (error) {
         console.error("Error fetching Food & Beverages:", error);
         res.status(500).json({
@@ -1013,7 +985,6 @@ const getAllFoodAndBeverages = async (req, res) => {
         });
     }
 };
-
 
 
 const deleteFoodAndBeverage = async (req, res) => {
@@ -1046,19 +1017,56 @@ const deleteFoodAndBeverage = async (req, res) => {
 //         const limitNumber = parseInt(limit, 10) || 5;
 //         const skip = (pageNumber - 1) * limitNumber;
 
-//         // Fetch active Food and Beverage categories
-//         const activeFoodAndBeverages = await FoodAndBeverage.find({ status: "Active" })
-//             .sort({ createdAt: -1 }) // Sort by creation date (newest first)
+//         // Fetch active Food and Beverage categories with necessary populations
+//         const activeFoodAndBeveragesData = await FoodAndBeverage.find({ status: "Active" })
+//             .populate('name', '_id name') // Populate the Restaurant reference in the "name" field
+//             .populate('subCategories.name', '_id name') // Populate the "name" field in each subCategory
+//             .sort({ createdAt: -1 })
 //             .skip(skip)
 //             .limit(limitNumber);
 
 //         // Count total active categories for pagination
 //         const totalItems = await FoodAndBeverage.countDocuments({ status: "Active" });
 
-//         // Prepare the response
+//         // Structure the response to match the desired format
+//         const responseData = activeFoodAndBeveragesData.map(fb => ({
+//             _id: fb._id,
+//             name: fb.name ? fb.name.name : "N/A",
+//             nameId: fb.name ? fb.name._id : null,
+//             location: fb.location || "",
+//             extansion_no: fb.extansion_no || "",
+//             description: fb.description || "",
+//             bannerImage: fb.bannerImage || "",
+//             mainmenu: fb.mainmenu || null,
+//             timings: fb.timings || [],
+//             subCategories: fb.subCategories.map(sub => ({
+//                 _id: sub._id,
+//                 name: sub.name ? sub.name.name : "N/A",
+//                 nameId: sub.name ? sub.name._id : null,
+//                 description: sub.description || "",
+//                 location: sub.location || "",
+//                 extansion_no: sub.extansion_no || "",
+//                 images: sub.images || [],
+//                 menu: sub.menu || "",
+//                 timings: sub.timings.map(timing => ({
+//                     title: timing.title || "",
+//                     startDay: timing.startDay || "",
+//                     endDay: timing.endDay || "",
+//                     startTime: timing.startTime || "",
+//                     endTime: timing.endTime || "",
+//                     _id: timing._id,
+//                 })),
+//             })),
+//             status: fb.status || "Active",
+//             createdAt: fb.createdAt,
+//             updatedAt: fb.updatedAt,
+//             __v: fb.__v || 0,
+//         }));
+
+//         // Send the structured response with pagination
 //         res.status(200).json({
 //             message: "Active Food and Beverage categories fetched successfully.",
-//             foodAndBeverages: activeFoodAndBeverages,
+//             foodAndBeverages: responseData,
 //             pagination: {
 //                 totalItems,
 //                 currentPage: pageNumber,
@@ -1085,15 +1093,14 @@ const getActiveFoodAndBeverages = async (req, res) => {
         const skip = (pageNumber - 1) * limitNumber;
 
         // Fetch active Food and Beverage categories with necessary populations
-        const activeFoodAndBeveragesData = await FoodAndBeverage.find({ status: "Active" })
+        const activeFoodAndBeveragesData = await FoodAndBeverage.find({ status: "Active", isDeleted: false })
             .populate('name', '_id name') // Populate the Restaurant reference in the "name" field
-            .populate('subCategories.name', '_id name') // Populate the "name" field in each subCategory
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limitNumber);
 
         // Count total active categories for pagination
-        const totalItems = await FoodAndBeverage.countDocuments({ status: "Active" });
+        const totalItems = await FoodAndBeverage.countDocuments({ status: "Active", isDeleted: false });
 
         // Structure the response to match the desired format
         const responseData = activeFoodAndBeveragesData.map(fb => ({
@@ -1103,26 +1110,15 @@ const getActiveFoodAndBeverages = async (req, res) => {
             location: fb.location || "",
             extansion_no: fb.extansion_no || "",
             description: fb.description || "",
-            bannerImage: fb.bannerImage || "",
+            bannerImage: fb.bannerImage || [],
             mainmenu: fb.mainmenu || null,
-            timings: fb.timings || [],
-            subCategories: fb.subCategories.map(sub => ({
-                _id: sub._id,
-                name: sub.name ? sub.name.name : "N/A",
-                nameId: sub.name ? sub.name._id : null,
-                description: sub.description || "",
-                location: sub.location || "",
-                extansion_no: sub.extansion_no || "",
-                images: sub.images || [],
-                menu: sub.menu || "",
-                timings: sub.timings.map(timing => ({
-                    title: timing.title || "",
-                    startDay: timing.startDay || "",
-                    endDay: timing.endDay || "",
-                    startTime: timing.startTime || "",
-                    endTime: timing.endTime || "",
-                    _id: timing._id,
-                })),
+            timings: fb.timings.map(timing => ({
+                title: timing.title || "",
+                startDay: timing.startDay || "",
+                endDay: timing.endDay || "",
+                startTime: timing.startTime || "",
+                endTime: timing.endTime || "",
+                _id: timing._id,
             })),
             status: fb.status || "Active",
             createdAt: fb.createdAt,
@@ -1149,6 +1145,7 @@ const getActiveFoodAndBeverages = async (req, res) => {
         });
     }
 };
+
 module.exports = {
     addFoodAndBeverage,
     updateFoodAndBeverage,
