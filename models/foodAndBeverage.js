@@ -108,7 +108,7 @@ const mongoose = require("mongoose");
 const TimingSchema = new mongoose.Schema({
     title: {
         type: String,
-        default: ""
+        // default: ""
     },
     startDay: {
         type: String, // Start day (e.g., "Mon")
