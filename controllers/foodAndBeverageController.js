@@ -1,4 +1,6 @@
 const FoodAndBeverage = require("../models/foodAndBeverage");
+const path = require("path");
+const fs = require("fs");
 
 // const addFoodAndBeverage = async (req, res) => {
 //     try {
@@ -1146,6 +1148,89 @@ const getActiveFoodAndBeverages = async (req, res) => {
     }
 };
 
+const deleteFoodAndBeveragesImage = async (req, res) => {
+    const { id, index } = req.params;
+
+    try {
+        // Find the banquet by ID
+        const banquet = await FoodAndBeverage.findById(id);
+        if (!banquet) {
+            return res.status(404).json({ message: "Food And Beverages not found." });
+        }
+
+        // Validate the index
+        if (index < 0 || index >= banquet.bannerImage.length) {
+            return res.status(400).json({ message: "Invalid image index." });
+        }
+
+        // Get the image path
+        const imagePath = banquet.bannerImage[index];
+
+        // Remove the image from the array
+        banquet.bannerImage.splice(index, 1);
+
+        // Delete the image file from the server
+        const filePath = path.resolve(__dirname, "..", imagePath);
+        fs.unlink(filePath, (err) => {
+            if (err) {
+                console.error("Failed to delete image file:", err);
+            }
+        });
+
+        // Save the updated banquet
+        await banquet.save();
+
+        return res.status(200).json({ message: "Image deleted successfully." });
+    } catch (error) {
+        console.error("Error deleting image:", error);
+        return res.status(500).json({
+            message: "Failed to delete image.",
+            error: error.message,
+        });
+    }
+};
+
+const uploadFoodAndBeveragesImage = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Check if Food and Beverage category exists
+        const foodAndBeverage = await FoodAndBeverage.findById(id);
+        if (!foodAndBeverage) {
+            return res.status(404).json({ message: "Food and Beverage category not found." });
+        }
+
+        // Ensure images are provided in the request
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ message: "Please provide images to upload." });
+        }
+
+        // Process image file paths and ensure cross-platform compatibility
+        const imagePaths = req.files.map((file) =>
+            `/uploads/foodAndBeverage/${file.filename}` // Adjust based on your file structure
+        );
+
+        // Update the banner images by appending the new ones
+        foodAndBeverage.bannerImage = [...(foodAndBeverage.bannerImage || []), ...imagePaths];
+
+        // Save the updated Food and Beverage category
+        await foodAndBeverage.save();
+
+        return res.status(200).json({
+            message: "Images uploaded successfully.",
+            images: imagePaths,
+            updatedBannerImages: foodAndBeverage.bannerImage,
+        });
+    } catch (error) {
+        console.error("Error uploading images:", error);
+        return res.status(500).json({
+            message: "Failed to upload images.",
+            error: error.message,
+        });
+    }
+};
+
+
 module.exports = {
     addFoodAndBeverage,
     updateFoodAndBeverage,
@@ -1153,5 +1238,7 @@ module.exports = {
     getFoodAndBeverageById,
     getEditFoodAndBeverageById,
     deleteFoodAndBeverage,
-    getActiveFoodAndBeverages
+    getActiveFoodAndBeverages,
+    deleteFoodAndBeveragesImage,
+    uploadFoodAndBeveragesImage
 };

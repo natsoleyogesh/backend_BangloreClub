@@ -1,4 +1,4 @@
-const { addFoodAndBeverage, getAllFoodAndBeverages, getFoodAndBeverageById, updateFoodAndBeverage, deleteFoodAndBeverage, getActiveFoodAndBeverages, getEditFoodAndBeverageById } = require("../controllers/foodAndBeverageController");
+const { addFoodAndBeverage, getAllFoodAndBeverages, getFoodAndBeverageById, updateFoodAndBeverage, deleteFoodAndBeverage, getActiveFoodAndBeverages, getEditFoodAndBeverageById, deleteFoodAndBeveragesImage, uploadFoodAndBeveragesImage } = require("../controllers/foodAndBeverageController");
 const { verifyToken } = require("../utils/common");
 const { FBupload } = require("../utils/upload");
 
@@ -11,6 +11,9 @@ module.exports = (router) => {
     router.get("/foodAndBeverage/edit/:id", getEditFoodAndBeverageById)
     // router.put("/foodAndBeverage/update-foodAndBeverage/:id", FBupload.fields([{ name: "bannerImage", maxCount: 1 }, { name: "subCategoryImages_*" }, { name: "menuFile_*" },]), updateFoodAndBeverage);
     router.put("/foodAndBeverage/update-foodAndBeverage/:id", FBupload.any(), updateFoodAndBeverage);
+    router.delete("/foodAndBeverage/deleteimage/:id/:index", deleteFoodAndBeveragesImage);
+    router.put("/foodAndBeverage/upload-images/:id", FBupload.any(), uploadFoodAndBeveragesImage);
+
     router.delete("/foodAndBeverage/delete/:id", deleteFoodAndBeverage);
     router.get("/foodAndBeverage/active-foodAndBeverages", verifyToken, getActiveFoodAndBeverages);
 }
