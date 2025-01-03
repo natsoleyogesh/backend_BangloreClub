@@ -22,6 +22,6 @@ module.exports = (router) => {
 
     router.put("/room-booking/allocate-room/:bookingId", verifyToken, updateRoomAllocation);
     router.post("/room-booking/create-details", createRoomBookingDetails);
-    router.post("/room-booking/findAvailableRooms", findRooms);
+    router.post("/room-booking/findAvailableRooms/:bookingId", findRooms);
 
 }

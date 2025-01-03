@@ -939,160 +939,320 @@ const deleteBooking = async (req, res) => {
     }
 };
 
-// WORKING CODE BUT ROOM IS NOT STORE 
+// // WORKING CODE BUT ROOM IS NOT STORE 
+// const updateRoomAllocation = async (req, res) => {
+//     try {
+//         const bookingId = req.params.bookingId; // Booking ID from URL
+//         const { allocatedRooms, bookingStatus } = req.body; // Data sent in the body for update (array of room allocations)
+//         const { userId, role } = req.user;
+
+//         if (!userId || role !== 'admin') {
+//             return res.status(400).json({ message: 'Alert You are not update the details!.' });
+
+//         }
+//         // Validate booking status
+//         const validStatuses = ['Pending', 'Confirmed', 'Cancelled'];
+//         if (!validStatuses.includes(bookingStatus)) {
+//             return res.status(400).json({ message: `Invalid booking status. Valid statuses are: ${validStatuses.join(', ')}.` });
+//         }
+
+//         // 1. Find the booking by ID
+//         const booking = await RoomBooking.findById(bookingId);
+//         if (!booking) {
+//             return res.status(404).json({ message: 'Booking not found' });
+//         }
+
+//         if (booking.isDeleted) {
+//             return res.status(400).json({ message: 'Cannot allocate a deleted booking.' });
+//         }
+
+//         if (booking.bookingStatus === 'Confirmed') {
+//             return res.status(400).json({ message: 'This Request is already Confirmed.' });
+//         }
+
+
+//         // 2. Loop through each room allocation and validate each category
+//         for (const allocation of allocatedRooms) {
+//             const { roomType, allocatedRoomIds } = allocation;
+//             const { checkIn, checkOut } = booking.bookingDates;
+
+//             // Check if the room category exists in the booking's roomCategoryCounts
+//             const roomCategoryCount = booking.roomCategoryCounts.find(category => category.roomType.toString() === roomType);
+//             if (!roomCategoryCount) {
+//                 return res.status(404).json({ message: `Room type ${roomType} not found in this booking` });
+//             }
+
+//             // 3. Fetch the room category details from the RoomWithCategory collection
+//             const roomWithCategory = await RoomWithCategory.findById(roomType);
+//             if (!roomWithCategory) {
+//                 return res.status(404).json({ message: 'Room category not found in RoomWithCategory' });
+//             }
+
+//             let requestId = null;
+
+//             // Find the request by departmentId instead of using findById
+//             const findRequest = await AllRequest.findOne({ departmentId: bookingId }).exec();
+
+//             if (findRequest) {
+//                 requestId = findRequest._id;
+//             }
+
+
+//             if (bookingStatus === 'Pending' || bookingStatus === 'Cancelled') {
+//                 // Update the booking status
+//                 booking.bookingStatus = bookingStatus;
+//                 // booking.allDetailsQRCode = allDetailsQRCode;
+//                 await booking.save();
+//                 // Call the createNotification function
+//                 await createNotification({
+//                     title: `Your Room Booking Is Rejected`,
+//                     send_to: "User",
+//                     push_message: "Your Room Booking Is Rejected For Some Details Are Not Validate!",
+//                     department: "RoomBooking",
+//                     departmentId: booking._id
+//                 });
+
+
+//                 if (requestId !== null) {
+//                     await updateRequest(requestId, {
+//                         status: bookingStatus,
+//                         adminResponse: "The Booking Is Cancelled Due To Some Reason"
+//                     });
+//                 }
+
+//             }
+
+//             // 4. Check available rooms that meet the date and status requirements
+//             const checkAvailabilityForDates = async (roomId) => {
+//                 // Fetch all bookings for this room
+//                 const bookingsForRoom = await RoomBooking.find({
+//                     "roomCategoryCounts.roomNumbers": roomId,
+//                     "bookingDates.checkOut": { $gt: checkIn },
+//                     "bookingDates.checkIn": { $lt: checkOut },
+//                     "isDeleted": false,  // Ensure deleted bookings are excluded
+//                 });
+
+//                 // If any bookings overlap, the room is not available
+//                 return bookingsForRoom.length === 0;
+//             };
+
+//             // Filter rooms that match the allocated room IDs, are available, and do not have conflicts with existing bookings
+//             const availableRooms = await Promise.all(
+//                 roomWithCategory.roomDetails.filter(room =>
+//                     room.status === 'Available' && allocatedRoomIds.includes(room._id.toString())
+//                 ).map(async (room) => {
+//                     const isAvailable = await checkAvailabilityForDates(room._id);
+//                     return isAvailable ? room : null;
+//                 })
+//             );
+
+//             // Remove unavailable rooms (null values)
+//             const validAvailableRooms = availableRooms.filter(room => room !== null);
+
+//             // 5. Check if the number of available rooms is sufficient
+//             if (validAvailableRooms.length < allocatedRoomIds.length) {
+//                 return res.status(400).json({ message: `Not enough rooms available for room type ${roomType} for the selected dates` });
+//             }
+
+//             // 6. Update the booking by allocating rooms
+//             booking.roomCategoryCounts.forEach(category => {
+//                 if (category.roomType.toString() === roomType) {
+//                     console.log(`Updating room numbers for room type: ${roomType}`);
+//                     console.log(`Allocated rooms: ${allocatedRoomIds}`);
+//                     category.roomNumbers = allocatedRoomIds;
+//                 }
+//             });
+//         }
+
+//         booking.bookingStatus = bookingStatus;
+
+//         // Save the updated booking
+//         await booking.save();
+//         if (booking.bookingStatus === 'Confirmed') {
+//             const subtotal = booking.pricingDetails.final_totalTaxAmount - booking.pricingDetails.final_totalAmount;
+
+//             await addBilling(booking.primaryMemberId, 'Room', { roomBooking: booking._id }, subtotal, 0, booking.pricingDetails.final_totalTaxAmount, booking.pricingDetails.final_totalAmount, userId)
+
+//             await createNotification({
+//                 title: `Your Room Booking Is Confirmed`,
+//                 send_to: "User",
+//                 push_message: "Your Room Booking Is Confirmed Please Pay The Amount!",
+//                 department: "RoomBooking",
+//                 departmentId: booking._id
+//             });
+
+//             if (requestId !== null) {
+//                 updateRequest(requestId, { status: bookingStatus, adminResponse: "The Booking Is Confirmed !" })
+//             }
+
+//         }
+
+//         return res.status(200).json({ message: 'Room allocation updated successfully', booking });
+//     } catch (err) {
+//         console.error(err);
+//         return res.status(500).json({ message: 'Server error' });
+//     }
+// };
+
 const updateRoomAllocation = async (req, res) => {
     try {
         const bookingId = req.params.bookingId; // Booking ID from URL
-        const { allocatedRooms, bookingStatus } = req.body; // Data sent in the body for update (array of room allocations)
-        const { userId, role } = req.user;
+        const { allocatedRooms, bookingStatus } = req.body; // Allocated rooms and booking status from the request body
+        const { userId, role } = req.user; // User information from the request
 
+        // Check if the user has admin privileges
         if (!userId || role !== 'admin') {
-            return res.status(400).json({ message: 'Alert You are not update the details!.' });
-
+            return res.status(400).json({ message: 'Unauthorized: You do not have permission to update the booking.' });
         }
-        // Validate booking status
+
+        // Validate the booking status
         const validStatuses = ['Pending', 'Confirmed', 'Cancelled'];
         if (!validStatuses.includes(bookingStatus)) {
             return res.status(400).json({ message: `Invalid booking status. Valid statuses are: ${validStatuses.join(', ')}.` });
         }
 
-        // 1. Find the booking by ID
+        // Find the booking by ID
         const booking = await RoomBooking.findById(bookingId);
         if (!booking) {
-            return res.status(404).json({ message: 'Booking not found' });
+            return res.status(404).json({ message: 'Booking not found.' });
         }
 
+        // Check if the booking is deleted
         if (booking.isDeleted) {
-            return res.status(400).json({ message: 'Cannot allocate a deleted booking.' });
+            return res.status(400).json({ message: 'Cannot update a deleted booking.' });
         }
 
+        // Check if the booking is already confirmed
         if (booking.bookingStatus === 'Confirmed') {
-            return res.status(400).json({ message: 'This Request is already Confirmed.' });
+            return res.status(400).json({ message: 'This booking is already confirmed.' });
         }
 
+        if (bookingStatus === 'Pending' || bookingStatus === 'Cancelled') {
+            // Update the booking status
+            booking.bookingStatus = bookingStatus;
+            // booking.allDetailsQRCode = allDetailsQRCode;
+            await booking.save();
+            // Call the createNotification function
+            // await createNotification({
+            //     title: `${booking.banquetType.banquetName.name}Banquet Booking Is Rejected`,
+            //     send_to: "User",
+            //     push_message: "Your banquet Booking Is Rejected For Some Details Are Not Validate!",
+            //     department: "BanquetBooking",
+            //     departmentId: booking._id
+            // });
 
-        // 2. Loop through each room allocation and validate each category
+            // if (requestId !== null) {
+            //     await updateRequest(requestId, {
+            //         status: bookingStatus,
+            //         adminResponse: "The Booking Is Cancelled Due To Some Reason"
+            //     });
+            // }
+        }
+
+        // Process the allocated rooms
         for (const allocation of allocatedRooms) {
             const { roomType, allocatedRoomIds } = allocation;
             const { checkIn, checkOut } = booking.bookingDates;
 
-            // Check if the room category exists in the booking's roomCategoryCounts
+            // Check if the room category exists in the booking
             const roomCategoryCount = booking.roomCategoryCounts.find(category => category.roomType.toString() === roomType);
             if (!roomCategoryCount) {
-                return res.status(404).json({ message: `Room type ${roomType} not found in this booking` });
+                return res.status(404).json({ message: `Room type ${roomType} not found in this booking.` });
             }
 
-            // 3. Fetch the room category details from the RoomWithCategory collection
+            // Fetch the room category details
             const roomWithCategory = await RoomWithCategory.findById(roomType);
             if (!roomWithCategory) {
-                return res.status(404).json({ message: 'Room category not found in RoomWithCategory' });
+                return res.status(404).json({ message: 'Room category not found in RoomWithCategory.' });
             }
 
-            let requestId = null;
-
-            // Find the request by departmentId instead of using findById
-            const findRequest = await AllRequest.findOne({ departmentId: bookingId }).exec();
-
-            if (findRequest) {
-                requestId = findRequest._id;
-            }
-
-
-            if (bookingStatus === 'Pending' || bookingStatus === 'Cancelled') {
-                // Update the booking status
-                booking.bookingStatus = bookingStatus;
-                // booking.allDetailsQRCode = allDetailsQRCode;
-                await booking.save();
-                // Call the createNotification function
-                await createNotification({
-                    title: `Your Room Booking Is Rejected`,
-                    send_to: "User",
-                    push_message: "Your Room Booking Is Rejected For Some Details Are Not Validate!",
-                    department: "RoomBooking",
-                    departmentId: booking._id
-                });
-
-
-                if (requestId !== null) {
-                    await updateRequest(requestId, {
-                        status: bookingStatus,
-                        adminResponse: "The Booking Is Cancelled Due To Some Reason"
-                    });
-                }
-
-            }
-
-            // 4. Check available rooms that meet the date and status requirements
-            const checkAvailabilityForDates = async (roomId) => {
-                // Fetch all bookings for this room
-                const bookingsForRoom = await RoomBooking.find({
+            // Validate room availability for the given dates
+            const checkRoomAvailability = async (roomId) => {
+                const overlappingBookings = await RoomBooking.find({
                     "roomCategoryCounts.roomNumbers": roomId,
                     "bookingDates.checkOut": { $gt: checkIn },
                     "bookingDates.checkIn": { $lt: checkOut },
-                    "isDeleted": false,  // Ensure deleted bookings are excluded
+                    "isDeleted": false, // Exclude deleted bookings
                 });
 
-                // If any bookings overlap, the room is not available
-                return bookingsForRoom.length === 0;
+                return overlappingBookings.length === 0;
             };
 
-            // Filter rooms that match the allocated room IDs, are available, and do not have conflicts with existing bookings
             const availableRooms = await Promise.all(
-                roomWithCategory.roomDetails.filter(room =>
-                    room.status === 'Available' && allocatedRoomIds.includes(room._id.toString())
-                ).map(async (room) => {
-                    const isAvailable = await checkAvailabilityForDates(room._id);
-                    return isAvailable ? room : null;
-                })
+                roomWithCategory.roomDetails
+                    .filter(room => allocatedRoomIds.includes(room._id.toString()))
+                    .map(async (room) => {
+                        const isAvailable = await checkRoomAvailability(room._id);
+                        return isAvailable ? room : null;
+                    })
             );
 
-            // Remove unavailable rooms (null values)
             const validAvailableRooms = availableRooms.filter(room => room !== null);
 
-            // 5. Check if the number of available rooms is sufficient
+            // Check if the required number of rooms is available
             if (validAvailableRooms.length < allocatedRoomIds.length) {
-                return res.status(400).json({ message: `Not enough rooms available for room type ${roomType} for the selected dates` });
+                return res.status(400).json({
+                    message: `Not enough rooms available for room type ${roomType} for the selected dates.`,
+                });
             }
 
-            // 6. Update the booking by allocating rooms
+            // Update the allocated rooms in the booking
             booking.roomCategoryCounts.forEach(category => {
                 if (category.roomType.toString() === roomType) {
-                    console.log(`Updating room numbers for room type: ${roomType}`);
-                    console.log(`Allocated rooms: ${allocatedRoomIds}`);
                     category.roomNumbers = allocatedRoomIds;
                 }
             });
         }
 
+        // Update the booking status
         booking.bookingStatus = bookingStatus;
 
         // Save the updated booking
         await booking.save();
-        if (booking.bookingStatus === 'Confirmed') {
-            const subtotal = booking.pricingDetails.final_totalTaxAmount - booking.pricingDetails.final_totalAmount;
 
-            await addBilling(booking.primaryMemberId, 'Room', { roomBooking: booking._id }, subtotal, 0, booking.pricingDetails.final_totalTaxAmount, booking.pricingDetails.final_totalAmount, userId)
+        if (bookingStatus === 'Confirmed') {
+            // Add billing details if the booking is confirmed
+            const subtotal = booking.pricingDetails.final_totalAmount - booking.pricingDetails.final_totalTaxAmount;
+            await addBilling(
+                booking.primaryMemberId,
+                'Room',
+                { roomBooking: booking._id },
+                subtotal,
+                0,
+                booking.pricingDetails.final_totalTaxAmount,
+                booking.pricingDetails.final_totalAmount,
+                userId
+            );
 
+            // Create a notification for the user
             await createNotification({
                 title: `Your Room Booking Is Confirmed`,
                 send_to: "User",
-                push_message: "Your Room Booking Is Confirmed Please Pay The Amount!",
+                push_message: "Your Room Booking is confirmed. Please proceed with the payment.",
                 department: "RoomBooking",
-                departmentId: booking._id
+                departmentId: booking._id,
             });
-
-            if (requestId !== null) {
-                updateRequest(requestId, { status: bookingStatus, adminResponse: "The Booking Is Confirmed !" })
-            }
-
+        } else if (bookingStatus === 'Cancelled') {
+            // Create a cancellation notification for the user
+            await createNotification({
+                title: `Your Room Booking Is Rejected`,
+                send_to: "User",
+                push_message: "Your Room Booking has been rejected due to invalid details.",
+                department: "RoomBooking",
+                departmentId: booking._id,
+            });
         }
 
-        return res.status(200).json({ message: 'Room allocation updated successfully', booking });
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ message: 'Server error' });
+        return res.status(200).json({ message: 'Room allocation updated successfully.', booking });
+    } catch (error) {
+        console.error('Error updating room allocation:', error);
+        return res.status(500).json({
+            message: 'An error occurred while updating room allocation.',
+            error: error.message,
+        });
     }
 };
+
 
 
 // const updateRoomAllocation = async (req, res) => {
@@ -1177,34 +1337,128 @@ const updateRoomAllocation = async (req, res) => {
 // };
 
 
+// const findRooms = async (req, res) => {
+//     const { roomCategoryCounts, bookingDates } = req.body;
+
+//     if (!roomCategoryCounts || !bookingDates) {
+//         return res.status(400).json({ error: "Missing required data" });
+//     }
+
+//     const { checkIn, checkOut } = bookingDates;
+
+//     if (!checkIn || !checkOut) {
+//         return res.status(400).json({ error: "Invalid booking dates" });
+//     }
+
+//     try {
+//         // Fetch all RoomWithCategory based on requested roomCategoryCounts
+//         const categoryIds = roomCategoryCounts.map((count) => count.roomType);
+//         const roomCategories = await RoomWithCategory.find({ _id: { $in: categoryIds } });
+
+//         // Fetch all RoomBooking records that overlap with the requested booking dates
+//         const overlappingBookings = await RoomBooking.find({
+//             "bookingDates.checkIn": { $lt: new Date(checkOut) },
+//             "bookingDates.checkOut": { $gt: new Date(checkIn) },
+//         });
+
+//         // Create a map of booked room IDs during the requested booking dates
+//         const bookedRoomIds = new Set();
+//         overlappingBookings.forEach((booking) => {
+//             booking.roomCategoryCounts.forEach((category) => {
+//                 category.roomNumbers.forEach((roomId) => {
+//                     bookedRoomIds.add(roomId.toString());
+//                 });
+//             });
+//         });
+
+//         // Prepare the response for available rooms
+//         const availableRoomsResponse = [];
+
+//         for (const requestedCategory of roomCategoryCounts) {
+//             const roomCategory = roomCategories.find(
+//                 (category) => category._id.toString() === requestedCategory.roomType
+//             );
+
+//             if (!roomCategory) {
+//                 return res.status(404).json({
+//                     error: `Room category not found for ID: ${requestedCategory.roomType}`,
+//                 });
+//             }
+
+//             // Filter available rooms for the current category
+//             const availableRooms = roomCategory.roomDetails.filter(
+//                 (room) => !bookedRoomIds.has(room._id.toString()) && room.status === "Available"
+//             );
+
+//             // Check if enough rooms are available
+//             if (availableRooms.length < requestedCategory.roomCount) {
+//                 return res.status(400).json({
+//                     error: `Not enough rooms available for category: ${roomCategory.categoryName}`,
+//                     required: requestedCategory.roomCount,
+//                     available: availableRooms.length,
+//                 });
+//             }
+
+//             // Add available rooms for the current category to the response
+//             availableRoomsResponse.push({
+//                 roomType: roomCategory.categoryName,
+//                 availableRooms: availableRooms.slice(0, requestedCategory.roomCount),
+//             });
+//         }
+
+//         // Return the available rooms response
+//         res.status(200).json({
+//             message: "Available rooms fetched successfully",
+//             availableRooms: availableRoomsResponse,
+//         });
+//     } catch (error) {
+//         console.error("Error finding available rooms:", error);
+//         res.status(500).json({ error: "An error occurred while finding available rooms" });
+//     }
+// }
+
+
 const findRooms = async (req, res) => {
-    const { roomCategoryCounts, bookingDates } = req.body;
+    const { bookingId } = req.params;
 
-    if (!roomCategoryCounts || !bookingDates) {
-        return res.status(400).json({ error: "Missing required data" });
-    }
-
-    const { checkIn, checkOut } = bookingDates;
-
-    if (!checkIn || !checkOut) {
-        return res.status(400).json({ error: "Invalid booking dates" });
+    if (!bookingId) {
+        return res.status(400).json({ error: "Booking ID is required" });
     }
 
     try {
-        // Fetch all RoomWithCategory based on requested roomCategoryCounts
-        const categoryIds = roomCategoryCounts.map((count) => count.roomType);
-        const roomCategories = await RoomWithCategory.find({ _id: { $in: categoryIds } });
+        // Fetch the RoomBooking details using the bookingId
+        const booking = await RoomBooking.findById(bookingId);
 
-        // Fetch all RoomBooking records that overlap with the requested booking dates
+        if (!booking) {
+            return res.status(404).json({ error: "Booking not found" });
+        }
+
+        const { roomCategoryCounts, bookingDates } = booking;
+
+        if (!roomCategoryCounts || !bookingDates) {
+            return res.status(400).json({ error: "Room category counts or booking dates are missing in the booking data" });
+        }
+
+        const { checkIn, checkOut } = bookingDates;
+
+        if (!checkIn || !checkOut) {
+            return res.status(400).json({ error: "Invalid booking dates" });
+        }
+
+        // Fetch all RoomWithCategory based on roomCategoryCounts
+        const categoryIds = roomCategoryCounts.map((count) => count.roomType);
+        const roomCategories = await RoomWithCategory.find({ _id: { $in: categoryIds } }).populate("categoryName");
+
+        // Fetch all RoomBooking records that overlap with the booking's dates
         const overlappingBookings = await RoomBooking.find({
             "bookingDates.checkIn": { $lt: new Date(checkOut) },
             "bookingDates.checkOut": { $gt: new Date(checkIn) },
         });
 
-        // Create a map of booked room IDs during the requested booking dates
+        // Create a set of booked room IDs during the requested booking dates
         const bookedRoomIds = new Set();
-        overlappingBookings.forEach((booking) => {
-            booking.roomCategoryCounts.forEach((category) => {
+        overlappingBookings.forEach((overlapBooking) => {
+            overlapBooking.roomCategoryCounts.forEach((category) => {
                 category.roomNumbers.forEach((roomId) => {
                     bookedRoomIds.add(roomId.toString());
                 });
@@ -1216,7 +1470,7 @@ const findRooms = async (req, res) => {
 
         for (const requestedCategory of roomCategoryCounts) {
             const roomCategory = roomCategories.find(
-                (category) => category._id.toString() === requestedCategory.roomType
+                (category) => category._id.toString() === requestedCategory.roomType.toString()
             );
 
             if (!roomCategory) {
@@ -1241,8 +1495,12 @@ const findRooms = async (req, res) => {
 
             // Add available rooms for the current category to the response
             availableRoomsResponse.push({
-                roomType: roomCategory.categoryName,
-                availableRooms: availableRooms.slice(0, requestedCategory.roomCount),
+                roomTypeName: roomCategory.categoryName.name,
+                roomType: roomCategory._id,
+                availableRooms: availableRooms.slice(0, requestedCategory.roomCount).map((room) => ({
+                    roomId: room._id,
+                    roomNumber: room.roomNumber,
+                })),
             });
         }
 
@@ -1255,7 +1513,8 @@ const findRooms = async (req, res) => {
         console.error("Error finding available rooms:", error);
         res.status(500).json({ error: "An error occurred while finding available rooms" });
     }
-}
+};
+
 
 
 module.exports = {
