@@ -9,6 +9,7 @@ const emailTemplates = require('../utils/emailTemplates');
 const { eventrenderTemplate } = require('../utils/templateRenderer');
 const { toTitleCase } = require('../utils/common');
 const { default: mongoose } = require('mongoose');
+const { createAttendanceRecords } = require('./eventAttendanceController');
 
 
 const createEvent = async (req, res) => {
@@ -584,6 +585,9 @@ const bookEvent = async (req, res) => {
         event.availableTickets -= (primaryMemberCount + dependentMemberCount + guestMemberCount);
         await event.save();
 
+        // Call this function after booking is created
+        await createAttendanceRecords(newBooking);
+
         // Send confirmation email
         const memberData = await EventBooking.findById(newBooking._id)
             .populate("eventId")
@@ -635,7 +639,7 @@ const bookEvent = async (req, res) => {
             [
                 {
                     filename: "qrcode.png",
-                    content: newBooking.allDetailsQRCode.split(",")[1],
+                    content: newBooking.primaryMemberQRCode.split(",")[1],
                     encoding: "base64",
                     cid: "qrCodeImage",
                 },
@@ -643,13 +647,13 @@ const bookEvent = async (req, res) => {
         );
 
         // Send email to dependents
-        for (const dependent of dependents || []) {
+        for (const dependent of preparedDependents || []) {
             const user = await User.findById(dependent.userId);
             if (user) {
                 await sendEmail(user.email, subjectDependent, htmlDependentBody, [
                     {
                         filename: "qrcode.png",
-                        content: newBooking.allDetailsQRCode.split(",")[1],
+                        content: dependent.qrCode.split(",")[1],
                         encoding: "base64",
                         cid: "qrCodeImage",
                     },
@@ -658,12 +662,12 @@ const bookEvent = async (req, res) => {
         }
 
         // Send email to guests
-        for (const guest of guests || []) {
+        for (const guest of preparedGuests || []) {
             if (guest.email) {
                 await sendEmail(guest.email, subjectDependent, htmlDependentBody, [
                     {
                         filename: "qrcode.png",
-                        content: newBooking.allDetailsQRCode.split(",")[1],
+                        content: guest.qrCode.split(",")[1],
                         encoding: "base64",
                         cid: "qrCodeImage",
                     },
