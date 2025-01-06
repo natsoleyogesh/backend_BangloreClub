@@ -47,15 +47,17 @@ const addRoomWithCategory = async (req, res) => {
             description: detail.description || '',
         }));
 
-        const parsedSpecialDayDetails = specialDayTariff.map(detail => {
-            // Ensure valid default values in case some fields are missing
-            return {
-                special_day_name: detail.special_day_name || '',
-                startDate: detail.startDate ? new Date(detail.startDate) : null,  // Handling potential undefined values
-                endDate: detail.endDate ? new Date(detail.endDate) : null,  // Handling potential undefined values
-                extraCharge: detail.extraCharge ? parseFloat(detail.extraCharge) : 0,  // Default to 0 if not a valid number
-            };
-        });
+        const parsedSpecialDayDetails = Array.isArray(specialDayTariff)
+            ? specialDayTariff.map(detail => {
+                // Ensure valid default values in case some fields are missing
+                return {
+                    special_day_name: detail.special_day_name || '',
+                    startDate: detail.startDate ? new Date(detail.startDate) : null,  // Handling potential undefined values
+                    endDate: detail.endDate ? new Date(detail.endDate) : null,  // Handling potential undefined values
+                    extraCharge: detail.extraCharge ? parseFloat(detail.extraCharge) : 0,  // Default to 0 if not a valid number
+                };
+            })
+            : [];
 
 
         // Validate room details
