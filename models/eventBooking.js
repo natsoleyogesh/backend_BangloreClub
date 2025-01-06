@@ -38,7 +38,7 @@ const eventBookingSchema = new mongoose.Schema(
                 uniqueQRCode: {
                     type: String,
                     required: true,
-                    unique: true,
+                    // unique: true,
                 },
             },
         ],
@@ -67,7 +67,7 @@ const eventBookingSchema = new mongoose.Schema(
                 uniqueQRCode: {
                     type: String,
                     required: true,
-                    unique: true,
+                    // unique: true,
                 },
             },
         ],
