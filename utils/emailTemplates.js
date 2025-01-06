@@ -3,8 +3,10 @@ const eventBookingTemplate = require("./template/eventBookingTemplate");
 const familymemberEditTemplate = require("./template/familymemberEditTemplate");
 const memberEditRequestTemplate = require("./template/memberEditRequestTemplate");
 
+
 // depentends template
 const eventBookingDependentTemplate = require("./template/eventBookingDependentTemplate");
+const roomBookingTemplate = require("./template/roomBookingTemplate");
 
 module.exports = {
     // roomBooking: roomBookingTemplate,
@@ -14,5 +16,6 @@ module.exports = {
     memberEditRequestTemplate: memberEditRequestTemplate,
     familymemberEditTemplate: familymemberEditTemplate,
 
-    eventBookingDependentTemplate: eventBookingDependentTemplate
+    eventBookingDependentTemplate: eventBookingDependentTemplate,
+    roomBooking: roomBookingTemplate
 };
