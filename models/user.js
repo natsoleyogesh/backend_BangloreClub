@@ -202,6 +202,39 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    // New fields added
+    vehicleNumber: {
+        type: String,
+        match: [
+            /^[A-Za-z0-9- ]{5,15}$/,
+            "Please provide a valid vehicle number",
+        ],
+        default: "",
+    },
+    vehicleModel: {
+        type: String,
+        default: "",
+    },
+    drivingLicenceNumber: {
+        type: String,
+        match: [
+            /^[A-Za-z0-9-]{5,20}$/,
+            "Please provide a valid driving licence number",
+        ],
+        default: "",
+    },
+    uploadProofs: [
+        {
+            type: String,
+            validate: {
+                validator: function (v) {
+                    return v.length <= 10; // Maximum 10 files
+                },
+                message: "You can upload a maximum of 3 files",
+            },
+            default: [],
+        },
+    ],
 }, { timestamps: true });
 
 const User = mongoose.model("User", userSchema);

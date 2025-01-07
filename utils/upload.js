@@ -3,13 +3,38 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
+// // Configure Multer storage
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => {
+//         cb(null, "uploads/profilePictures/"); // Directory where files will be saved
+//     },
+//     filename: (req, file, cb) => {
+//         const uniqueName = `${Date.now()}-${file.originalname}`;
+//         cb(null, uniqueName);
+//     },
+// });
+
+// // Multer upload instance
+// const upload = multer({
+//     storage,
+//     fileFilter: (req, file, cb) => {
+//         // Accept only image files
+//         if (!file.mimetype.startsWith("image/")) {
+//             return cb(new Error("Only image files are allowed"), false);
+//         }
+//         cb(null, true);
+//     },
+//     limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+// });
+
 // Configure Multer storage
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, "uploads/profilePictures/"); // Directory where files will be saved
+        const folder = file.fieldname === "proofs" ? "uploads/proofs/" : "uploads/profilePictures/";
+        cb(null, folder); // Save files in the appropriate directory
     },
     filename: (req, file, cb) => {
-        const uniqueName = `${Date.now()}-${file.originalname}`;
+        const uniqueName = `${Date.now()}-${file.originalname.replace(/\s+/g, "-")}`;
         cb(null, uniqueName);
     },
 });
@@ -22,10 +47,27 @@ const upload = multer({
         if (!file.mimetype.startsWith("image/")) {
             return cb(new Error("Only image files are allowed"), false);
         }
-        cb(null, true);
+        cb(null, true); // Accept the file if it's an image
     },
-    limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+    limits: { fileSize: 100 * 1024 }, // Limit file size to 100 KB (100 * 1024 bytes)
 });
+
+// Error handling for file size
+const handleMulterError = (err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        // Handle Multer-specific errors
+        if (err.code === "LIMIT_FILE_SIZE") {
+            return res.status(400).json({
+                message: "Each file must be less than 100 KB in size.",
+            });
+        }
+        return res.status(400).json({ message: err.message });
+    } else if (err) {
+        // Handle general errors
+        return res.status(400).json({ message: err.message });
+    }
+    next();
+};
 
 // Set up storage configuration for Multer
 const eventstorage = multer.diskStorage({
@@ -333,4 +375,4 @@ const notificationUpload = multer({
 
 });
 
-module.exports = { upload, eventupload, roomUpload, offerupload, hodupload, downloadUpload, noticeUpload, FBupload, ICONupload, banquetUpload, notificationUpload };
+module.exports = { upload, eventupload, roomUpload, offerupload, hodupload, downloadUpload, noticeUpload, FBupload, ICONupload, banquetUpload, notificationUpload, handleMulterError };

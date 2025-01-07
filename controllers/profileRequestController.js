@@ -130,6 +130,7 @@ const rejectProfileRequest = async (req, res) => {
 
 
 // Admin updates user details and approves the request
+
 // const updateUserDetailsByAdmin = async (req, res) => {
 //     try {
 //         const adminId = req.user.userId; // Extract adminId from the token's decoded data
@@ -142,7 +143,24 @@ const rejectProfileRequest = async (req, res) => {
 //         // Determine the `requestId` from `req.body` or `req.params`
 //         const requestId = req.body.requestId || req.params.requestId;
 //         const userId = req.params.userId; // Direct userId update if no requestId is provided
-//         const { name, email, mobileNumber, address, age, adminResponse, status } = req.body;
+//         const {
+//             name,
+//             email,
+//             mobileNumber,
+//             address,
+//             address1,
+//             address2,
+//             city,
+//             state,
+//             country,
+//             pin,
+//             dateOfBirth,
+//             maritalStatus,
+//             marriageDate,
+//             title,
+//             adminResponse,
+//             status,
+//         } = req.body;
 
 //         let user;
 
@@ -168,7 +186,16 @@ const rejectProfileRequest = async (req, res) => {
 //                 if (email) user.email = email;
 //                 if (mobileNumber) user.mobileNumber = mobileNumber;
 //                 if (address) user.address = address;
-//                 if (age) user.age = age;
+//                 if (address1) user.address1 = address1;
+//                 if (address2) user.address2 = address2;
+//                 if (city) user.city = city;
+//                 if (state) user.state = state;
+//                 if (country) user.country = country;
+//                 if (pin) user.pin = pin;
+//                 if (dateOfBirth) user.dateOfBirth = dateOfBirth;
+//                 if (maritalStatus) user.maritalStatus = maritalStatus;
+//                 if (marriageDate) user.marriageDate = marriageDate;
+//                 if (title) user.title = title;
 //                 if (status) {
 //                     user.status = status;
 
@@ -182,7 +209,7 @@ const rejectProfileRequest = async (req, res) => {
 
 //             // Approve the profile edit request
 //             profileEditRequest.status = "Approved";
-//             profileEditRequest.adminResponse = adminResponse || "Admin Approved The Your Request And Profile Is Updated";
+//             profileEditRequest.adminResponse = adminResponse || "Admin approved the request and profile is updated.";
 //             await profileEditRequest.save();
 //         } else if (userId) {
 //             // Direct user update without a requestId
@@ -196,7 +223,16 @@ const rejectProfileRequest = async (req, res) => {
 //             if (email) user.email = email;
 //             if (mobileNumber) user.mobileNumber = mobileNumber;
 //             if (address) user.address = address;
-//             if (age) user.age = age;
+//             if (address1) user.address1 = address1;
+//             if (address2) user.address2 = address2;
+//             if (city) user.city = city;
+//             if (state) user.state = state;
+//             if (country) user.country = country;
+//             if (pin) user.pin = pin;
+//             if (dateOfBirth) user.dateOfBirth = dateOfBirth;
+//             if (maritalStatus) user.maritalStatus = maritalStatus;
+//             if (marriageDate) user.marriageDate = marriageDate;
+//             if (title) user.title = title;
 //             if (status) {
 //                 user.status = status;
 
@@ -211,28 +247,19 @@ const rejectProfileRequest = async (req, res) => {
 //             return res.status(400).json({ message: "Either requestId or userId must be provided." });
 //         }
 
+
+
 //         // Response with updated user details
 //         res.status(200).json({
 //             message: "User details updated successfully by admin",
-//             user: {
-//                 _id: user._id,
-//                 name: user.name,
-//                 email: user.email,
-//                 mobileNumber: user.mobileNumber,
-//                 memberId: user.memberId,
-//                 lastLogin: user.lastLogin,
-//                 address: user.address,
-//                 relation: user.relation,
-//                 profilePicture: user.profilePicture,
-//                 age: user.age,
-//                 status: user.status
-//             },
+//             user,
 //         });
 //     } catch (error) {
 //         console.error("Error updating user details by admin:", error);
 //         res.status(500).json({ message: "Error updating user details", error: error.message });
 //     }
 // };
+
 const updateUserDetailsByAdmin = async (req, res) => {
     try {
         const adminId = req.user.userId; // Extract adminId from the token's decoded data
@@ -262,6 +289,9 @@ const updateUserDetailsByAdmin = async (req, res) => {
             title,
             adminResponse,
             status,
+            vehicleNumber,
+            vehicleModel,
+            drivingLicenceNumber,
         } = req.body;
 
         let user;
@@ -298,6 +328,9 @@ const updateUserDetailsByAdmin = async (req, res) => {
                 if (maritalStatus) user.maritalStatus = maritalStatus;
                 if (marriageDate) user.marriageDate = marriageDate;
                 if (title) user.title = title;
+                if (vehicleNumber) user.vehicleNumber = vehicleNumber;
+                if (vehicleModel) user.vehicleModel = vehicleModel;
+                if (drivingLicenceNumber) user.drivingLicenceNumber = drivingLicenceNumber;
                 if (status) {
                     user.status = status;
 
@@ -311,7 +344,8 @@ const updateUserDetailsByAdmin = async (req, res) => {
 
             // Approve the profile edit request
             profileEditRequest.status = "Approved";
-            profileEditRequest.adminResponse = adminResponse || "Admin approved the request and profile is updated.";
+            profileEditRequest.adminResponse =
+                adminResponse || "Admin approved the request and profile is updated.";
             await profileEditRequest.save();
         } else if (userId) {
             // Direct user update without a requestId
@@ -335,6 +369,9 @@ const updateUserDetailsByAdmin = async (req, res) => {
             if (maritalStatus) user.maritalStatus = maritalStatus;
             if (marriageDate) user.marriageDate = marriageDate;
             if (title) user.title = title;
+            if (vehicleNumber) user.vehicleNumber = vehicleNumber;
+            if (vehicleModel) user.vehicleModel = vehicleModel;
+            if (drivingLicenceNumber) user.drivingLicenceNumber = drivingLicenceNumber;
             if (status) {
                 user.status = status;
 
@@ -348,8 +385,6 @@ const updateUserDetailsByAdmin = async (req, res) => {
             // If neither `requestId` nor `userId` is provided
             return res.status(400).json({ message: "Either requestId or userId must be provided." });
         }
-
-
 
         // Response with updated user details
         res.status(200).json({

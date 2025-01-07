@@ -16,6 +16,112 @@ const STATIC_OTP = "123456";
 // const authToken = process.env.TWILIO_AUTH_TOKEN;
 // const client = twilio(accountSid, authToken);
 
+// const createUser = async (req, res) => {
+//     try {
+//         const {
+//             name,
+//             email,
+//             mobileNumber,
+//             relation,
+//             parentUserId,
+//             address,
+//             address1,
+//             address2,
+//             city,
+//             state,
+//             country,
+//             pin,
+//             dateOfBirth,
+//             maritalStatus,
+//             marriageDate,
+//             title,
+//         } = req.body;
+
+//         const profilePicturePath = req.file ? `/uploads/profilePictures/${req.file.filename}` : "";
+
+//         // Determine if this user is a primary user or a family member
+//         if (!parentUserId) {
+//             const memberId = await generatePrimaryMemberId();
+//             const newUser = new User({
+//                 name,
+//                 email,
+//                 mobileNumber,
+//                 memberId,
+//                 relation: "Primary",
+//                 address,
+//                 address1,
+//                 address2,
+//                 city,
+//                 state,
+//                 country,
+//                 pin,
+//                 dateOfBirth,
+//                 maritalStatus,
+//                 marriageDate,
+//                 title,
+//                 profilePicture: profilePicturePath,
+//                 isDeleted: false,
+//                 lastLogin: Date.now(),
+//             });
+
+//             const savedUser = await newUser.save();
+//             return res.status(201).json({
+//                 message: "Primary user created successfully",
+//                 user: savedUser,
+//             });
+//         }
+
+//         // If parentUserId is provided, it means this is a family member addition
+//         const parentUser = await User.findById(parentUserId);
+//         if (!parentUser) {
+//             return res.status(404).json({ message: "Parent user not found." });
+//         }
+
+//         // Validate relationship rules
+//         const existingRelations = await User.find({ parentUserId });
+//         if (relation === "Spouse" && existingRelations.some((member) => member.relation === "Spouse")) {
+//             return res.status(400).json({ message: "Only one spouse can be added per user." });
+//         }
+
+//         // Generate a unique memberId for the family member
+//         const memberId = await generateFamilyMemberId(parentUser.memberId, existingRelations.length);
+
+//         // Create and save the family member
+//         const familyMember = new User({
+//             name,
+//             email,
+//             mobileNumber,
+//             memberId,
+//             relation,
+//             address,
+//             address1,
+//             address2,
+//             city,
+//             state,
+//             country,
+//             pin,
+//             dateOfBirth,
+//             maritalStatus,
+//             marriageDate,
+//             title,
+//             parentUserId: parentUser._id,
+//             profilePicture: profilePicturePath,
+//         });
+
+//         const savedFamilyMember = await familyMember.save();
+//         res.status(201).json({
+//             message: "Family member added successfully",
+//             user: savedFamilyMember,
+//         });
+//     } catch (error) {
+//         console.error("Error in creating user or adding family member:", error);
+//         res.status(400).json({
+//             message: "Error in creating user or adding family member",
+//             error: error.message,
+//         });
+//     }
+// };
+
 const createUser = async (req, res) => {
     try {
         const {
@@ -35,13 +141,32 @@ const createUser = async (req, res) => {
             maritalStatus,
             marriageDate,
             title,
+            vehicleNumber,
+            vehicleModel,
+            drivingLicenceNumber,
         } = req.body;
 
-        const profilePicturePath = req.file ? `/uploads/profilePictures/${req.file.filename}` : "";
+        // Handle profile picture
+        const profilePicturePath = req.files?.profilePicture
+            ? `/uploads/profilePictures/${req.files.profilePicture[0].filename}`
+            : "";
+
+        // Handle proof files
+        const uploadProofs = req.files?.proofs
+            ? req.files.proofs.map((file) => `/uploads/proofs/${file.filename}`)
+            : [];
+
+        // Ensure no more than 3 proofs are uploaded
+        if (uploadProofs.length > 3) {
+            return res.status(400).json({ message: "You can upload a maximum of 3 proof files." });
+        }
 
         // Determine if this user is a primary user or a family member
         if (!parentUserId) {
+            // Generate a unique member ID for the primary user
             const memberId = await generatePrimaryMemberId();
+
+            // Create a new primary user
             const newUser = new User({
                 name,
                 email,
@@ -60,10 +185,15 @@ const createUser = async (req, res) => {
                 marriageDate,
                 title,
                 profilePicture: profilePicturePath,
+                vehicleNumber,
+                vehicleModel,
+                drivingLicenceNumber,
+                uploadProofs,
                 isDeleted: false,
                 lastLogin: Date.now(),
             });
 
+            // Save the primary user to the database
             const savedUser = await newUser.save();
             return res.status(201).json({
                 message: "Primary user created successfully",
@@ -83,10 +213,10 @@ const createUser = async (req, res) => {
             return res.status(400).json({ message: "Only one spouse can be added per user." });
         }
 
-        // Generate a unique memberId for the family member
+        // Generate a unique member ID for the family member
         const memberId = await generateFamilyMemberId(parentUser.memberId, existingRelations.length);
 
-        // Create and save the family member
+        // Create a new family member
         const familyMember = new User({
             name,
             email,
@@ -106,8 +236,13 @@ const createUser = async (req, res) => {
             title,
             parentUserId: parentUser._id,
             profilePicture: profilePicturePath,
+            vehicleNumber,
+            vehicleModel,
+            drivingLicenceNumber,
+            uploadProofs,
         });
 
+        // Save the family member to the database
         const savedFamilyMember = await familyMember.save();
         res.status(201).json({
             message: "Family member added successfully",
@@ -121,6 +256,7 @@ const createUser = async (req, res) => {
         });
     }
 };
+
 
 
 // Step 1: Request login to generate and send OTP
@@ -317,6 +453,9 @@ const fetchFamilyTree = async (userId) => {
                 status: member.status,
                 activatedDate: member.activatedDate,
                 profilePicture: member.profilePicture, // Add profile picture in QR data
+                vehicleNumber: member.vehicleNumber,
+                vehicleModel: member.vehicleModel,
+                drivingLicenceNumber: member.drivingLicenceNumber,
             };
             const qrCode = await QRCodeHelper.generateQRCode(qrData);
 
@@ -343,6 +482,9 @@ const fetchFamilyTree = async (userId) => {
                 profilePicture: member.profilePicture,
                 qrCode, // Include the generated QR code
                 familyMembers: await fetchFamilyTree(member._id), // Recursively fetch sub-family members
+                vehicleNumber: member.vehicleNumber,
+                vehicleModel: member.vehicleModel,
+                drivingLicenceNumber: member.drivingLicenceNumber,
             };
         })
     );
@@ -449,6 +591,9 @@ const getUserDetails = async (req, res) => {
             status: user.status,
             activatedDate: user.activatedDate,
             profilePicture: user.profilePicture, // Include profile picture
+            vehicleNumber: user.vehicleNumber,
+            vehicleModel: user.vehicleModel,
+            drivingLicenceNumber: user.drivingLicenceNumber,
         };
         const primaryUserQRCode = await QRCodeHelper.generateQRCode(primaryUserQRData);
 
@@ -480,8 +625,11 @@ const getUserDetails = async (req, res) => {
                 relation: user.relation,
                 status: user.status,
                 activatedDate: user.activatedDate,
-                qrCode: primaryUserQRCode, // Include the primary user's QR code
+                vehicleNumber: user.vehicleNumber,
+                vehicleModel: user.vehicleModel,
+                drivingLicenceNumber: user.drivingLicenceNumber,
                 familyMembers, // Nested family members with QR codes
+                qrCode: primaryUserQRCode, // Include the primary user's QR code
             },
         });
     } catch (error) {
@@ -566,11 +714,100 @@ const userLogout = async (req, res) => {
 };
 
 
+const uploadProofs = async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        // Find the user by ID
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // Check if proofs are provided
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ message: "Please provide proofs to upload!" });
+        }
+
+        // Extract proof file paths and ensure cross-platform compatibility
+        const proofPaths = req.files.map((file) => `/${file.path.replace(/\\/g, '/')}`);
+
+        // Ensure no more than 3 proofs are uploaded in total
+        if (user.uploadProofs.length + proofPaths.length > 3) {
+            return res.status(400).json({ message: "You can upload a maximum of 3 proofs." });
+        }
+
+        // Add the new proofs to the user's proofs array
+        user.uploadProofs.push(...proofPaths);
+
+        // Save the updated user
+        await user.save();
+
+        return res.status(200).json({
+            message: "Proofs uploaded successfully.",
+            proofs: proofPaths,
+        });
+    } catch (error) {
+        console.error("Error uploading proofs:", error);
+        return res.status(500).json({
+            message: "Failed to upload proofs.",
+            error: error.message,
+        });
+    }
+};
+
+
+const deleteProofs = async (req, res) => {
+    const { userId, index } = req.params;
+
+    try {
+        // Find the user by ID
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // Validate the index
+        if (index < 0 || index >= user.uploadProofs.length) {
+            return res.status(400).json({ message: "Invalid proof index." });
+        }
+
+        // Get the proof path
+        const proofPath = user.uploadProofs[index];
+
+        // Remove the proof from the array
+        user.uploadProofs.splice(index, 1);
+
+        // Delete the proof file from the server
+        const filePath = path.resolve(__dirname, "..", proofPath);
+        fs.unlink(filePath, (err) => {
+            if (err) {
+                console.error("Failed to delete proof file:", err);
+            }
+        });
+
+        // Save the updated user
+        await user.save();
+
+        return res.status(200).json({ message: "Proof deleted successfully." });
+    } catch (error) {
+        console.error("Error deleting proof:", error);
+        return res.status(500).json({
+            message: "Failed to delete proof.",
+            error: error.message,
+        });
+    }
+};
+
+
+
 module.exports = {
     createUser,
     loginRequest,
     verifyOtp,
     getUserDetails,
     updateProfilePicture,
-    userLogout
+    userLogout,
+    uploadProofs,
+    deleteProofs
 };
