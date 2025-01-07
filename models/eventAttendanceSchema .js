@@ -12,6 +12,11 @@ const eventAttendanceSchema = new mongoose.Schema(
             ref: 'User', // Reference to the User model (for primary member or dependents)
             required: false, // Optional for guests
         },
+        gatekeeperId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Admin", // Reference to the Gatekeeper (User) model
+            default: null
+        },
         guestName: {
             type: String, // Name of the guest
             required: function () {
@@ -19,6 +24,10 @@ const eventAttendanceSchema = new mongoose.Schema(
             },
         },
         qrCode: {
+            type: String, // Unique QR code for attendance tracking
+            required: true,
+        },
+        qrCodeData: {
             type: String, // Unique QR code for attendance tracking
             required: true,
         },
@@ -30,6 +39,10 @@ const eventAttendanceSchema = new mongoose.Schema(
         scannedAt: {
             type: Date, // Timestamp of when the QR code was scanned
         },
+        isDeleted: {
+            type: Boolean,
+            default: false
+        }
     },
     { timestamps: true }
 );

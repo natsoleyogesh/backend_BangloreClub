@@ -1,3 +1,4 @@
+const { markAttendance, getEventAttendance, getMemberDetailsFromQR } = require("../controllers/eventAttendanceController");
 const { createEvent, getAllEvents, getEventById, updateEvent, deleteEvent, bookEvent, bookingDetails, getAllBookings, getBookingById, deleteBooking, getBookingDetailsById, updateBookingStatusAndPaymentStatus, getBookingDetails } = require("../controllers/eventController");
 const { verifyToken } = require("../utils/common");
 const { eventupload } = require("../utils/upload");
@@ -23,4 +24,9 @@ module.exports = (router) => {
     router.get("/event/allbookings", verifyToken, getBookingDetails);
 
 
+
+    router.post("/mark-attendance", verifyToken, markAttendance);
+    router.get("/get-attendance/:eventId", getEventAttendance);
+
+    router.post("/getmember-details", getMemberDetailsFromQR);
 }
