@@ -16,7 +16,7 @@ const app = express();
 let isDevelopment = true;
 app.use(
   cors({
-    origin: isDevelopment ? "*" : ["https://13.53.129.30"],
+    origin: isDevelopment ? "*" : ["https://13.60.85.75/"],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true, // Adjust based on your use case
   })
