@@ -173,6 +173,10 @@ const fetchFamilyTree = async (userId) => {
       activatedDate: member.activatedDate,
       profilePicture: member.profilePicture,
       parentUserId: member.parentUserId,
+      vehicleNumber: member.vehicleNumber,
+      vehicleModel: member.vehicleModel,
+      drivingLicenceNumber: member.drivingLicenceNumber,
+      uploadProofs: member.uploadProofs,
       familyMembers: await fetchFamilyTree(member._id), // Recursively fetch sub-family members
     }))
   );
@@ -219,6 +223,10 @@ const getUserDetailsById = async (req, res) => {
         parentUserId: user.parentUserId,
         status: user.status,
         activatedDate: user.activatedDate,
+        vehicleNumber: user.vehicleNumber,
+        vehicleModel: user.vehicleModel,
+        drivingLicenceNumber: user.drivingLicenceNumber,
+        uploadProofs: user.uploadProofs,
         familyMembers, // Nested family members
       },
     });

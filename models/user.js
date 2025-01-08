@@ -228,9 +228,9 @@ const userSchema = new mongoose.Schema({
             type: String,
             validate: {
                 validator: function (v) {
-                    return v.length <= 10; // Maximum 10 files
+                    return v.length > 10; // Maximum 10 files
                 },
-                message: "You can upload a maximum of 3 files",
+                message: "You can upload a maximum of 10 files",
             },
             default: [],
         },
