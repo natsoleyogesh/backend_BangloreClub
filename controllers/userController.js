@@ -161,6 +161,16 @@ const createUser = async (req, res) => {
             return res.status(400).json({ message: "You can upload a maximum of 3 proof files." });
         }
 
+        // Check if email or mobile number is already linked to another account
+        const existingUser = await User.findOne({
+            $or: [{ email: email }, { mobileNumber: mobileNumber }],
+        });
+        if (existingUser) {
+            return res.status(400).json({
+                message: "This mobile number or e-mail is already linked to another account.",
+            });
+        }
+
         // Determine if this user is a primary user or a family member
         if (!parentUserId) {
             // Generate a unique member ID for the primary user

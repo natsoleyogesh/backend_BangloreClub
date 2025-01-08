@@ -442,6 +442,7 @@ const getActiveBill = async (req, res) => {
                 $match: {
                     memberId: new mongoose.Types.ObjectId(userId),  // Ensure memberId is treated as an ObjectId
                     // paymentStatus: 'Due',
+                    paymentStatus: "Due", // Only include bills with paymentStatus as "Due"
                     isDeleted: false
                 }
             },
@@ -539,7 +540,8 @@ const getMemberBill = async (req, res) => {
                 $match: {
                     memberId: new mongoose.Types.ObjectId(userId), // Ensure memberId is treated as an ObjectId
                     isDeleted: false,
-                    ...(filter.paymentStatus ? { paymentStatus: filter.paymentStatus } : {}),
+                    // ...(filter.paymentStatus ? { paymentStatus: filter.paymentStatus } : {}),
+                    paymentStatus: "Due",
                     ...(filter.createdAt ? { createdAt: filter.createdAt } : {}) // Apply date filter in aggregation if applicable
                 }
             },

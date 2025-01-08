@@ -235,6 +235,15 @@ const userSchema = new mongoose.Schema({
             default: [],
         },
     ],
+    creditStop: {
+        type: String,
+        enum: ['Yes', 'No'],
+        default: 'No'
+    },
+    creditLimit: {
+        type: Number,
+        default: 0
+    }
 }, { timestamps: true });
 
 const User = mongoose.model("User", userSchema);

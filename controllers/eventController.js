@@ -473,9 +473,9 @@ const bookEvent = async (req, res) => {
             return res.status(400).json({ message: 'Event is not active or available for booking.' });
         }
 
-        if (event.availableTickets <= 0) {
-            return res.status(400).json({ message: 'No tickets available for this event.' });
-        }
+        // if (event.availableTickets <= 0) {
+        //     return res.status(400).json({ message: 'No tickets available for this event.' });
+        // }
 
         // Pricing calculations
         let primaryMemberCount = 0;
@@ -484,6 +484,12 @@ const bookEvent = async (req, res) => {
         }
         const dependentMemberCount = dependents ? dependents.length : 0;
         const guestMemberCount = guests ? guests.length : 0;
+
+        const totalMemberCount = primaryMemberCount + dependentMemberCount + guestMemberCount;
+
+        if (event.availableTickets <= totalMemberCount) {
+            return res.status(400).json({ message: 'No tickets available for this event.' });
+        }
 
         const subtotal =
             primaryMemberCount * event.primaryMemberPrice +
@@ -829,9 +835,7 @@ const bookingDetails = async (req, res) => {
             return res.status(400).json({ message: 'Event is not active or available for booking.' });
         }
 
-        if (event.availableTickets <= 0) {
-            return res.status(400).json({ message: 'No tickets available for this event.' });
-        }
+
 
         // Pricing calculations
         let primaryMemberCount = 0;
@@ -840,6 +844,13 @@ const bookingDetails = async (req, res) => {
         }
         const dependentMemberCount = dependents ? dependents.length : 0;
         const guestMemberCount = guests ? guests.length : 0;
+
+        const totalMemberCount = primaryMemberCount + dependentMemberCount + guestMemberCount;
+
+        if (event.availableTickets <= totalMemberCount) {
+            return res.status(400).json({ message: 'No tickets available for this event.' });
+        }
+
 
         const subtotal =
             primaryMemberCount * event.primaryMemberPrice +

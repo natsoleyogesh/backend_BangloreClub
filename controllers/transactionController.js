@@ -3,7 +3,57 @@ const Transaction = require('../models/transaction'); // Import the Transaction 
 const Billing = require('../models/billings'); // Assuming the Billing model is in the models folder
 
 const moment = require('moment');
+const RoomBooking = require('../models/roomBooking');
+const BanquetBooking = require('../models/banquetBooking');
+const EventBooking = require('../models/eventBooking');
 // Create a new transaction
+// const createTransaction = async (req, res) => {
+//     const {
+//         memberId,
+//         billingId,
+//         paymentMethod,
+//         taxAmount,
+//         other_service_charge,
+//         paymentAmount,
+//         transactionId,
+//         paymentStatus
+//     } = req.body;
+
+//     try {
+//         // Create a new transaction
+//         const transaction = new Transaction({
+//             memberId,
+//             billingId,
+//             paymentMethod: paymentMethod ? paymentMethod : '',
+//             taxAmount,
+//             other_service_charge,
+//             paymentAmount,
+//             transactionId,
+//             paymentStatus,
+//             status: 'Pending'  // Initial status
+//         });
+
+//         await transaction.save();
+
+//         // If paymentStatus is "Success", update the corresponding Billing record
+//         if (paymentStatus === 'Success') {
+//             await Billing.findByIdAndUpdate(
+//                 billingId,
+//                 { paymentStatus: 'Paid' },
+//                 { new: true }
+//             );
+//         }
+
+//         return res.status(201).json({
+//             message: 'Transaction created successfully.',
+//             transaction
+//         });
+//     } catch (error) {
+//         console.error('Error creating transaction:', error);
+//         return res.status(500).json({ message: 'Internal server error', error: error.message });
+//     }
+// };
+
 const createTransaction = async (req, res) => {
     const {
         memberId,
@@ -27,18 +77,58 @@ const createTransaction = async (req, res) => {
             paymentAmount,
             transactionId,
             paymentStatus,
-            status: 'Pending'  // Initial status
+            status: 'Pending' // Initial status
         });
 
         await transaction.save();
 
         // If paymentStatus is "Success", update the corresponding Billing record
         if (paymentStatus === 'Success') {
-            await Billing.findByIdAndUpdate(
+            const billing = await Billing.findByIdAndUpdate(
                 billingId,
                 { paymentStatus: 'Paid' },
                 { new: true }
-            );
+            )
+            // .populate('serviceDetails.roomBooking')
+            //     .populate('serviceDetails.banquetBooking')
+            //     .populate('serviceDetails.eventBooking');
+
+            if (!billing) {
+                return res.status(404).json({ message: 'Billing record not found.' });
+            }
+
+            // Determine the service type and update its paymentStatus
+            switch (billing.serviceType) {
+                case 'Room':
+                    if (billing.serviceDetails.roomBooking) {
+                        await RoomBooking.findByIdAndUpdate(
+                            billing.serviceDetails.roomBooking,
+                            { paymentStatus: 'Completed' },
+                            { new: true }
+                        );
+                    }
+                    break;
+                case 'Banquet':
+                    if (billing.serviceDetails.banquetBooking) {
+                        await BanquetBooking.findByIdAndUpdate(
+                            billing.serviceDetails.banquetBooking,
+                            { paymentStatus: 'Completed' },
+                            { new: true }
+                        );
+                    }
+                    break;
+                case 'Event':
+                    if (billing.serviceDetails.eventBooking) {
+                        await EventBooking.findByIdAndUpdate(
+                            billing.serviceDetails.eventBooking,
+                            { paymentStatus: 'Completed' },
+                            { new: true }
+                        );
+                    }
+                    break;
+                default:
+                    console.error('Unknown service type:', billing.serviceType);
+            }
         }
 
         return res.status(201).json({
@@ -50,6 +140,7 @@ const createTransaction = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 };
+
 
 
 const getAllTransactions = async (req, res) => {

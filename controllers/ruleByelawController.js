@@ -179,7 +179,7 @@ const updateRuleBylaw = async (req, res) => {
             const duplicateCheck = await ClubRuleByelaw.findOne({
                 _id: { $ne: id }, // Exclude the current record
                 type: updates.type || (await ClubRuleByelaw.findById(id)).type, // Use current value if not updated
-                category: updates.category || (await ClubRuleByelaw.findById(id)).category,
+                // category: updates.category || (await ClubRuleByelaw.findById(id)).category,
                 title: updates.title || (await ClubRuleByelaw.findById(id)).title,
             });
 

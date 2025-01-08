@@ -307,6 +307,20 @@ const updateUserDetailsByAdmin = async (req, res) => {
             // Determine the target user based on `dependentId` or `userId` in the request
             const targetUserId = profileEditRequest.dependentId || profileEditRequest.userId;
 
+
+            // Common logic to check if email or mobile number already exists
+            if (email || mobileNumber) {
+                const existingUser = await User.findOne({
+                    $or: [{ email: email }, { mobileNumber: mobileNumber }],
+                    _id: { $ne: targetUserId }, // Exclude the current user being updated
+                });
+                if (existingUser) {
+                    return res.status(400).json({
+                        message: "This mobile number or e-mail is already linked to another account.",
+                    });
+                }
+            }
+
             user = await User.findById(targetUserId);
             if (!user) {
                 return res.status(404).json({ message: "User not found." });
@@ -349,6 +363,19 @@ const updateUserDetailsByAdmin = async (req, res) => {
             await profileEditRequest.save();
         } else if (userId) {
             // Direct user update without a requestId
+
+            // Common logic to check if email or mobile number already exists
+            if (email || mobileNumber) {
+                const existingUser = await User.findOne({
+                    $or: [{ email: email }, { mobileNumber: mobileNumber }],
+                    _id: { $ne: userId }, // Exclude the current user being updated
+                });
+                if (existingUser) {
+                    return res.status(400).json({
+                        message: "This mobile number or e-mail is already linked to another account.",
+                    });
+                }
+            }
             user = await User.findById(userId);
             if (!user) {
                 return res.status(404).json({ message: "User not found." });

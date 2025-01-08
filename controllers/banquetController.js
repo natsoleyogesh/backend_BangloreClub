@@ -293,6 +293,11 @@ const createBanquet = async (req, res) => {
                 accessible: false,
             };
 
+        if (req.files.length > 6) {
+            return res.status(400).json({
+                message: 'Only 6 Images Are Allowed!',
+            });
+        }
         // Parse and handle images
         const images = req.files ? req.files.map(file => `/${file.path.replace(/\\/g, '/')}`) : [];
 
@@ -507,6 +512,14 @@ const uploadBanquetImage = async (req, res) => {
         // Check if images are provided
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ message: "Please provide banquet images!" });
+        }
+
+
+        const totalImages = banquet.images.length + req.files.length;
+        if (totalImages > 6) {
+            return res.status(400).json({
+                message: `Only 6 Images Are allowed ${banquet.images.length} Are Availble, Please Select the only (${6 - banquet.images.length})`,
+            });
         }
 
         // Extract image file paths and ensure cross-platform compatibility
