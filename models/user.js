@@ -184,7 +184,8 @@ const userSchema = new mongoose.Schema({
     },
     activatedDate: {
         type: Date,
-        default: null, // Null when user is not active
+        // default: null, // Null when user is not active
+        default: Date.now,
     },
     profilePicture: {
         type: String,
