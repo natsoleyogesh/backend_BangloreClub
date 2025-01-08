@@ -234,7 +234,7 @@ const getAllUsers = async (req, res) => {
 
     // Find the primary user by ID
     // const users = await User.find({});
-    const users = (await User.find({})).reverse();
+    const users = (await User.find({ relation: "Primary" })).reverse();
     // Send the response including the user and their full family tree
     res.status(200).json({
       message: "User details retrieved successfully",
