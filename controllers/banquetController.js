@@ -931,20 +931,34 @@ const createBanquetBooking = async (req, res) => {
         }
 
         // const totalAmount = applicablePricing.price * durationInHours;
-        const totalAmount = applicablePricing.price;
+        let totalAmount = applicablePricing.price;
 
 
-        // Calculate special day charges if applicable
+        // // Calculate special day charges if applicable
+        // let specialDayExtraCharge = 0;
+        // if (banquet.specialDayTariff && Array.isArray(banquet.specialDayTariff)) {
+        //     banquet.specialDayTariff.forEach(specialDay => {
+        //         const start = new Date(specialDay.startDate);
+        //         const end = new Date(specialDay.endDate);
+        //         if (checkInDate >= start && checkOutDate <= end) {
+        //             specialDayExtraCharge += specialDay.extraCharge;
+        //         }
+        //     });
+        // }
+
         let specialDayExtraCharge = 0;
         if (banquet.specialDayTariff && Array.isArray(banquet.specialDayTariff)) {
-            banquet.specialDayTariff.forEach(specialDay => {
+            banquet.specialDayTariff.forEach((specialDay) => {
                 const start = new Date(specialDay.startDate);
                 const end = new Date(specialDay.endDate);
                 if (checkInDate >= start && checkOutDate <= end) {
-                    specialDayExtraCharge += specialDay.extraCharge;
+                    specialDayExtraCharge += (totalAmount * specialDay.extraCharge) / 100;
                 }
             });
         }
+
+        totalAmount += specialDayExtraCharge;
+
 
         // Calculate tax details
         let totalTaxAmount = 0;
@@ -1235,19 +1249,34 @@ const createBanquetBookingDetails = async (req, res) => {
             return res.status(400).json({ message: 'No pricing details available for the selected time slot.' });
         }
 
-        const totalAmount = applicablePricing.price;
+        let totalAmount = applicablePricing.price;
 
-        // Calculate special day charges if applicable
+        // // Calculate special day charges if applicable
+        // let specialDayExtraCharge = 0;
+        // if (banquet.specialDayTariff && Array.isArray(banquet.specialDayTariff)) {
+        //     banquet.specialDayTariff.forEach(specialDay => {
+        //         const start = new Date(specialDay.startDate);
+        //         const end = new Date(specialDay.endDate);
+        //         if (checkInDate >= start && checkOutDate <= end) {
+        //             specialDayExtraCharge += specialDay.extraCharge;
+        //         }
+        //     });
+        // }
+
+        // Calculate special day charges in percentage and add to the total amount
         let specialDayExtraCharge = 0;
         if (banquet.specialDayTariff && Array.isArray(banquet.specialDayTariff)) {
-            banquet.specialDayTariff.forEach(specialDay => {
+            banquet.specialDayTariff.forEach((specialDay) => {
                 const start = new Date(specialDay.startDate);
                 const end = new Date(specialDay.endDate);
                 if (checkInDate >= start && checkOutDate <= end) {
-                    specialDayExtraCharge += specialDay.extraCharge;
+                    specialDayExtraCharge += (totalAmount * specialDay.extraCharge) / 100;
                 }
             });
         }
+
+        totalAmount += specialDayExtraCharge;
+
 
         // Calculate tax details
         let totalTaxAmount = 0;
