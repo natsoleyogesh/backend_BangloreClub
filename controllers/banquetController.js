@@ -957,7 +957,7 @@ const createBanquetBooking = async (req, res) => {
             });
         }
 
-        totalAmount += specialDayExtraCharge;
+        // totalAmount += specialDayExtraCharge;
 
 
         // Calculate tax details
@@ -973,7 +973,7 @@ const createBanquetBooking = async (req, res) => {
             });
         });
 
-        const finalTotalAmount = totalAmount + totalTaxAmount;
+        const finalTotalAmount = totalAmount + specialDayExtraCharge + totalTaxAmount;
 
         // Generate a unique QR code for the booking
         const uniqueNumber = Math.floor(Math.random() * 10000000000); // Generates a random 10-digit number
@@ -1275,7 +1275,7 @@ const createBanquetBookingDetails = async (req, res) => {
             });
         }
 
-        totalAmount += specialDayExtraCharge;
+        // totalAmount += specialDayExtraCharge;
 
 
         // Calculate tax details
@@ -1291,7 +1291,7 @@ const createBanquetBookingDetails = async (req, res) => {
             });
         });
 
-        const finalTotalAmount = totalAmount + totalTaxAmount;
+        const finalTotalAmount = totalAmount + specialDayExtraCharge + totalTaxAmount;
 
 
         // Create banquet booking object
