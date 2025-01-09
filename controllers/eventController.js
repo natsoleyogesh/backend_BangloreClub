@@ -10,7 +10,7 @@ const { eventrenderTemplate } = require('../utils/templateRenderer');
 const { toTitleCase } = require('../utils/common');
 const { default: mongoose } = require('mongoose');
 const { createAttendanceRecords } = require('./eventAttendanceController');
-
+const moment = require('moment')
 
 const createEvent = async (req, res) => {
     try {
@@ -912,7 +912,58 @@ const bookingDetails = async (req, res) => {
 
 const getAllBookings = async (req, res) => {
     try {
-        const bookings = await EventBooking.find({ isDeleted: false, deletedAt: null })
+
+        const { filterType, customStartDate, customEndDate, bookingStatus, userId } = req.query;
+
+        let filter = { isDeleted: false, deletedAt: null };
+
+        // Add paymentStatus to filter if provided
+        if (bookingStatus) {
+            filter.bookingStatus = bookingStatus;
+        }
+        if (userId) {
+            filter.primaryMemberId = userId;
+        }
+
+        // Handle date filters
+        if (filterType) {
+            const today = moment().startOf('day');
+
+            switch (filterType) {
+                case 'today':
+                    filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() };
+                    break;
+                case 'last7days':
+                    filter.createdAt = { $gte: moment(today).subtract(7, 'days').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last30days':
+                    filter.createdAt = { $gte: moment(today).subtract(30, 'days').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last3months':
+                    filter.createdAt = { $gte: moment(today).subtract(3, 'months').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last6months':
+                    filter.createdAt = { $gte: moment(today).subtract(6, 'months').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last1year':
+                    filter.createdAt = { $gte: moment(today).subtract(1, 'year').toDate(), $lt: today.toDate() };
+                    break;
+                case 'custom':
+                    if (!customStartDate || !customEndDate) {
+                        return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
+                    }
+                    filter.createdAt = {
+                        $gte: moment(customStartDate, 'YYYY-MM-DD').startOf('day').toDate(),
+                        $lt: moment(customEndDate, 'YYYY-MM-DD').endOf('day').toDate(),
+                    };
+                    break;
+                default:
+                    break; // No filter applied if no valid filterType
+            }
+        }
+
+        // const bookings = await EventBooking.find({ isDeleted: false, deletedAt: null })
+        const bookings = await EventBooking.find(filter)
             .populate("eventId")
             .populate("primaryMemberId");
         const reversedata = bookings.reverse()

@@ -79,7 +79,7 @@ const getAllRequests = async (req, res) => {
             filter.status = status;
         }
         const requests = await AllRequest.find(filter)
-            .populate('primaryMemberId', 'name email')
+            .populate('primaryMemberId', 'name email memberId')
             .populate('departmentId')
             .sort({ createdAt: -1 }) // Sort by creation date
             .exec();
@@ -192,7 +192,7 @@ const getAllUserRequest = async (req, res) => {
         })
             .sort({ updatedAt: -1 }) // Sort by updatedAt descending
             .populate("departmentId") // Populate department details if needed
-            .populate('primaryMemberId', 'name email profilePicture')
+            .populate('primaryMemberId', 'name email profilePicture memberId')
             .lean();
 
         // Transform the response
