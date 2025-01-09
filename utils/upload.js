@@ -49,7 +49,7 @@ const upload = multer({
         }
         cb(null, true); // Accept the file if it's an image
     },
-    limits: { fileSize: 100 * 1024 }, // Limit file size to 100 KB (100 * 1024 bytes)
+    limits: { fileSize: 20 * 1024 * 1024 }, // Limit file size to 20MB
 });
 
 // Error handling for file size
@@ -95,7 +95,7 @@ const fileFilter = (req, file, cb) => {
 const eventupload = multer({
     storage: eventstorage,
     fileFilter: fileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+    limits: { fileSize: 20 * 1024 * 1024 }, // Limit file size to 20MB
 });
 
 // module.exports = upload;
@@ -145,9 +145,7 @@ const roomStorage = multer.diskStorage({
 const roomUpload = multer({
     storage: roomStorage,
     fileFilter,
-    limits: {
-        fileSize: 5 * 1024 * 1024, // Limit file size to 5MB
-    },
+    limits: { fileSize: 20 * 1024 * 1024 }, // Limit file size to 20MB
 });
 
 
@@ -168,7 +166,7 @@ const offerstorage = multer.diskStorage({
 const offerupload = multer({
     storage: offerstorage,
     fileFilter,
-    limits: { fileSize: 100 * 1024 }, // Limit file size to 100 KB
+    limits: { fileSize: 20 * 1024 * 1024 }, // Limit file size to 20MB
 });
 
 // Configure Multer storage
@@ -188,7 +186,7 @@ const hodstorage = multer.diskStorage({
 const hodupload = multer({
     storage: hodstorage,
     fileFilter,
-    limits: { fileSize: 100 * 1024 }, // Limit file size to 100 KB
+    limits: { fileSize: 20 * 1024 * 1024 }, // Limit file size to 20MB
 });
 
 
@@ -217,7 +215,7 @@ const downloadFileFilter = (req, file, cb) => {
 const downloadUpload = multer({
     storage: downloadStorage,
     fileFilter: downloadFileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+    limits: { fileSize: 20 * 1024 * 1024 }, // Limit file size to 20MB
 });
 
 
@@ -248,7 +246,7 @@ const noticeFileFilter = (req, file, cb) => {
 const noticeUpload = multer({
     storage: noticeStorage,
     fileFilter: noticeFileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+    limits: { fileSize: 20 * 1024 * 1024 }, // Limit file size to 20MB
 });
 
 
@@ -286,7 +284,7 @@ const FBfileFilter = (req, file, cb) => {
 const FBupload = multer({
     storage: FBstorage,
     fileFilter: FBfileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB file size limit
+    limits: { fileSize: 20 * 1024 * 1024 }, // Limit file size to 20MB
 });
 
 
@@ -304,7 +302,7 @@ const ICONstorage = multer.diskStorage({
 
 const ICONupload = multer({
     storage: ICONstorage,
-    limits: { fileSize: 100 * 1024 }, // 100 KB limit (in bytes)
+    limits: { fileSize: 20 * 1024 * 1024 }, // Limit file size to 20MB
     fileFilter: (req, file, cb) => {
         // Allow only SVG files
         if (file.mimetype === 'image/svg+xml') {
@@ -341,7 +339,7 @@ const banquetStorage = multer.diskStorage({
 const banquetUpload = multer({
     storage: banquetStorage,
     fileFilter,
-    limits: { fileSize: 100 * 1024 }, // 100 KB limit (in bytes)
+    limits: { fileSize: 20 * 1024 * 1024 }, // Limit file size to 20MB
 
 });
 
@@ -371,7 +369,7 @@ const notificationStorage = multer.diskStorage({
 const notificationUpload = multer({
     storage: notificationStorage,
     fileFilter,
-    limits: { fileSize: 100 * 1024 }, // 100 KB limit (in bytes)
+    limits: { fileSize: 20 * 1024 * 1024 }, // Limit file size to 20MB
 
 });
 

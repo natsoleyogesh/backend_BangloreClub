@@ -694,6 +694,51 @@ const updateProfilePicture = async (req, res) => {
     }
 };
 
+
+const updateProfilePictureByUser = async (req, res) => {
+    try {
+        const { userId } = req.user;
+
+        // Check if a file was uploaded
+        if (!req.file) {
+            return res.status(400).json({ message: "No image file provided." });
+        }
+
+        // Find the user by ID
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // Store the new profile picture path
+        const newProfilePicturePath = `/uploads/profilePictures/${req.file.filename}`;
+
+        // Optional: Delete the old profile picture if it exists
+        if (user.profilePicture && user.profilePicture !== "") {
+            const oldProfilePicturePath = path.join(__dirname, "..", user.profilePicture);
+            if (fs.existsSync(oldProfilePicturePath)) {
+                fs.unlinkSync(oldProfilePicturePath);
+            }
+        }
+
+        // Update the user's profile picture in the database
+        user.profilePicture = newProfilePicturePath;
+        await user.save();
+
+        res.status(200).json({
+            message: "Profile picture updated successfully.",
+            profilePicture: newProfilePicturePath,
+        });
+    } catch (error) {
+        console.error("Error updating profile picture:", error);
+        res.status(500).json({
+            message: "Error updating profile picture.",
+            error: error.message,
+        });
+    }
+};
+
+
 const userLogout = async (req, res) => {
     try {
         const user = req.user;
@@ -819,5 +864,6 @@ module.exports = {
     updateProfilePicture,
     userLogout,
     uploadProofs,
-    deleteProofs
+    deleteProofs,
+    updateProfilePictureByUser
 };
