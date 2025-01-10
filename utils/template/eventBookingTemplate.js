@@ -168,6 +168,10 @@ module.exports = {
                 <p><strong>Event Date:</strong> {{eventDate}}</p>
             </div>
 
+              <div class="details-section">
+               <h3>Booked By:- {{bookedBy}}</h3>
+            </div>
+
             <div class="details-section">
                 <h3>Member Details</h3>
                 <p><strong>Name:</strong> {{primaryName}}</p>

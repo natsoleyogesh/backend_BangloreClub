@@ -172,12 +172,11 @@ module.exports = {
             </div>
 
             <div class="details-section">
-                 <h3>Dependent Member Details</h3>
-                <p><strong>Name:</strong> {{dependentName}}</p>
-                <p><strong>Email:</strong> {{dependentMail}}</p>
-                <p><strong>Contact Number:</strong> {{dependentContact}}</p>
-
-
+                <h3>Guest Member Details</h3>
+                <p><strong>Name:</strong> {{guestName}}</p>
+                <p><strong>Email:</strong> {{guestEmail}}</p>
+                <p><strong>Contact Number:</strong> {{guestContact}}</p>
+              
             </div>
            
             <div class="icons">

@@ -6,7 +6,7 @@ const QRCodeHelper = require('../utils/helper');
 const { addBilling } = require('./billingController');
 const sendEmail = require('../utils/sendMail');
 const emailTemplates = require('../utils/emailTemplates');
-const { eventrenderTemplate } = require('../utils/templateRenderer');
+const { eventrenderTemplate, eventrenderDependentTemplate } = require('../utils/templateRenderer');
 const { toTitleCase } = require('../utils/common');
 const { default: mongoose } = require('mongoose');
 const { createAttendanceRecords } = require('./eventAttendanceController');
@@ -649,96 +649,6 @@ const bookEvent = async (req, res) => {
             .populate("primaryMemberId")
             .populate("dependents.userId");
 
-        // const templateData = {
-        //     uniqueQRCode: newBooking.allDetailsUniqueQRCode,
-        //     qrCode: allDetailsQRCode, // Base64 string for QR Code
-        //     eventTitle: event.eventTitle,
-        //     eventDate: event.eventStartDate.toDateString(),
-        //     primaryName: memberData?.primaryMemberId?.name,
-        //     primaryEmail: memberData?.primaryMemberId?.email,
-        //     primaryContact: memberData?.primaryMemberId?.mobileNumber,
-        //     familyMembers: memberData.dependents.length > 0
-        //         ? memberData.dependents.map(dep => ({ name: dep.userId.name }))
-        //         : [],
-        //     guests: memberData.guests.length > 0
-        //         ? memberData.guests.map(guest => ({
-        //             name: guest.name,
-        //             email: guest.email,
-        //             contact: guest.phone,
-        //         }))
-        //         : [],
-        //     taxTypes: newBooking.ticketDetails.taxTypes.length > 0
-        //         ? newBooking.ticketDetails.taxTypes.map(taxType => ({
-        //             taxType: taxType.taxType || "N/A",
-        //             taxRate: taxType.taxRate || 0,
-        //             taxAmount: taxType.taxAmount || 0,
-        //         }))
-        //         : [],
-        //     subtotal: newBooking.ticketDetails.subtotal.toFixed(2),
-        //     taxAmount: newBooking.ticketDetails.taxAmount.toFixed(2),
-        //     totalAmount: newBooking.ticketDetails.totalAmount.toFixed(2),
-        // };
-
-        // const emailTemplate = emailTemplates.eventBooking;
-        // const htmlBody = eventrenderTemplate(emailTemplate.body, templateData);
-        // const subject = eventrenderTemplate(emailTemplate.subject, templateData);
-
-        // const emailDependentTemplate = emailTemplates.eventBookingDependentTemplate;
-        // const htmlDependentBody = eventrenderTemplate(emailDependentTemplate.body, templateData);
-        // const subjectDependent = eventrenderTemplate(emailDependentTemplate.subject, templateData);
-
-        // await sendEmail(
-        //     memberData.primaryMemberId.email,
-        //     subject,
-        //     htmlBody,
-        //     // { ...htmlBody, uniqueQRCode: newBooking.allDetailsUniqueQRCode, },
-        //     [
-        //         {
-        //             filename: "qrcode.png",
-        //             // content: newBooking.primaryMemberQRCode.split(",")[1],
-        //             content: Buffer.from(newBooking.primaryMemberQRCode.split(",")[1], "base64"), // Convert to Buffer
-        //             encoding: "base64",
-        //             cid: "qrCodeImage",
-        //         },
-        //     ]
-        // );
-
-        // // Send email to dependents
-        // for (const dependent of preparedDependents || []) {
-        //     const user = await User.findById(dependent.userId);
-        //     if (user) {
-        //         await sendEmail(user.email, subjectDependent,
-        //             // { ...htmlDependentBody, uniqueQRCode: dependent.uniqueQRCode }
-        //             htmlDependentBody
-        //             , [
-        //                 {
-        //                     filename: "qrcode.png",
-        //                     // content: dependent.qrCode.split(",")[1],
-        //                     content: Buffer.from(dependent.qrCode.split(",")[1], "base64"), // Convert to Buffer
-        //                     encoding: "base64",
-        //                     cid: "qrCodeImage",
-        //                 },
-        //             ]);
-        //     }
-        // }
-
-        // // Send email to guests
-        // for (const guest of preparedGuests || []) {
-        //     if (guest.email) {
-        //         await sendEmail(guest.email, subjectDependent,
-        //             //  { ...htmlDependentBody, uniqueQRCode: guest.uniqueQRCode }
-        //             htmlDependentBody
-        //             , [
-        //                 {
-        //                     filename: "qrcode.png",
-        //                     // content: guest.qrCode.split(",")[1],
-        //                     content: Buffer.from(guest.qrCode.split(",")[1], "base64"), // Convert to Buffer
-        //                     encoding: "base64",
-        //                     cid: "qrCodeImage",
-        //                 },
-        //             ]);
-        //     }
-        // }
 
         let primaryName;
         let primaryEmail;
@@ -757,7 +667,7 @@ const bookEvent = async (req, res) => {
 
 
         const templateData = {
-            uniqueQRCode: newBooking.allDetailsUniqueQRCode,
+            uniqueQRCode: primaryMemberChecked ? newBooking.uniqueQRCode : newBooking.allDetailsUniqueQRCode,
             qrCode: allDetailsQRCode, // Base64 string for QR Code
             eventTitle: event.eventTitle,
             eventDate: event.eventStartDate.toDateString(),
@@ -792,6 +702,7 @@ const bookEvent = async (req, res) => {
         const subject = eventrenderTemplate(emailTemplate.subject, templateData);
 
         const emailDependentTemplate = emailTemplates.eventBookingDependentTemplate;
+        const emailGuestTemplate = emailTemplates.eventBookingGuestTemplate;
         const subjectDependent = eventrenderTemplate(emailDependentTemplate.subject, templateData);
 
         // Send email to primary member
@@ -802,29 +713,53 @@ const bookEvent = async (req, res) => {
             primaryMemberEmail = member.parentUserId.email;
         }
 
+        // // Prepare email content
+        // const emailAttachments = primaryMemberChecked
+        //     ? [
+        //         {
+        //             filename: "qrCodeImage .png",
+        //             content: Buffer.from(
+        //                 primaryMemberQRCodeData.qrCode.split(",")[1],
+        //                 "base64"
+        //             ),
+        //             encoding: "base64",
+        //             cid: "qrCodeImage",
+        //         },
+        //     ]
+        //     : [
+        //         {
+        //             filename: "qrCodeImage.png",
+        //             content: Buffer.from(newBooking.allDetailsQRCode.split(",")[1], "base64"),
+        //             encoding: "base64",
+        //             cid: "qrCodeImage",
+        //         },
+        //     ];
         // Prepare email content
         const emailAttachments = primaryMemberChecked
             ? [
                 {
-                    filename: "primaryMemberQRCode.png",
+                    filename: "qrCodeImage.png", // Corrected filename
                     content: Buffer.from(
                         primaryMemberQRCodeData.qrCode.split(",")[1],
                         "base64"
-                    ),
+                    ), // Convert primary member QR code to Buffer
                     encoding: "base64",
-                    cid: "primaryQRCodeImage",
+                    cid: "qrCodeImage", // Inline CID for embedding in email
                 },
             ]
             : [
                 {
-                    filename: "allDetailsQRCode.png",
-                    content: Buffer.from(newBooking.allDetailsQRCode.split(",")[1], "base64"),
+                    filename: "qrCodeImage.png", // Corrected filename
+                    content: Buffer.from(
+                        newBooking.allDetailsQRCode.split(",")[1],
+                        "base64"
+                    ), // Convert all details QR code to Buffer
                     encoding: "base64",
-                    cid: "allDetailsQRCodeImage",
+                    cid: "qrCodeImage", // Inline CID for embedding in email
                 },
             ];
 
-
+      
         await sendEmail(
             primaryMemberEmail,
             subject,
@@ -840,8 +775,11 @@ const bookEvent = async (req, res) => {
                 const dependentTemplateData = {
                     ...templateData,
                     uniqueQRCode: dependent.uniqueQRCode, // Dependent's unique QR Code
+                    dependentName: user.name,
+                    dependentMail: user.email,
+                    dependentContact: user.mobileNumber
                 };
-                const htmlDependentBody = eventrenderTemplate(emailDependentTemplate.body, dependentTemplateData);
+                const htmlDependentBody = eventrenderDependentTemplate(emailDependentTemplate.body, dependentTemplateData);
 
                 // Send email
                 await sendEmail(
@@ -867,8 +805,11 @@ const bookEvent = async (req, res) => {
                 const guestTemplateData = {
                     ...templateData,
                     uniqueQRCode: guest.uniqueQRCode, // Guest's unique QR Code
+                    guestName: guest.name,
+                    guestEmail: guest.email,
+                    guestContact: guest.phone
                 };
-                const htmlGuestBody = eventrenderTemplate(emailDependentTemplate.body, guestTemplateData);
+                const htmlGuestBody = eventrenderDependentTemplate(emailGuestTemplate.body, guestTemplateData);
 
                 // Send email
                 await sendEmail(

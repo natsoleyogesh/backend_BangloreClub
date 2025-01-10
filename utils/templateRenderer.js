@@ -3,7 +3,9 @@ const eventrenderTemplate = (template, data) => {
     template = template.replace(/{{familyMembers}}/g, () => {
         return data.familyMembers.length > 0
             ? data.familyMembers
-                .map((member, index) => `<p><strong>Family Member ${index + 1}:</strong> ${member.name}</p>`)
+                .map((member, index) => `<p><strong>Family Member ${index + 1}:</strong> ${member.name}</p>
+                                         <p><strong>Email:</strong> ${member.email}</p>
+                                         <p><strong>Contact Number:</strong> ${member.contact}</p>`)
                 .join("")
             : "<p>No family members added.</p>";
     });
@@ -37,6 +39,11 @@ const eventrenderTemplate = (template, data) => {
     });
 
 
+    // Replace other placeholders
+    return template.replace(/{{(.*?)}}/g, (_, key) => data[key] || "");
+};
+
+const eventrenderDependentTemplate = (template, data) => {
     // Replace other placeholders
     return template.replace(/{{(.*?)}}/g, (_, key) => data[key] || "");
 };
@@ -113,4 +120,4 @@ const roomrenderTemplate = (template, data) => {
     return template.replace(/{{(.*?)}}/g, (_, key) => data[key] || "");
 };
 
-module.exports = { eventrenderTemplate, banquetrenderTemplate, roomrenderTemplate };
+module.exports = { eventrenderTemplate, banquetrenderTemplate, roomrenderTemplate, eventrenderDependentTemplate };

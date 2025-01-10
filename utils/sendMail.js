@@ -46,6 +46,13 @@ const sendEmail = async (to, subject, htmlBody, attachments = []) => {
             html: htmlBody,
             attachments,
         };
+        // Check the size of each attachment
+        attachments.forEach((attachment, index) => {
+            const sizeInBytes = Buffer.byteLength(attachment.content);
+            const sizeInKB = (sizeInBytes / 1024).toFixed(2); // Convert to KB
+            console.log(`Attachment ${index + 1} Size: ${sizeInBytes} bytes (${sizeInKB} KB)`);
+        });
+
 
         const info = await transporter.sendMail(mailOptions);
         console.log("Email sent successfully:", info.messageId);
