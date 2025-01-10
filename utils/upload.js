@@ -43,6 +43,7 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage,
     fileFilter: (req, file, cb) => {
+        console.log(file, "fileTYpe------")
         // Accept only jpg, jpeg, png files
         const allowedTypes = /jpeg|jpg|png/;
         const mimeType = allowedTypes.test(file.mimetype);
