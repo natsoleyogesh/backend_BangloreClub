@@ -27,7 +27,7 @@ module.exports = (router) => {
     router.post("/member/verify-otp", verifyOtp);
     router.get("/member/details", verifyToken, getUserDetails);
     router.put("/member/update-profile-picture/:userId", upload.single("profilePicture"), updateProfilePicture)
-    router.put("/update-profile-picture", upload.single("profilePicture"), verifyToken, updateProfilePictureByUser)
+    router.post("/update-profile-picture", upload.single("profilePicture"), verifyToken, updateProfilePictureByUser)
 
     router.post("/member/logout", verifyToken, userLogout)
 }
