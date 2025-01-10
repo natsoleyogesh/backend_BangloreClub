@@ -818,7 +818,7 @@ const bookEvent = async (req, res) => {
             : [
                 {
                     filename: "allDetailsQRCode.png",
-                    content: Buffer.from(newBooking.allDetailsUniqueQRCode.split(",")[1], "base64"),
+                    content: Buffer.from(newBooking.allDetailsQRCode.split(",")[1], "base64"),
                     encoding: "base64",
                     cid: "allDetailsQRCodeImage",
                 },
