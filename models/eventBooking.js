@@ -18,8 +18,9 @@ const eventBookingSchema = new mongoose.Schema(
         },
         uniqueQRCode: {
             type: String,
-            required: true,
-            unique: true,
+            required: false,
+            default: ""
+            // unique: true,
         },
         dependents: [
             {
