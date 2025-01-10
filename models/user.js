@@ -116,6 +116,7 @@ const userSchema = new mongoose.Schema({
     },
     relation: {
         type: String,
+        enum: ["Primary", "Spouse", "Daughter", "Son", "Senior Dependent"],
         required: true,
     },
     parentUserId: {

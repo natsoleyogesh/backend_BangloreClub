@@ -713,13 +713,13 @@ const updateProfilePictureByUser = async (req, res) => {
         // Store the new profile picture path
         const newProfilePicturePath = `/uploads/profilePictures/${req.file.filename}`;
 
-        // Optional: Delete the old profile picture if it exists
-        if (user.profilePicture && user.profilePicture !== "") {
-            const oldProfilePicturePath = path.join(__dirname, "..", user.profilePicture);
-            if (fs.existsSync(oldProfilePicturePath)) {
-                fs.unlinkSync(oldProfilePicturePath);
-            }
-        }
+        // // Optional: Delete the old profile picture if it exists
+        // if (user.profilePicture && user.profilePicture !== "") {
+        //     const oldProfilePicturePath = path.join(__dirname, "..", user.profilePicture);
+        //     if (fs.existsSync(oldProfilePicturePath)) {
+        //         fs.unlinkSync(oldProfilePicturePath);
+        //     }
+        // }
 
         // Update the user's profile picture in the database
         user.profilePicture = newProfilePicturePath;

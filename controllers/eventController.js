@@ -22,35 +22,41 @@ const createEvent = async (req, res) => {
             startTime,
             endTime,
             ticketPrice,
-            rsvpStatus,
-            availableTickets,
-            location,
-            aboutEvent,
-            organizer,
             primaryMemberPrice,
             dependentMemberPrice,
             guestMemberPrice,
+            allottedTicketsMember,
+            allottedTicketsGuest,
+            rsvpStatus,
+            location,
+            aboutEvent,
+            organizer,
             taxTypes,
-            showBanner
+            showBanner,
+            bookingPermissionPrimary,
+            bookingPermissionSpouse,
+            bookingPermissionSon,
+            bookingPermissionDaughter,
+            bookingPermissionSeniorDependent,
         } = req.body;
 
-        // Check if image was uploaded
+        // Check if the required image file is uploaded
         if (!req.file) {
-            return res.status(400).json({
-                message: 'Event Banner Image is Required!',
-            });
+            return res.status(400).json({ message: 'Event Banner Image is Required!' });
         }
 
+        // Normalize event title
         const normalizedTitle = toTitleCase(eventTitle);
+
         // Check if the event already exists
-        const existingNotice = await Event.findOne({ eventTitle: normalizedTitle, isDeleted: false });
-        if (existingNotice) {
-            return res.status(400).json({ message: 'Event already exists but is inactive.' });
+        const existingEvent = await Event.findOne({ eventTitle: normalizedTitle, isDeleted: false });
+        if (existingEvent) {
+            return res.status(400).json({ message: 'Event with the same title already exists.' });
         }
 
         const eventImage = `/uploads/event/${req.file.filename}`;
 
-        // Get the current date and time
+        // Get current date and time for validation
         const currentDateTime = new Date();
         const eventStartDateTime = new Date(eventStartDate);
         const eventEndDateTime = new Date(eventEndDate);
@@ -59,40 +65,36 @@ const createEvent = async (req, res) => {
         const [startHour, startMinute] = startTime.split(':').map(Number);
         const [endHour, endMinute] = endTime.split(':').map(Number);
 
-        // Create Date objects for event start and end times
+        // Create Date objects with times included
         const eventStartDateTimeWithTime = new Date(eventStartDateTime.setHours(startHour, startMinute));
         const eventEndDateTimeWithTime = new Date(eventEndDateTime.setHours(endHour, endMinute));
 
-        // Validation 1: Check if the event start date is in the past
+        // Validation 1: Event start date must not be in the past
         if (eventStartDateTime < currentDateTime.setHours(0, 0, 0, 0)) {
+            return res.status(400).json({ message: 'Event start date must be today or a future date.' });
+        }
+
+        // Validation 2: If the event starts today, ensure the start time is in the future
+        if (eventStartDateTime.toDateString() === currentDateTime.toDateString() &&
+            eventStartDateTimeWithTime <= currentDateTime) {
             return res.status(400).json({
-                message: 'Event start date must be today or a future date.',
+                message: 'Event start time must be later than the current time if the event starts today.',
             });
         }
 
-        // Validation 2: If the event start date is today, check that the start time is in the future
-        if (eventStartDateTime.toDateString() === currentDateTime.toDateString()) {
-            if (eventStartDateTimeWithTime <= currentDateTime) {
-                return res.status(400).json({
-                    message: 'Event start time must be later than the current time if the event starts today.',
-                });
-            }
-        }
-
-        // Validation 3: Check if the event end date is after the start date
+        // Validation 3: Event end date must be after the start date
         if (eventEndDateTime < eventStartDateTime) {
-            return res.status(400).json({
-                message: 'Event end date must be after the start date.',
-            });
+            return res.status(400).json({ message: 'Event end date must be after the start date.' });
         }
 
-        // Validation 4: Check if the end time is after the start time on the same day
+        // Validation 4: Event end time must be after start time if they are on the same day
         if (eventStartDateTime.toDateString() === eventEndDateTime.toDateString() &&
             eventEndDateTimeWithTime <= eventStartDateTimeWithTime) {
-            return res.status(400).json({
-                message: 'Event end time must be after the start time.',
-            });
+            return res.status(400).json({ message: 'Event end time must be after the start time.' });
         }
+
+        // Calculate totalAvailableTickets
+        const totalAvailableTickets = allottedTicketsMember + allottedTicketsGuest;
 
         // Parse and validate tax types
         const parsedTaxTypes = Array.isArray(taxTypes)
@@ -101,39 +103,48 @@ const createEvent = async (req, res) => {
                 ? JSON.parse(taxTypes)
                 : [];
 
-        // Create a new event document
+        // Create a new event
         const newEvent = new Event({
-            eventTitle,
+            eventTitle: normalizedTitle,
             eventSubtitle,
             eventStartDate,
             eventEndDate,
             startTime,
             endTime,
             ticketPrice,
+            primaryMemberPrice,
+            dependentMemberPrice,
+            guestMemberPrice,
+            allottedTicketsMember,
+            allottedTicketsGuest,
+            totalAvailableTickets,
             rsvpStatus,
-            availableTickets,
             eventImage,
             location,
             aboutEvent,
             organizer,
-            primaryMemberPrice,
-            dependentMemberPrice,
-            guestMemberPrice,
             taxTypes: parsedTaxTypes,
-            showBanner: showBanner
+            showBanner: showBanner || false,
+            bookingPermissionPrimary: bookingPermissionPrimary || true,
+            bookingPermissionSpouse: bookingPermissionSpouse || false,
+            bookingPermissionSon: bookingPermissionSon || false,
+            bookingPermissionDaughter: bookingPermissionDaughter || false,
+            bookingPermissionSeniorDependent: bookingPermissionSeniorDependent || false,
         });
 
-        // Save the event to the database
+        // Save the new event to the database
         const savedEvent = await newEvent.save();
+
         res.status(201).json({
             message: 'Event created successfully.',
             event: savedEvent,
         });
     } catch (error) {
-        console.error('Error creating event:', error);
+        console.error('Error creating event:', error.message);
         res.status(500).json({ message: 'Internal server error.' });
     }
 };
+
 
 
 const getAllEvents = async (req, res) => {
@@ -185,37 +196,6 @@ const getAllEvents = async (req, res) => {
 };
 
 
-// const getEventById = async (req, res) => {
-//     try {
-//         const { id } = req.params;
-//         const { opration } = req.query;
-
-//         if (!id) {
-//             return res.status(400).json({ message: 'Please Provide the Event Id' });
-//         }
-
-//         let event = {};
-//         if (opration == 'edit') {
-//             event = await Event.findById(id);
-
-//         }
-
-//         event = await Event.findById(id).populate("taxTypes");
-
-//         if (!event || event.isDeleted) {
-//             return res.status(404).json({ message: 'Event not found.' });
-//         }
-
-//         res.status(200).json({
-//             message: 'Event fetched successfully.',
-//             event,
-//         });
-//     } catch (error) {
-//         console.error('Error fetching event:', error);
-//         res.status(500).json({ message: 'Internal server error.' });
-//     }
-// }
-
 const getEventById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -253,7 +233,6 @@ const getEventById = async (req, res) => {
 };
 
 
-
 const updateEvent = async (req, res) => {
     try {
         const { id } = req.params;
@@ -265,17 +244,23 @@ const updateEvent = async (req, res) => {
             startTime,
             endTime,
             ticketPrice,
+            primaryMemberPrice,
+            dependentMemberPrice,
+            guestMemberPrice,
+            allottedTicketsMember,
+            allottedTicketsGuest,
             rsvpStatus,
-            availableTickets,
             location,
             aboutEvent,
             organizer,
             status,
-            primaryMemberPrice,
-            dependentMemberPrice,
-            guestMemberPrice,
             taxTypes,
-            showBanner
+            showBanner,
+            bookingPermissionPrimary,
+            bookingPermissionSpouse,
+            bookingPermissionSon,
+            bookingPermissionDaughter,
+            bookingPermissionSeniorDependent,
         } = req.body;
 
         // Find the existing event
@@ -360,6 +345,11 @@ const updateEvent = async (req, res) => {
             }
         }
 
+        // Calculate totalAvailableTickets if ticket numbers are provided
+        const totalAvailableTickets =
+            (allottedTicketsMember !== undefined ? parseInt(allottedTicketsMember) : existingEvent.allottedTicketsMember) +
+            (allottedTicketsGuest !== undefined ? parseInt(allottedTicketsGuest) : existingEvent.allottedTicketsGuest);
+
         // Parse and validate tax types
         const parsedTaxTypes = taxTypes
             ? Array.isArray(taxTypes)
@@ -376,8 +366,6 @@ const updateEvent = async (req, res) => {
         // Handle image upload if a new file is provided
         const eventImage = req.file ? `/uploads/event/${req.file.filename}` : existingEvent.eventImage;
 
-        // const parsedShowBanner = typeof showBanner === "boolean" ? showBanner : showBanner === "true";
-
         // Update the event fields only if they are provided in the request
         const updateData = {
             eventTitle: normalizedTitle || existingEvent.eventTitle,
@@ -387,18 +375,32 @@ const updateEvent = async (req, res) => {
             startTime: startTime || existingEvent.startTime,
             endTime: endTime || existingEvent.endTime,
             ticketPrice: ticketPrice || existingEvent.ticketPrice,
+            primaryMemberPrice: primaryMemberPrice || existingEvent.primaryMemberPrice,
+            dependentMemberPrice: dependentMemberPrice || existingEvent.dependentMemberPrice,
+            guestMemberPrice: guestMemberPrice || existingEvent.guestMemberPrice,
+            allottedTicketsMember: allottedTicketsMember || existingEvent.allottedTicketsMember,
+            allottedTicketsGuest: allottedTicketsGuest || existingEvent.allottedTicketsGuest,
+            totalAvailableTickets: totalAvailableTickets,
             rsvpStatus: rsvpStatus || existingEvent.rsvpStatus,
-            availableTickets: availableTickets || existingEvent.availableTickets,
             eventImage: eventImage,
             location: location || existingEvent.location,
             aboutEvent: aboutEvent || existingEvent.aboutEvent,
             organizer: organizer || existingEvent.organizer,
             status: status || existingEvent.status,
-            primaryMemberPrice: primaryMemberPrice || existingEvent.primaryMemberPrice,
-            dependentMemberPrice: dependentMemberPrice || existingEvent.dependentMemberPrice,
-            guestMemberPrice: guestMemberPrice || existingEvent.guestMemberPrice,
             taxTypes: parsedTaxTypes || existingEvent.taxTypes,
-            showBanner: showBanner || existingEvent.showBanner
+            showBanner: showBanner !== undefined ? showBanner : existingEvent.showBanner,
+            bookingPermissionPrimary:
+                bookingPermissionPrimary !== undefined ? bookingPermissionPrimary : existingEvent.bookingPermissionPrimary,
+            bookingPermissionSpouse:
+                bookingPermissionSpouse !== undefined ? bookingPermissionSpouse : existingEvent.bookingPermissionSpouse,
+            bookingPermissionSon:
+                bookingPermissionSon !== undefined ? bookingPermissionSon : existingEvent.bookingPermissionSon,
+            bookingPermissionDaughter:
+                bookingPermissionDaughter !== undefined ? bookingPermissionDaughter : existingEvent.bookingPermissionDaughter,
+            bookingPermissionSeniorDependent:
+                bookingPermissionSeniorDependent !== undefined
+                    ? bookingPermissionSeniorDependent
+                    : existingEvent.bookingPermissionSeniorDependent,
         };
 
         // Update the event using findByIdAndUpdate
@@ -420,7 +422,6 @@ const updateEvent = async (req, res) => {
         res.status(500).json({ message: 'Internal server error.' });
     }
 };
-
 
 
 const deleteEvent = async (req, res) => {
@@ -473,22 +474,42 @@ const bookEvent = async (req, res) => {
             return res.status(400).json({ message: 'Event is not active or available for booking.' });
         }
 
-        // if (event.availableTickets <= 0) {
-        //     return res.status(400).json({ message: 'No tickets available for this event.' });
-        // }
-
-        // Pricing calculations
-        let primaryMemberCount = 0;
-        if (primaryMemberChecked === true) {
-            primaryMemberCount = 1; // Primary member is always 1
+        // Fetch the primary member's details
+        const member = await User.findById(primaryMemberId).populate("parentUserId");
+        if (!member) {
+            return res.status(404).json({ message: "Primary member not found." });
         }
+
+        // Define a mapping for relation types
+        const relationMapping = {
+            "Primary": "Primary",
+            "Spouse": "Spouse",
+            "Son": "Son",
+            "Daughter": "Daughter",
+            "Senior Dependent": "SeniorDependent",
+        };
+
+        // Get the primary member's relation and map it
+        // const { relation } = member;
+        const permissionKey = relationMapping[member.relation];
+
+        // Validate the booking permission for the relation
+        if (!permissionKey || !event[`bookingPermission${permissionKey}`]) {
+            return res.status(403).json({
+                message: `Members with the relationship type '${member.relation}' are not eligible for booking this event.`,
+            });
+        }
+
+        // Calculate ticket requirements
+        const primaryMemberCount = primaryMemberChecked ? 1 : 0;
         const dependentMemberCount = dependents ? dependents.length : 0;
         const guestMemberCount = guests ? guests.length : 0;
 
         const totalMemberCount = primaryMemberCount + dependentMemberCount + guestMemberCount;
 
-        if (event.availableTickets <= totalMemberCount) {
-            return res.status(400).json({ message: 'No tickets available for this event.' });
+        // Check ticket availability
+        if (event.totalAvailableTickets < totalMemberCount) {
+            return res.status(400).json({ message: "Not enough tickets available for this event." });
         }
 
         const subtotal =
@@ -588,7 +609,18 @@ const bookEvent = async (req, res) => {
         await newBooking.save();
 
         // Update the available tickets in the Event schema
-        event.availableTickets -= (primaryMemberCount + dependentMemberCount + guestMemberCount);
+        // Update available tickets in the database
+        event.allottedTicketsMember -= primaryMemberCount + dependentMemberCount;
+        event.allottedTicketsGuest -= guestMemberCount;
+        event.totalAvailableTickets -= totalMemberCount;
+
+        // Validate updated ticket counts
+        if (event.allottedTicketsMember < 0 || event.allottedTicketsGuest < 0) {
+            return res.status(400).json({
+                message: "Invalid ticket count update. Ensure the requested tickets are available.",
+            });
+        }
+
         await event.save();
 
         // Call this function after booking is created
@@ -691,16 +723,33 @@ const bookEvent = async (req, res) => {
         //     }
         // }
 
+        let primaryName;
+        let primaryEmail;
+        let primaryContact;
+
+        // Send email to primary member
+        if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
+            primaryName = memberData?.primaryMemberId?.name
+            primaryEmail = memberData?.primaryMemberId?.email
+            primaryContact = memberData?.primaryMemberId?.mobileNumber
+        } else {
+            primaryName = member.parentUserId.name
+            primaryEmail = member.parentUserId.email
+            primaryContact = member.parentUserId.mobileNumber
+        }
+
+
         const templateData = {
             uniqueQRCode: newBooking.allDetailsUniqueQRCode,
             qrCode: allDetailsQRCode, // Base64 string for QR Code
             eventTitle: event.eventTitle,
             eventDate: event.eventStartDate.toDateString(),
-            primaryName: memberData?.primaryMemberId?.name,
-            primaryEmail: memberData?.primaryMemberId?.email,
-            primaryContact: memberData?.primaryMemberId?.mobileNumber,
+            bookedBy: memberData?.primaryMemberId?.name,
+            primaryName: primaryName,
+            primaryEmail: primaryEmail,
+            primaryContact: primaryContact,
             familyMembers: memberData.dependents.length > 0
-                ? memberData.dependents.map(dep => ({ name: dep.userId.name }))
+                ? memberData.dependents.map(dep => ({ name: dep.userId.name, email: dep.userId.email, contact: dep.userId.mobileNumber }))
                 : [],
             guests: memberData.guests.length > 0
                 ? memberData.guests.map(guest => ({
@@ -729,8 +778,15 @@ const bookEvent = async (req, res) => {
         const subjectDependent = eventrenderTemplate(emailDependentTemplate.subject, templateData);
 
         // Send email to primary member
+        let primaryMemberEmail;
+        if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
+            primaryMemberEmail = memberData.primaryMemberId.email;
+        } else {
+            primaryMemberEmail = member.parentUserId.email;
+        }
+
         await sendEmail(
-            memberData.primaryMemberId.email,
+            primaryMemberEmail,
             subject,
             htmlBody,
             [
@@ -797,9 +853,15 @@ const bookEvent = async (req, res) => {
                 );
             }
         }
+        let billingPrimaryMember;
+        if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
+            billingPrimaryMember = newBooking.primaryMemberId;
+        } else {
+            billingPrimaryMember = member.parentUserId._id;
+        }
 
 
-        await addBilling(newBooking.primaryMemberId, 'Event', { eventBooking: newBooking._id }, newBooking.ticketDetails.subtotal, 0, newBooking.ticketDetails.taxAmount, newBooking.ticketDetails.totalAmount, newBooking.primaryMemberId)
+        await addBilling(billingPrimaryMember, 'Event', { eventBooking: newBooking._id }, newBooking.ticketDetails.subtotal, 0, newBooking.ticketDetails.taxAmount, newBooking.ticketDetails.totalAmount, newBooking.primaryMemberId)
 
 
         // Return the response
@@ -814,43 +876,63 @@ const bookEvent = async (req, res) => {
 };
 
 
-
-
 const bookingDetails = async (req, res) => {
     try {
         const { eventId, primaryMemberId, dependents, guests, primaryMemberChecked } = req.body;
 
         // Validate request data
         if (!eventId || !primaryMemberId) {
-            return res.status(400).json({ message: 'Event ID and Primary Member ID are required.' });
+            return res.status(400).json({ message: "Event ID and Primary Member ID are required." });
         }
 
         // Fetch the event details
         const event = await Event.findById(eventId).populate("taxTypes");
         if (!event) {
-            return res.status(404).json({ message: 'Event not found.' });
+            return res.status(404).json({ message: "Event not found." });
         }
 
-        if (event.status !== 'Active') {
-            return res.status(400).json({ message: 'Event is not active or available for booking.' });
+        if (event.status !== "Active") {
+            return res.status(400).json({ message: "Event is not active or available for booking." });
+        }
+
+        // Fetch the primary member's details
+        const member = await User.findById(primaryMemberId);
+        if (!member) {
+            return res.status(404).json({ message: "Primary member not found." });
+        }
+
+        // Define a mapping for relation types
+        const relationMapping = {
+            "Primary": "Primary",
+            "Spouse": "Spouse",
+            "Son": "Son",
+            "Daughter": "Daughter",
+            "Senior Dependent": "SeniorDependent",
+        };
+
+        // Get the primary member's relation and map it
+        // const { relation } = member;
+        const permissionKey = relationMapping[member.relation];
+
+        // Validate the booking permission for the relation
+        if (!permissionKey || !event[`bookingPermission${permissionKey}`]) {
+            return res.status(400).json({
+                message: `Members with the relationship type '${member.relation}' are not eligible for booking this event.`,
+            });
         }
 
 
-
-        // Pricing calculations
-        let primaryMemberCount = 0;
-        if (primaryMemberChecked) {
-            primaryMemberCount = 1; // Primary member is always 1
-        }
+        // Calculate ticket requirements
+        const primaryMemberCount = primaryMemberChecked ? 1 : 0;
         const dependentMemberCount = dependents ? dependents.length : 0;
         const guestMemberCount = guests ? guests.length : 0;
 
         const totalMemberCount = primaryMemberCount + dependentMemberCount + guestMemberCount;
 
-        if (event.availableTickets <= totalMemberCount) {
-            return res.status(400).json({ message: 'No tickets available for this event.' });
+        // Check ticket availability
+        if (event.totalAvailableTickets < totalMemberCount) {
+            return res.status(400).json({ message: "Not enough tickets available for this event." });
         }
-
 
         const subtotal =
             primaryMemberCount * event.primaryMemberPrice +
@@ -870,7 +952,21 @@ const bookingDetails = async (req, res) => {
         const totalTaxAmount = taxDetails.reduce((acc, tax) => acc + tax.taxAmount, 0);
         const totalAmount = subtotal + totalTaxAmount;
 
-        // Prepare the response data without QR codes
+        // Update available tickets in the database
+        event.allottedTicketsMember -= primaryMemberCount + dependentMemberCount;
+        event.allottedTicketsGuest -= guestMemberCount;
+        event.totalAvailableTickets -= totalMemberCount;
+
+        // Validate updated ticket counts
+        if (event.allottedTicketsMember < 0 || event.allottedTicketsGuest < 0) {
+            return res.status(400).json({
+                message: "Invalid ticket count update. Ensure the requested tickets are available.",
+            });
+        }
+
+        // await event.save();
+
+        // Prepare the response data
         const bookingDetails = {
             eventId,
             primaryMemberId,
@@ -890,25 +986,23 @@ const bookingDetails = async (req, res) => {
                 taxAmount: totalTaxAmount,
                 totalAmount,
             },
-            paymentStatus: 'Pending', // Default status
-            bookingStatus: 'Pending', // Default status
+            paymentStatus: "Pending", // Default status
+            bookingStatus: "Pending", // Default status
         };
 
-        // Return the booking details without saving to the database
+        // Return the booking details
         return res.status(200).json({
-            message: 'Booking details calculated successfully.',
+            message: "Booking details calculated successfully.",
             bookingDetails,
         });
     } catch (error) {
-        console.error('Error calculating booking details:', error);
+        console.error("Error calculating booking details:", error);
         return res.status(500).json({
-            message: 'An error occurred while calculating the event booking details.',
-            error,
+            message: "An error occurred while calculating the event booking details.",
+            error: error.message,
         });
     }
 };
-
-
 
 const getAllBookings = async (req, res) => {
     try {
