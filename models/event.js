@@ -162,12 +162,12 @@ const eventSchema = new mongoose.Schema(
         eventEndDate: {
             type: Date,
             required: true,
-            validate: {
-                validator: function (value) {
-                    return value > this.eventStartDate;
-                },
-                message: 'Event end date must be after the start date.',
-            },
+            // validate: {
+            //     validator: function (value) {
+            //         return value > this.eventStartDate;
+            //     },
+            //     message: 'Event end date must be after the start date.',
+            // },
         },
         startTime: {
             type: String,
@@ -176,14 +176,14 @@ const eventSchema = new mongoose.Schema(
         endTime: {
             type: String,
             required: true,
-            validate: {
-                validator: function (value) {
-                    const [startHour, startMinute] = this.startTime.split(':').map(Number);
-                    const [endHour, endMinute] = value.split(':').map(Number);
-                    return endHour > startHour || (endHour === startHour && endMinute > startMinute);
-                },
-                message: 'End time must be after start time.',
-            },
+            // validate: {
+            //     validator: function (value) {
+            //         const [startHour, startMinute] = this.startTime.split(':').map(Number);
+            //         const [endHour, endMinute] = value.split(':').map(Number);
+            //         return endHour > startHour || (endHour === startHour && endMinute > startMinute);
+            //     },
+            //     message: 'End time must be after start time.',
+            // },
         },
         ticketPrice: {
             type: Number,
