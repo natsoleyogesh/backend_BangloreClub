@@ -530,13 +530,28 @@ const bookEvent = async (req, res) => {
         const totalTaxAmount = taxDetails.reduce((acc, tax) => acc + tax.taxAmount, 0);
         const totalAmount = subtotal + totalTaxAmount;
 
-        // Generate QR codes for all members
+        // // Generate QR codes for all members
+        // const members = [
+        //     { userId: primaryMemberId, type: 'Primary', eventId },
+        //     ...(dependents || []).map(dep => ({ userId: dep.userId, type: 'Dependent', eventId })),
+        //     ...(guests || []).map(guest => ({ userId: guest.name, type: 'Guest', eventId })), // For guest, use name instead of userId
+        // ];
+        // const qrCodes = await QRCodeHelper.generateMultipleQRCodes(members);
+
+        // Members for QR code generation
         const members = [
-            { userId: primaryMemberId, type: 'Primary', eventId },
-            ...(dependents || []).map(dep => ({ userId: dep.userId, type: 'Dependent', eventId })),
-            ...(guests || []).map(guest => ({ userId: guest.name, type: 'Guest', eventId })), // For guest, use name instead of userId
+            ...(primaryMemberChecked ? [{ userId: primaryMemberId, type: "Primary", eventId }] : []),
+            ...(dependents || []).map(dep => ({ userId: dep.userId, type: "Dependent", eventId })),
+            ...(guests || []).map(guest => ({ userId: guest.name, type: "Guest", eventId })), // Guest uses name
         ];
+
+        // Generate QR codes for members
         const qrCodes = await QRCodeHelper.generateMultipleQRCodes(members);
+
+        // Generate primary member QR code if checked
+        const primaryMemberQRCodeData = primaryMemberChecked
+            ? qrCodes.find(qr => qr.userId.toString() === primaryMemberId.toString())
+            : null;
 
         // Generate QR code for all details
         const uniqueNumber = Math.floor(Math.random() * 10000000000); // Generates a random 10-digit number
@@ -582,8 +597,10 @@ const bookEvent = async (req, res) => {
         const newBooking = new EventBooking({
             eventId,
             primaryMemberId,
-            primaryMemberQRCode: qrCodes.find(qr => qr.userId.toString() === primaryMemberId.toString()).qrCode,
-            uniqueQRCode: qrCodes.find(qr => qr.userId.toString() === primaryMemberId.toString()).uniqueQRCodeData,
+            // primaryMemberQRCode: qrCodes.find(qr => qr.userId.toString() === primaryMemberId.toString()).qrCode,
+            // uniqueQRCode: qrCodes.find(qr => qr.userId.toString() === primaryMemberId.toString()).uniqueQRCodeData,
+            primaryMemberQRCode: primaryMemberQRCodeData ? primaryMemberQRCodeData.qrCode : null,
+            uniqueQRCode: primaryMemberQRCodeData ? primaryMemberQRCodeData.uniqueQRCodeData : null,
             dependents: preparedDependents,
             guests: preparedGuests,
             counts: {
@@ -785,18 +802,34 @@ const bookEvent = async (req, res) => {
             primaryMemberEmail = member.parentUserId.email;
         }
 
+        // Prepare email content
+        const emailAttachments = primaryMemberChecked
+            ? [
+                {
+                    filename: "primaryMemberQRCode.png",
+                    content: Buffer.from(
+                        primaryMemberQRCodeData.qrCode.split(",")[1],
+                        "base64"
+                    ),
+                    encoding: "base64",
+                    cid: "primaryQRCodeImage",
+                },
+            ]
+            : [
+                {
+                    filename: "allDetailsQRCode.png",
+                    content: Buffer.from(allDetailsUniqueQRCode.split(",")[1], "base64"),
+                    encoding: "base64",
+                    cid: "allDetailsQRCodeImage",
+                },
+            ];
+
+
         await sendEmail(
             primaryMemberEmail,
             subject,
             htmlBody,
-            [
-                {
-                    filename: "qrcode.png",
-                    content: Buffer.from(newBooking.primaryMemberQRCode.split(",")[1], "base64"), // Convert to Buffer
-                    encoding: "base64",
-                    cid: "qrCodeImage", // For inline embedding in email
-                },
-            ]
+            emailAttachments
         );
 
         // Send emails to dependents
