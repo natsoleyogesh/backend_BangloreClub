@@ -60,7 +60,15 @@ const addAffiliatedClub = async (req, res) => {
 // API to get all affiliated clubs
 const getAllAffiliatedClubs = async (req, res) => {
     try {
-        const clubs = await AffiliateClub.find({ isDeleted: false });
+        const { countryDescription } = req.query;
+
+        let filter = { isDeleted: false };
+
+        // Add countryDescription to filter if provided
+        if (countryDescription) {
+            filter.countryDescription = countryDescription;
+        }
+        const clubs = await AffiliateClub.find(filter);
         return res.status(200).send({ message: "All Affilieated Clubs", clubs });
     } catch (error) {
         return res.status(500).send({ error: error.message });
