@@ -736,6 +736,8 @@ const createRoomBookingDetails = async (req, res) => {
                     const overlapDays = overlapEndDate.diff(overlapStartDate, 'days') + 1;
                     if (overlapDays > 0) {
                         specialDayExtraCharge += extraCharge * overlapDays;
+                        // specialDayExtraCharge +=
+                        //     (roomTotalPrice * extraCharge * overlapDays) / 100;
                     }
                 });
             }

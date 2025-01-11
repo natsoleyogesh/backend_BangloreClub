@@ -135,56 +135,95 @@
 const HOD = require("../models/clubHods");
 const User = require("../models/user");
 const Department = require("../models/department");
+const { toTitleCase } = require("../utils/common");
+
+// const addHOD = async (req, res) => {
+//     const { userId, designation, departmentId, status } = req.body;
+
+//     try {
+//         // Validate if user exists
+//         const user = await User.findById(userId);
+//         if (!user) return res.status(404).json({ message: "User not found" });
+
+//         // Validate if department exists
+//         const department = await Department.findById(departmentId);
+//         if (!department) return res.status(404).json({ message: "Department not found" });
+
+//         // Create new HOD
+//         const newHOD = new HOD({
+//             userId,
+//             designation,
+//             department: departmentId,
+//             status,
+//         });
+
+//         // Save the new HOD
+//         const savedHOD = await newHOD.save();
+//         return res.status(201).json({
+//             message: "HOD created successfully",
+//             hod: savedHOD
+//         });
+//     } catch (error) {
+//         console.error("Error creating HOD:", error);
+//         return res.status(500).json({ message: "Error creating HOD", error: error.message });
+//     }
+// };
+
 
 const addHOD = async (req, res) => {
-    const { userId, designation, departmentId, status } = req.body;
-
     try {
-        // Validate if user exists
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ message: "User not found" });
+        const { name, designation, departmentId, contactNumber, email, status } = req.body;
+        const normalizedName = toTitleCase(name);
 
-        // Validate if department exists
+
+        const existingEmail = await HOD.findOne({ email: email, isDeleted: false });
+        if (existingEmail) {
+            return res.status(400).json({ message: 'Email Is already exists.' });
+        }
+
+        // Check if file was uploaded
+        const image = req.file ? `/uploads/hods/${req.file.filename}` : "";
+
         const department = await Department.findById(departmentId);
         if (!department) return res.status(404).json({ message: "Department not found" });
-
-        // Create new HOD
+        // Create a new HOD entry
         const newHOD = new HOD({
-            userId,
+            name: normalizedName,
             designation,
             department: departmentId,
+            contactNumber,
+            email,
+            image,
             status,
         });
 
-        // Save the new HOD
-        const savedHOD = await newHOD.save();
-        return res.status(201).json({
-            message: "HOD created successfully",
-            hod: savedHOD
-        });
+        // Save the HOD to the database
+        await newHOD.save();
+
+        return res.status(201).json({ message: "HOD added successfully", hod: newHOD });
     } catch (error) {
-        console.error("Error creating HOD:", error);
-        return res.status(500).json({ message: "Error creating HOD", error: error.message });
+        console.error("Error adding HOD:", error);
+        return res.status(500).json({ message: "Error adding HOD", error: error.message });
     }
 };
+
 
 
 const getAllHODs = async (req, res) => {
     try {
         // Fetch HODs and populate user and department details
         const data = await HOD.find()
-            .populate('userId', 'name mobileNumber profilePicture') // Populating user details
             .populate('department', 'departmentName'); // Populating department name
 
         // Map the data for the desired response format
         const hods = data.reverse().map(hod => ({
             _id: hod._id,
-            userId: hod.userId._id,
             departmentId: hod.department._id,
             designation: hod.designation,
-            name: hod.userId.name,
-            contactNumber: hod.userId.mobileNumber,
-            image: hod.userId.profilePicture,
+            name: hod.name,
+            contactNumber: hod.contactNumber,
+            email: hod.email,
+            image: hod.image,
             department: hod.department ? hod.department.departmentName : 'N/A', // Handle missing department
             status: hod.status,
             createdAt: hod.createdAt,
@@ -203,18 +242,17 @@ const getActiveHODs = async (req, res) => {
     try {
         // Fetch HODs and populate user and department details
         const data = await HOD.find({ status: "Active" })
-            .populate('userId', 'name mobileNumber profilePicture') // Populating user details
             .populate('department', 'departmentName'); // Populating department name
 
         // Map the data for the desired response format
         const hods = data.reverse().map(hod => ({
             _id: hod._id,
-            userId: hod.userId._id,
             departmentId: hod.department._id,
             designation: hod.designation,
-            name: hod.userId.name,
-            contactNumber: hod.userId.mobileNumber,
-            image: hod.userId.profilePicture,
+            name: hod.name,
+            contactNumber: hod.contactNumber,
+            email: hod.email,
+            image: hod.image,
             department: hod.department ? hod.department.departmentName : 'N/A', // Handle missing department
             status: hod.status,
             createdAt: hod.createdAt,
@@ -235,7 +273,6 @@ const getHODById = async (req, res) => {
     try {
         // Find HOD by ID and populate user and department details
         const hod = await HOD.findById(id)
-            .populate('userId', 'name mobileNumber profilePicture')
             .populate('department', 'departmentName');
 
         if (!hod) return res.status(404).json({ message: "HOD not found" });
@@ -244,12 +281,12 @@ const getHODById = async (req, res) => {
             message: "HOD fetched successfully",
             hod: {
                 _id: hod._id,
-                userId: hod.userId._id,
                 departmentId: hod.department._id,
                 designation: hod.designation,
-                name: hod.userId.name,
-                contactNumber: hod.userId.mobileNumber,
-                image: hod.userId.profilePicture,
+                name: hod.name,
+                contactNumber: hod.contactNumber,
+                email: hod.email,
+                image: hod.image,
                 department: hod.department ? hod.department.departmentName : 'N/A',
                 status: hod.status,
                 createdAt: hod.createdAt,
@@ -263,16 +300,71 @@ const getHODById = async (req, res) => {
 };
 
 
+// const updateHOD = async (req, res) => {
+//     const { id } = req.params;
+//     const { userId, designation, departmentId, status } = req.body;
+
+//     try {
+//         // Validate if user exists
+//         if (userId) {
+
+//             const user = await User.findById(userId);
+//             if (!user) return res.status(404).json({ message: "User not found" });
+//         }
+
+//         // Validate if department exists
+//         if (departmentId) {
+
+//             const department = await Department.findById(departmentId);
+//             if (!department) return res.status(404).json({ message: "Department not found" });
+//         }
+
+//         // Find HOD and update it
+//         const updatedHOD = await HOD.findByIdAndUpdate(id, {
+//             userId,
+//             designation,
+//             department: departmentId,
+//             status
+//         }, { new: true });
+
+//         if (!updatedHOD) return res.status(404).json({ message: "HOD not found" });
+
+//         return res.status(200).json({
+//             message: "HOD updated successfully",
+//             hod: updatedHOD
+//         });
+//     } catch (error) {
+//         console.error("Error updating HOD:", error);
+//         return res.status(500).json({ message: "Error updating HOD", error: error.message });
+//     }
+// };
+
 const updateHOD = async (req, res) => {
-    const { id } = req.params;
-    const { userId, designation, departmentId, status } = req.body;
-
     try {
-        // Validate if user exists
-        if (userId) {
+        const { id } = req.params;
+        const { name, designation, departmentId, contactNumber, email, status } = req.body;
 
-            const user = await User.findById(userId);
-            if (!user) return res.status(404).json({ message: "User not found" });
+        const updates = {};
+
+        if (email) {
+
+            const existingEmail = await HOD.findOne({
+                email,
+                _id: { $ne: id }, // Exclude the current document by ID
+            });
+
+            if (existingEmail) {
+                return res.status(400).json({ message: 'A Email Is already exists.' });
+            }
+
+            // Add normalized title to updates
+            updates.email = email;
+        }
+
+        // Check if file was uploaded
+        let image;
+        if (req.file) {
+            image = req.file ? `/uploads/hods/${req.file.filename}` : "";
         }
 
         // Validate if department exists
@@ -282,25 +374,31 @@ const updateHOD = async (req, res) => {
             if (!department) return res.status(404).json({ message: "Department not found" });
         }
 
-        // Find HOD and update it
-        const updatedHOD = await HOD.findByIdAndUpdate(id, {
-            userId,
-            designation,
-            department: departmentId,
-            status
-        }, { new: true });
+        // Prepare the update object dynamically
 
-        if (!updatedHOD) return res.status(404).json({ message: "HOD not found" });
+        if (name) updates.name = name;
+        if (designation) updates.designation = designation;
+        if (departmentId) updates.department = departmentId;
+        if (contactNumber) updates.contactNumber = contactNumber;
+        if (status) updates.status = status;
+        if (image) updates.image = image; // Update profile image only if uploaded
 
-        return res.status(200).json({
-            message: "HOD updated successfully",
-            hod: updatedHOD
-        });
+        // Find and update the HOD
+        const updatedHOD = await HOD.findByIdAndUpdate(id, updates, { new: true });
+
+        if (!updatedHOD) {
+            return res.status(404).json({ message: "HOD not found" });
+        }
+
+        return res.status(200).json({ message: "HOD updated successfully", hod: updatedHOD });
     } catch (error) {
         console.error("Error updating HOD:", error);
         return res.status(500).json({ message: "Error updating HOD", error: error.message });
     }
 };
+
+
+
 
 // Delete HOD
 const deleteHOD = async (req, res) => {

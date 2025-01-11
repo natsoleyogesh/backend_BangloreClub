@@ -3,30 +3,6 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// // Configure Multer storage
-// const storage = multer.diskStorage({
-//     destination: (req, file, cb) => {
-//         cb(null, "uploads/profilePictures/"); // Directory where files will be saved
-//     },
-//     filename: (req, file, cb) => {
-//         const uniqueName = `${Date.now()}-${file.originalname}`;
-//         cb(null, uniqueName);
-//     },
-// });
-
-// // Multer upload instance
-// const upload = multer({
-//     storage,
-//     fileFilter: (req, file, cb) => {
-//         // Accept only image files
-//         if (!file.mimetype.startsWith("image/")) {
-//             return cb(new Error("Only image files are allowed"), false);
-//         }
-//         cb(null, true);
-//     },
-//     limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
-// });
-
 // Configure Multer storage
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -112,26 +88,6 @@ const uploadDir = 'uploads/rooms/';
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
-
-// // Storage configuration
-// const roomstorage = multer.diskStorage({
-//     destination: (req, file, cb) => {
-//         cb(null, "uploads/rooms/"); // Directory where files will be saved
-//     },
-//     filename: (req, file, cb) => {
-//         const uniqueName = `${Date.now()}-${file.originalname}`;
-//         cb(null, uniqueName);
-//     },
-// });
-
-// // Multer configuration with file filter
-// const roomupload = multer({
-//     storage: roomstorage,
-//     fileFilter,
-//     limits: {
-//         fileSize: 5 * 1024 * 1024, // Limit file size to 5MB
-//     },
-// });
 
 
 // Storage configuration
@@ -380,4 +336,31 @@ const notificationUpload = multer({
 
 });
 
-module.exports = { upload, eventupload, roomUpload, offerupload, hodupload, downloadUpload, noticeUpload, FBupload, ICONupload, banquetUpload, notificationUpload, handleMulterError };
+
+// Multer configuration for Excel file uploads
+const xslStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/xlsx'); // Corrected directory name
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`); // Set unique file name
+    },
+});
+
+const xslUpload = multer({
+    storage: xslStorage,
+    fileFilter: (req, file, cb) => {
+        // Allow only Excel file types
+        if (
+            file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+            file.mimetype === 'application/vnd.ms-excel'
+        ) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only Excel files are allowed!'), false);
+        }
+    },
+});
+
+
+module.exports = { upload, eventupload, roomUpload, offerupload, hodupload, downloadUpload, noticeUpload, FBupload, ICONupload, banquetUpload, notificationUpload, handleMulterError, xslUpload };

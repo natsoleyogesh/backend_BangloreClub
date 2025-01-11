@@ -834,12 +834,12 @@ const deleteProofs = async (req, res) => {
         user.uploadProofs.splice(index, 1);
 
         // Delete the proof file from the server
-        const filePath = path.resolve(__dirname, "..", proofPath);
-        fs.unlink(filePath, (err) => {
-            if (err) {
-                console.error("Failed to delete proof file:", err);
-            }
-        });
+        // const filePath = path.resolve(__dirname, "..", proofPath);
+        // fs.unlink(filePath, (err) => {
+        //     if (err) {
+        //         console.error("Failed to delete proof file:", err);
+        //     }
+        // });
 
         // Save the updated user
         await user.save();
