@@ -1,4 +1,4 @@
-const { addAffiliatedClub, getAllAffiliatedClubs, getAffiliatedClubById, deleteAffiliatedClub, updateAffiliatedClub } = require("../controllers/affiliatedClubController");
+const { addAffiliatedClub, getAllAffiliatedClubs, getAffiliatedClubById, deleteAffiliatedClub, updateAffiliatedClub, getAffiliatedClubs } = require("../controllers/affiliatedClubController");
 const { xslUpload } = require("../utils/upload");
 
 module.exports = (router) => {
@@ -7,4 +7,5 @@ module.exports = (router) => {
     router.get("/affiliated-club/:id", getAffiliatedClubById);
     router.delete("/affiliated-club/:id", deleteAffiliatedClub);
     router.put("/update-affiliated-club/:id", updateAffiliatedClub);
+    router.get("/affiliated-clubs", getAffiliatedClubs);
 };

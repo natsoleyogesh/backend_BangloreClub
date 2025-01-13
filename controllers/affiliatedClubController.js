@@ -135,10 +135,51 @@ const updateAffiliatedClub = async (req, res) => {
     }
 };
 
+
+// API to get all affiliated clubs
+const getAffiliatedClubs = async (req, res) => {
+    try {
+        const { countryDescription, page = 1, limit = 10 } = req.query;
+
+        let filter = { isDeleted: false };
+
+        // Add countryDescription to filter if provided
+        if (countryDescription) {
+            filter.countryDescription = countryDescription;
+        }
+
+        // Parse pagination parameters
+        const pageNumber = parseInt(page, 10);
+        const pageSize = parseInt(limit, 10);
+        const skip = (pageNumber - 1) * pageSize;
+
+        const clubs = await AffiliateClub.find(filter)
+            .skip(skip)
+            .limit(pageSize);
+
+        const totalClubs = await AffiliateClub.countDocuments(filter);
+
+        return res.status(200).send({
+            message: "All Affiliated Clubs",
+            clubs,
+            pagination: {
+                total: totalClubs,
+                page: pageNumber,
+                limit: pageSize,
+                totalPages: Math.ceil(totalClubs / pageSize),
+            },
+        });
+    } catch (error) {
+        return res.status(500).send({ error: error.message });
+    }
+};
+
+
 module.exports = {
     addAffiliatedClub,
     getAllAffiliatedClubs,
     getAffiliatedClubById,
     deleteAffiliatedClub,
     updateAffiliatedClub,
+    getAffiliatedClubs
 }
