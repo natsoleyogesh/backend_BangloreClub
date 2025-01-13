@@ -238,9 +238,10 @@ const userSchema = new mongoose.Schema({
         },
     ],
     creditStop: {
-        type: String,
-        enum: ['Yes', 'No'],
-        default: 'No'
+        type: Boolean,
+        default: false
+        // enum: ['Yes', 'No'],
+        // default: 'No'
     },
     creditLimit: {
         type: Number,

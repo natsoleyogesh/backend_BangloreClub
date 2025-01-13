@@ -226,6 +226,8 @@ const getUserDetailsById = async (req, res) => {
         vehicleNumber: user.vehicleNumber,
         vehicleModel: user.vehicleModel,
         drivingLicenceNumber: user.drivingLicenceNumber,
+        creditLimit: user.creditLimit,
+        creditStop: user.creditStop,
         uploadProofs: user.uploadProofs,
         familyMembers, // Nested family members
       },

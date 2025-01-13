@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
     logger: true,
 });
 
-// // Create a reusable transporter using SMTP settings
+// // Create a reusable transporter using SMTP settings 
 // const transporter = nodemailer.createTransport({
 //     host: "smtp.gmail.com", // Replace with your SMTP server (e.g., Gmail SMTP server)
 //     port: 587, // Normal SMTP port for STARTTLS
@@ -60,7 +60,7 @@ const sendEmail = async (to, subject, htmlBody, attachments = []) => {
         return info;
     } catch (error) {
         console.error("Error sending email:", error);
-        throw error;
+        // throw error;
     }
 };
 

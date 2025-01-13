@@ -144,6 +144,8 @@ const createUser = async (req, res) => {
             vehicleNumber,
             vehicleModel,
             drivingLicenceNumber,
+            creditLimit,
+            creditStop
         } = req.body;
 
         // Handle profile picture
@@ -201,6 +203,8 @@ const createUser = async (req, res) => {
                 uploadProofs,
                 isDeleted: false,
                 lastLogin: Date.now(),
+                creditLimit,
+                creditStop,
             });
 
             // Save the primary user to the database
@@ -638,6 +642,8 @@ const getUserDetails = async (req, res) => {
                 vehicleNumber: user.vehicleNumber,
                 vehicleModel: user.vehicleModel,
                 drivingLicenceNumber: user.drivingLicenceNumber,
+                creditLimit: user.creditLimit,
+                creditStop: user.creditStop,
                 familyMembers, // Nested family members with QR codes
                 qrCode: primaryUserQRCode, // Include the primary user's QR code
             },

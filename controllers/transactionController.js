@@ -6,54 +6,10 @@ const moment = require('moment');
 const RoomBooking = require('../models/roomBooking');
 const BanquetBooking = require('../models/banquetBooking');
 const EventBooking = require('../models/eventBooking');
+const User = require('../models/user');
+const ConsolidatedBilling = require('../models/offlineBill');
+const OfflineBillTransaction = require('../models/offlineBillTransaction');
 // Create a new transaction
-// const createTransaction = async (req, res) => {
-//     const {
-//         memberId,
-//         billingId,
-//         paymentMethod,
-//         taxAmount,
-//         other_service_charge,
-//         paymentAmount,
-//         transactionId,
-//         paymentStatus
-//     } = req.body;
-
-//     try {
-//         // Create a new transaction
-//         const transaction = new Transaction({
-//             memberId,
-//             billingId,
-//             paymentMethod: paymentMethod ? paymentMethod : '',
-//             taxAmount,
-//             other_service_charge,
-//             paymentAmount,
-//             transactionId,
-//             paymentStatus,
-//             status: 'Pending'  // Initial status
-//         });
-
-//         await transaction.save();
-
-//         // If paymentStatus is "Success", update the corresponding Billing record
-//         if (paymentStatus === 'Success') {
-//             await Billing.findByIdAndUpdate(
-//                 billingId,
-//                 { paymentStatus: 'Paid' },
-//                 { new: true }
-//             );
-//         }
-
-//         return res.status(201).json({
-//             message: 'Transaction created successfully.',
-//             transaction
-//         });
-//     } catch (error) {
-//         console.error('Error creating transaction:', error);
-//         return res.status(500).json({ message: 'Internal server error', error: error.message });
-//     }
-// };
-
 const createTransaction = async (req, res) => {
     const {
         memberId,
@@ -86,7 +42,7 @@ const createTransaction = async (req, res) => {
         if (paymentStatus === 'Success') {
             const billing = await Billing.findByIdAndUpdate(
                 billingId,
-                { paymentStatus: 'Paid' },
+                { paymentStatus: 'Paid', status: "Paid" },
                 { new: true }
             )
             // .populate('serviceDetails.roomBooking')
@@ -129,6 +85,19 @@ const createTransaction = async (req, res) => {
                 default:
                     console.error('Unknown service type:', billing.serviceType);
             }
+
+            let primaryMemberDetails = await User.findById(memberId);
+            // If the member is not primary, fetch the actual primary member
+            if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {
+                primaryMemberDetails = await User.findById(primaryMemberDetails.parentUserId);
+                if (!primaryMemberDetails) {
+                    return res.status(404).json({ message: "Primary member not found for the provided member." });
+                }
+            }
+
+            primaryMemberDetails.creditLimit = transaction.paymentAmount;
+
+            await primaryMemberDetails.save();
         }
 
         return res.status(201).json({
@@ -141,6 +110,112 @@ const createTransaction = async (req, res) => {
     }
 };
 
+// // API to create a new transaction
+// const createTransaction = async (req, res) => {
+//     const {
+//         memberId,
+//         billingId,
+//         paymentMethod,
+//         taxAmount,
+//         other_service_charge,
+//         paymentAmount,
+//         transactionId,
+//         paymentStatus
+//     } = req.body;
+
+//     try {
+//         // Create a new transaction
+//         const transaction = new Transaction({
+//             memberId,
+//             billingId,
+//             paymentMethod: paymentMethod || '',
+//             taxAmount,
+//             other_service_charge,
+//             paymentAmount,
+//             transactionId,
+//             paymentStatus,
+//             status: 'Pending' // Initial status
+//         });
+
+//         await transaction.save();
+
+//         // If paymentStatus is "Success", update the corresponding Billing or ConsolidatedBilling record
+//         let billing = await Billing.findById(billingId);
+//         let isBillingModel = true; // Flag to track if it's a Billing model
+//         if (!billing) {
+//             billing = await ConsolidatedBilling.findById(billingId);
+//             isBillingModel = false; // Not a Billing model
+//         }
+
+//         if (!billing) {
+//             return res.status(404).json({ message: 'Billing record not found.' });
+//         }
+
+//         // Update payment status for the billing record
+//         billing.paymentStatus = 'Paid';
+//         billing.status = 'Paid';
+//         await billing.save();
+
+//         // Update paymentStatus for service-specific bookings if applicable
+//         if (isBillingModel && billing.serviceDetails) {
+//             switch (billing.serviceType) {
+//                 case 'Room':
+//                     if (billing.serviceDetails.roomBooking) {
+//                         await RoomBooking.findByIdAndUpdate(
+//                             billing.serviceDetails.roomBooking,
+//                             { paymentStatus: 'Completed' },
+//                             { new: true }
+//                         );
+//                     }
+//                     break;
+//                 case 'Banquet':
+//                     if (billing.serviceDetails.banquetBooking) {
+//                         await BanquetBooking.findByIdAndUpdate(
+//                             billing.serviceDetails.banquetBooking,
+//                             { paymentStatus: 'Completed' },
+//                             { new: true }
+//                         );
+//                     }
+//                     break;
+//                 case 'Event':
+//                     if (billing.serviceDetails.eventBooking) {
+//                         await EventBooking.findByIdAndUpdate(
+//                             billing.serviceDetails.eventBooking,
+//                             { paymentStatus: 'Completed' },
+//                             { new: true }
+//                         );
+//                     }
+//                     break;
+//                 default:
+//                     console.warn('Unknown service type:', billing.serviceType);
+//             }
+//         }
+
+//         // Update primary member's credit limit only for Billing model
+//         if (isBillingModel) {
+//             // Update primary member's credit limit
+//             let primaryMember = await User.findById(memberId);
+//             if (primaryMember && primaryMember.relation !== 'Primary' && primaryMember.parentUserId) {
+//                 primaryMember = await User.findById(primaryMember.parentUserId);
+//                 if (!primaryMember) {
+//                     return res.status(404).json({ message: 'Primary member not found for the provided member.' });
+//                 }
+//             }
+
+//             if (primaryMember) {
+//                 primaryMember.creditLimit = (primaryMember.creditLimit || 0) + paymentAmount;
+//                 await primaryMember.save();
+//             }
+//         }
+//         return res.status(201).json({
+//             message: 'Transaction created successfully.',
+//             transaction
+//         });
+//     } catch (error) {
+//         console.error('Error creating transaction:', error);
+//         return res.status(500).json({ message: 'Internal server error', error: error.message });
+//     }
+// };
 
 
 const getAllTransactions = async (req, res) => {
@@ -488,6 +563,379 @@ const getAllFilterTransactions = async (req, res) => {
     }
 };
 
+
+
+// OFFLINE BILLS TRABSACTION API
+
+// Create a new transaction
+const createOfflineBillTransaction = async (req, res) => {
+    const {
+        memberId,
+        billingId,
+        paymentMethod,
+        taxAmount,
+        other_service_charge,
+        paymentAmount,
+        transactionId,
+        paymentStatus
+    } = req.body;
+
+    try {
+        // Create a new transaction
+        const transaction = new OfflineBillTransaction({
+            memberId,
+            billingId,
+            paymentMethod: paymentMethod ? paymentMethod : '',
+            taxAmount,
+            other_service_charge,
+            paymentAmount,
+            transactionId,
+            paymentStatus,
+            status: 'Pending' // Initial status
+        });
+
+        await transaction.save();
+
+        // If paymentStatus is "Success", update the corresponding Billing record
+        if (paymentStatus === 'Success') {
+            const billing = await ConsolidatedBilling.findByIdAndUpdate(
+                billingId,
+                { paymentStatus: 'Paid', status: "Paid" },
+                { new: true }
+            )
+
+            if (!billing) {
+                return res.status(404).json({ message: 'Billing record not found.' });
+            }
+
+            // let primaryMemberDetails = await User.findById(memberId);
+            // // If the member is not primary, fetch the actual primary member
+            // if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {
+            //     primaryMemberDetails = await User.findById(primaryMemberDetails.parentUserId);
+            //     if (!primaryMemberDetails) {
+            //         return res.status(404).json({ message: "Primary member not found for the provided member." });
+            //     }
+            // }
+
+            // primaryMemberDetails.creditLimit = transaction.paymentAmount;
+
+            // await primaryMemberDetails.save();
+
+            transaction.status = "Completed";
+
+            await transaction.save();
+        }
+
+        return res.status(201).json({
+            message: 'Transaction created successfully.',
+            transaction
+        });
+    } catch (error) {
+        console.error('Error creating transaction:', error);
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+};
+
+const getAllOfflineTransactions = async (req, res) => {
+    try {
+
+        const { filterType, customStartDate, customEndDate, paymentStatus, userId } = req.query; // Extract filter type and custom date range from query
+
+        let filter = { isDeleted: false };
+
+        // Add paymentStatus to filter if provided
+        if (paymentStatus) {
+            filter.paymentStatus = paymentStatus;
+        }
+        if (userId) {
+            filter.memberId = userId
+        }
+
+        // Handle date filters
+        if (filterType) {
+            const today = moment().startOf('day');
+
+            switch (filterType) {
+                case 'today':
+                    filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() };
+                    break;
+                case 'last7days':
+                    filter.createdAt = { $gte: moment(today).subtract(7, 'days').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last30days':
+                    filter.createdAt = { $gte: moment(today).subtract(30, 'days').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last3months':
+                    filter.createdAt = { $gte: moment(today).subtract(3, 'months').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last6months':
+                    filter.createdAt = { $gte: moment(today).subtract(6, 'months').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last1year':
+                    filter.createdAt = { $gte: moment(today).subtract(1, 'year').toDate(), $lt: today.toDate() };
+                    break;
+                case 'custom':
+                    if (!customStartDate || !customEndDate) {
+                        return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
+                    }
+                    filter.createdAt = {
+                        // $gte: moment(customStartDate, 'YYYY-MM-DD').startOf('day').toDate(),
+                        // $lt: moment(customEndDate, 'YYYY-MM-DD').endOf('day').toDate()
+                        $lt: moment(customStartDate, 'YYYY-MM-DD').endOf('day').toDate(),
+                        $gte: moment(customEndDate, 'YYYY-MM-DD').startOf('day').toDate()
+                    };
+                    break;
+                default:
+                    break; // No filter applied if no valid filterType
+            }
+        }
+
+
+        // const transactions = await Transaction.find({ isDeleted: false })
+        const transactions = await OfflineBillTransaction.find(filter)
+            .populate('memberId')
+            .populate('billingId')
+            .sort({ createdAt: -1 }); // Sort by creation date, most recent first
+
+        return res.status(200).json({
+            message: 'Transactions fetched successfully.',
+            transactions
+        });
+    } catch (error) {
+        console.error('Error fetching transactions:', error);
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+};
+
+
+
+const getOfflineTransactionById = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Fetch the transaction with the populated fields
+        const transaction = await OfflineBillTransaction.findById(id)
+            .populate('memberId') // Populate memberId (User)
+            .populate('billingId')
+            .where('isDeleted').equals(false) // Ensure the transaction is not deleted
+            .setOptions({ strictPopulate: false }); // Allow population of paths that aren't explicitly defined in the schema
+
+
+        if (!transaction) {
+            return res.status(404).json({ message: 'Transaction not found.' });
+        }
+
+        return res.status(200).json({
+            message: 'Transaction fetched successfully.',
+            transaction
+        });
+    } catch (error) {
+        console.error('Error fetching transaction:', error);
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+};
+
+
+const deleteOfflineTransaction = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const transaction = await OfflineBillTransaction.findById(id);
+
+        if (!transaction) {
+            return res.status(404).json({ message: 'Transaction not found.' });
+        }
+
+        // Soft delete the transaction by setting `isDeleted` to true and adding `deletedAt`
+        transaction.isDeleted = true;
+        transaction.deletedAt = new Date();
+
+        await transaction.save();
+
+        return res.status(200).json({
+            message: 'Transaction soft deleted successfully.',
+            transaction
+        });
+    } catch (error) {
+        console.error('Error deleting transaction:', error);
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+};
+
+
+const updateOfflineTransaction = async (req, res) => {
+    const { id } = req.params;
+    const {
+        paymentMethod,
+        taxAmount,
+        other_service_charge,
+        paymentAmount,
+        paymentStatus,
+        status
+    } = req.body;
+
+    try {
+        const transaction = await OfflineBillTransaction.findById(id).where('isDeleted').equals(false);
+
+        if (!transaction) {
+            return res.status(404).json({ message: 'Transaction not found.' });
+        }
+
+        // Update the transaction fields with the new values
+        transaction.paymentMethod = paymentMethod || transaction.paymentMethod;
+        transaction.taxAmount = taxAmount || transaction.taxAmount;
+        transaction.other_service_charge = other_service_charge || transaction.other_service_charge;
+        transaction.paymentAmount = paymentAmount || transaction.paymentAmount;
+        transaction.paymentStatus = paymentStatus || transaction.paymentStatus;
+        transaction.status = status || transaction.status;
+
+        await transaction.save();
+
+        return res.status(200).json({
+            message: 'Transaction updated successfully.',
+            transaction
+        });
+    } catch (error) {
+        console.error('Error updating transaction:', error);
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+};
+
+
+const getAllFilterOfflineTransactions = async (req, res) => {
+    const { userId } = req.user;
+    const { type, startDate, endDate, page = 1, limit = 10 } = req.query;
+
+    // Parse the page and limit parameters as integers
+    const pageNumber = parseInt(page, 10);
+    const pageSize = parseInt(limit, 10);
+
+    // Default filter conditions
+    let filter = {};
+    if (userId) {
+        filter.memberId = userId;
+    }
+    const currentDate = moment();
+
+    try {
+        // Check if both startDate and endDate are provided
+        if (startDate && endDate) {
+            let start = moment(startDate, 'YYYY-MM-DD');
+            let end = moment(endDate, 'YYYY-MM-DD');
+
+            // Ensure that the startDate is not after the endDate
+            if (start.isAfter(end)) {
+                // Handle reverse date selection: Swap them or show error
+                return res.status(400).json({ message: 'Start date cannot be after end date.' });
+            }
+
+            // Validate that the date range is not greater than 12 months
+            const dateDiffInMonths = end.diff(start, 'months');
+            if (dateDiffInMonths > 12) {
+                return res.status(400).json({ message: 'Please select a time period of less than one year.' });
+            }
+
+            // Apply the date filter for the custom range
+            filter.paymentDate = {
+                $gte: start.startOf('day').toDate(),  // Start of the day for startDate
+                $lt: end.endOf('day').toDate()        // End of the day for endDate
+            };
+        }
+
+        // Determine the filter based on 'type' and optional date range
+        switch (type) {
+            case 'current':
+                // Current month filter
+                filter.paymentDate = {
+                    $gte: moment().startOf('month').toDate(),
+                    $lt: moment().endOf('month').toDate()
+                };
+                break;
+            case 'history':
+                // All transactions (no date filter)
+                break;
+            case 'lastMonth':
+                // Last month filter
+                filter.paymentDate = {
+                    $gte: moment().subtract(1, 'month').startOf('month').toDate(),
+                    $lt: moment().subtract(1, 'month').endOf('month').toDate()
+                };
+                break;
+            case 'lastWeek':
+                // Last week filter
+                filter.paymentDate = {
+                    $gte: moment().subtract(1, 'week').startOf('week').toDate(),
+                    $lt: moment().subtract(1, 'week').endOf('week').toDate()
+                };
+                break;
+            case 'last30Days':
+                // Last 30 days filter
+                filter.paymentDate = {
+                    $gte: moment().subtract(30, 'days').toDate(),
+                    $lt: moment().toDate()
+                };
+                break;
+            case 'lastThreeMonths':
+                // Last 3 months filter
+                filter.paymentDate = {
+                    $gte: moment().subtract(3, 'months').startOf('month').toDate(),
+                    $lt: moment().toDate()
+                };
+                break;
+            case 'lastSixMonths':
+                // Last 6 months filter
+                filter.paymentDate = {
+                    $gte: moment().subtract(6, 'months').startOf('month').toDate(),
+                    $lt: moment().toDate()
+                };
+                break;
+            case 'custom':
+                // Custom date range filter (already handled above)
+                if (!(startDate && endDate)) {
+                    return res.status(400).json({ message: 'Please provide both startDate and endDate for custom filter.' });
+                }
+                break;
+            default:
+                return res.status(400).json({ message: 'Invalid filter type provided.' });
+        }
+
+        // Get the total count of the filtered transactions
+        const totalTransactions = await OfflineBillTransaction.countDocuments(filter);
+
+        // Calculate the skip value for pagination
+        const skip = (pageNumber - 1) * pageSize;
+
+        // Fetch the transactions with pagination
+        const transactions = await OfflineBillTransaction.find(filter)
+            .populate('billingId')  // Populate memberId (User)
+            .skip(skip)  // Skip the first (pageNumber - 1) * pageSize documents
+            .limit(pageSize)  // Limit to the page size
+            .where('isDeleted').equals(false)
+            .sort({ createdAt: -1 }); // Sort by creation date, most recent first
+
+
+        // Calculate the total number of pages
+        const totalPages = Math.ceil(totalTransactions / pageSize);
+
+        // Return the transactions with pagination metadata
+        return res.status(200).json({
+            message: 'Transactions fetched successfully.',
+            pagination: {
+                currentPage: pageNumber,
+                totalPages: totalPages,
+                totalTransactions: totalTransactions,
+                pageSize: pageSize
+            },
+            transactions
+        });
+    } catch (error) {
+        console.error('Error fetching transactions:', error);
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+};
+
+
+
 module.exports = {
     createTransaction,
     getAllTransactions,
@@ -495,4 +943,13 @@ module.exports = {
     deleteTransaction,
     updateTransaction,
     getAllFilterTransactions,
+
+    // OFFLINE BILLS TRANSACTION
+
+    createOfflineBillTransaction,
+    getAllOfflineTransactions,
+    getOfflineTransactionById,
+    deleteOfflineTransaction,
+    updateOfflineTransaction,
+    getAllFilterOfflineTransactions
 }

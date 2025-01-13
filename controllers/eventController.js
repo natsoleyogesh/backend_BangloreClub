@@ -759,7 +759,7 @@ const bookEvent = async (req, res) => {
                 },
             ];
 
-      
+
         await sendEmail(
             primaryMemberEmail,
             subject,
@@ -837,7 +837,17 @@ const bookEvent = async (req, res) => {
 
         await addBilling(billingPrimaryMember, 'Event', { eventBooking: newBooking._id }, newBooking.ticketDetails.subtotal, 0, newBooking.ticketDetails.taxAmount, newBooking.ticketDetails.totalAmount, newBooking.primaryMemberId)
 
+        let primaryMemberDetails = await User.findById(primaryMemberId);
+        // If the member is not primary, fetch the actual primary member
+        if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {
+            primaryMemberDetails = await User.findById(primaryMemberDetails.parentUserId);
+            if (!primaryMemberDetails) {
+                return res.status(404).json({ message: "Primary member not found for the provided member." });
+            }
+        }
 
+        primaryMemberDetails.creditLimit = primaryMemberDetails.creditLimit - newBooking.ticketDetails.totalAmount
+        await primaryMemberDetails.save();
         // Return the response
         return res.status(201).json({
             message: 'Booking successful',
@@ -874,6 +884,23 @@ const bookingDetails = async (req, res) => {
         if (!member) {
             return res.status(404).json({ message: "Primary member not found." });
         }
+
+        let primaryMemberDetails = await User.findById(primaryMemberId);
+        // If the member is not primary, fetch the actual primary member
+        if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {
+            primaryMemberDetails = await User.findById(primaryMemberDetails.parentUserId);
+            if (!primaryMemberDetails) {
+                return res.status(404).json({ message: "Primary member not found for the provided member." });
+            }
+        }
+
+        // Check credit stop and credit limit
+        if (primaryMemberDetails.creditStop) {
+            return res.status(400).json({
+                message: "You are currently not eligible for booking. Please contact the club."
+            });
+        }
+
 
         // Define a mapping for relation types
         const relationMapping = {
@@ -925,6 +952,13 @@ const bookingDetails = async (req, res) => {
 
         const totalTaxAmount = taxDetails.reduce((acc, tax) => acc + tax.taxAmount, 0);
         const totalAmount = subtotal + totalTaxAmount;
+
+        // Check credit limit
+        if (primaryMemberDetails.creditLimit < totalAmount) {
+            return res.status(400).json({
+                message: "Your credit limit is less than the purchase amount. Please contact the club.",
+            });
+        }
 
         // Update available tickets in the database
         event.allottedTicketsMember -= primaryMemberCount + dependentMemberCount;
