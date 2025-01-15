@@ -292,6 +292,8 @@ const updateUserDetailsByAdmin = async (req, res) => {
             vehicleNumber,
             vehicleModel,
             drivingLicenceNumber,
+            creditStop,
+            creditLimit
         } = req.body;
 
         let user;
@@ -345,6 +347,8 @@ const updateUserDetailsByAdmin = async (req, res) => {
                 if (vehicleNumber) user.vehicleNumber = vehicleNumber;
                 if (vehicleModel) user.vehicleModel = vehicleModel;
                 if (drivingLicenceNumber) user.drivingLicenceNumber = drivingLicenceNumber;
+                if (creditStop !== undefined) user.creditStop = creditStop;
+                if (creditLimit) user.creditLimit = creditLimit;
                 if (status) {
                     user.status = status;
 
@@ -399,6 +403,8 @@ const updateUserDetailsByAdmin = async (req, res) => {
             if (vehicleNumber) user.vehicleNumber = vehicleNumber;
             if (vehicleModel) user.vehicleModel = vehicleModel;
             if (drivingLicenceNumber) user.drivingLicenceNumber = drivingLicenceNumber;
+            if (creditStop !== undefined) user.creditStop = creditStop;
+            if (creditLimit) user.creditLimit = creditLimit;
             if (status) {
                 user.status = status;
 

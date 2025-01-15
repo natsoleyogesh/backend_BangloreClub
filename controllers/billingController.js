@@ -757,14 +757,36 @@ const getAllBillingsWithFilters = async (req, res) => {
             .populate('memberId') // Populate relevant member fields
             .sort({ transactionMonth: -1 }); // Sort by transactionMonth in descending order
 
-        // Check if any billings were found
-        if (billings.length === 0) {
-            return res.status(404).json({ message: 'No billings found.' });
-        }
+        // // Check if any billings were found
+        // if (billings.length === 0) {
+        //     return res.status(404).json({ message: 'No billings found.' });
+        // }
+
+        // Calculate totals
+        const totalOutstanding = billings.reduce((sum, billing) => sum + (billing.totalAmount || 0), 0);
+        const totalPaid = billings.reduce(
+            (sum, billing) => sum + (billing.paymentStatus === 'Paid' ? billing.totalAmount : 0),
+            0
+        );
+        const totalOfflinePaid = billings.reduce(
+            (sum, billing) => sum + (billing.paymentStatus === 'Paid Offline' ? billing.totalAmount : 0),
+            0
+        );
+        const totalDue = billings.reduce(
+            (sum, billing) => sum + (billing.paymentStatus === 'Due' ? billing.totalAmount : 0),
+            0
+        );
+
 
         // Return the response with filtered data
         return res.status(200).json({
             message: 'Billings fetched successfully.',
+            totals: {
+                totalOutstanding, // Total of all records
+                totalPaid,        // Total of Paid records
+                totalOfflinePaid, // Total of Offline Paid records
+                totalDue          // Total of Due records
+            },
             billings
         });
     } catch (error) {
