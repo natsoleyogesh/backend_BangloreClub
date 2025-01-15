@@ -6,3 +6,7 @@
 
 # Ignore all .zip files
 *.zip
+
+# Ignore .env files
+*.env
+.env.*
