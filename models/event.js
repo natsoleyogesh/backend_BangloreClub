@@ -230,6 +230,10 @@ const eventSchema = new mongoose.Schema(
             type: Number,
             min: 0,
         },
+        totalAvailableTicketCounts: {
+            type: Number,
+            min: 0,
+        },
         bookingPermissionPrimary: {
             type: Boolean,
             default: true,

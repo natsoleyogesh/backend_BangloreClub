@@ -29,4 +29,7 @@ module.exports = (router) => {
     router.get("/get-attendance/:eventId", getEventAttendance);
 
     router.post("/getmember-details", getMemberDetailsFromQR);
+
+    // router.post("/getmember-details-qrCode", getMemberDetailsFromQRCode);
+
 }
