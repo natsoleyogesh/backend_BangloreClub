@@ -667,7 +667,8 @@ const uploadConsolidatedBill = async (req, res) => {
             // Find or create a consolidated billing entry
             let billing = await ConsolidatedBilling.findOne({
                 memberId: member._id,
-                transactionMonth
+                transactionMonth,
+                paymentStatus: "Due"
             });
 
             if (!billing) {
@@ -701,6 +702,8 @@ const uploadConsolidatedBill = async (req, res) => {
                 0
             );
 
+            // Round off to the nearest whole number
+            billing.totalAmount = Math.round(billing.totalAmount);
             // Generate and set invoice number, invoice date, and due date
             billing.invoiceNumber = billing.invoiceNumber || await generateOfflineInvoiceNumber();
             // billing.invoiceDate = transactionMonth; // Set to the first day of the transaction month

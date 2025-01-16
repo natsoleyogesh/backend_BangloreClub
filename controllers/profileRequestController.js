@@ -273,6 +273,7 @@ const updateUserDetailsByAdmin = async (req, res) => {
         const requestId = req.body.requestId || req.params.requestId;
         const userId = req.params.userId; // Direct userId update if no requestId is provided
         const {
+            memberId,
             name,
             email,
             mobileNumber,
@@ -330,6 +331,7 @@ const updateUserDetailsByAdmin = async (req, res) => {
 
             // Update user details only for "edit" operations
             if (profileEditRequest.operation === "edit") {
+                if (memberId) user.memberId = memberId;
                 if (name) user.name = name;
                 if (email) user.email = email;
                 if (mobileNumber) user.mobileNumber = mobileNumber;
@@ -386,6 +388,7 @@ const updateUserDetailsByAdmin = async (req, res) => {
             }
 
             // Update user details directly
+            if (memberId) user.memberId = memberId;
             if (name) user.name = name;
             if (email) user.email = email;
             if (mobileNumber) user.mobileNumber = mobileNumber;

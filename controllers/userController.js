@@ -176,7 +176,9 @@ const createUser = async (req, res) => {
         // Determine if this user is a primary user or a family member
         if (!parentUserId) {
             // Generate a unique member ID for the primary user
-            const memberId = await generatePrimaryMemberId();
+            // const memberId = await generatePrimaryMemberId();
+            const memberId = req.body.memberId;
+
 
             // Create a new primary user
             const newUser = new User({
