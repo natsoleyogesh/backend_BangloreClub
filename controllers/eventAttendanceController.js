@@ -7,9 +7,13 @@ const createAttendanceRecords = async (booking) => {
 
     // Add primary member attendance record
     if (booking.counts.primaryMemberCount > 0) {
+        const primaryDetails = await User.findById(booking.primaryMemberId);
         attendanceRecords.push({
             eventId: booking.eventId,
             memberId: booking.primaryMemberId,
+            name: primaryDetails.name,
+            mobileNumber: primaryDetails.mobileNumber,
+            email: primaryDetails.email,
             qrCode: booking.uniqueQRCode,
             qrCodeData: booking.primaryMemberQRCode
         });
@@ -17,10 +21,14 @@ const createAttendanceRecords = async (booking) => {
 
 
     // Add dependent attendance records
-    booking.dependents.forEach((dependent) => {
+    booking.dependents.forEach(async (dependent) => {
+        const DependentDetails = await User.findById(dependent.userId);
         attendanceRecords.push({
             eventId: booking.eventId,
             memberId: dependent.userId,
+            name: DependentDetails.name,
+            mobileNumber: DependentDetails.mobileNumber,
+            email: DependentDetails.email,
             qrCode: dependent.uniqueQRCode,
             qrCodeData: dependent.qrCode
         });
@@ -31,6 +39,9 @@ const createAttendanceRecords = async (booking) => {
         attendanceRecords.push({
             eventId: booking.eventId,
             guestName: guest.name,
+            name: guest.name,
+            mobileNumber: guest.phone,
+            email: guest.email,
             qrCode: guest.uniqueQRCode,
             qrCodeData: guest.qrCode
         });
@@ -90,9 +101,18 @@ const getEventAttendance = async (req, res) => {
             .populate('gatekeeperId', 'name email') // Populate member details
             .lean();
 
+        // const formattedRecords = attendanceRecords.map((record) => ({
+        //     name: record.memberId ? record.memberId.name : record.guestName,
+        //     email: record.memberId ? record.memberId.email : 'N/A',
+        //     gatekeeperName: record.gatekeeperId ? record.gatekeeperId.name : 'N/A',
+        //     attendanceStatus: record.attendanceStatus,
+        //     qrCode: record.qrCode,
+        //     scannedAt: record.scannedAt || 'Not Scanned',
+        // }));
         const formattedRecords = attendanceRecords.map((record) => ({
-            name: record.memberId ? record.memberId.name : record.guestName,
-            email: record.memberId ? record.memberId.email : 'N/A',
+            name: record.name,
+            email: record.email || 'N/A',
+            mobileNumber: record.mobileNumber || "N/A",
             gatekeeperName: record.gatekeeperId ? record.gatekeeperId.name : 'N/A',
             attendanceStatus: record.attendanceStatus,
             qrCode: record.qrCode,
@@ -129,7 +149,7 @@ const getMemberDetailsFromQR = async (req, res) => {
         let response = {
             eventDetails: null,
             userDetails: null,
-            guestName: null,
+            // guestName: null,
         };
 
         // Fetch event details
@@ -143,12 +163,24 @@ const getMemberDetailsFromQR = async (req, res) => {
             title: event.eventTitle,
             date: event.eventStartDate,
             status: event.status,
-            availableTickets: event.availableTickets,
+            totalAvailableTickets: event.totalAvailableTickets,
         };
 
+        // Find the attendance record by QR code
+        const attendanceRecord = await EventAttendance.findOne({ qrCode: uniqueQRCodeData });
+
+        if (!attendanceRecord) {
+            return res.status(404).json({ message: 'Invalid QR Code. No attendance record found.' });
+        }
+
         if (type === "Guest") {
-            // If the type is "Guest", return only the guestName
-            response.guestName = userId; // For guests, userId is actually the guest's name
+            // Add user details to response
+            response.userDetails = {
+                name: attendanceRecord.name,
+                email: attendanceRecord.email,
+                mobileNumber: attendanceRecord.mobileNumber,
+                status: "Active",
+            };
         } else {
             // If type is not "Guest", fetch user details
             const user = await User.findById(userId);
@@ -160,6 +192,88 @@ const getMemberDetailsFromQR = async (req, res) => {
             response.userDetails = {
                 name: user.name,
                 email: user.email,
+                mobileNumber: user.mobileNumber,
+                status: user.status,
+            };
+        }
+
+        // Return the response
+        return res.status(200).json({
+            message: "Member details fetched successfully",
+            data: response,
+        });
+    } catch (error) {
+        console.error("Error fetching member details from QR:", error);
+        return res.status(500).json({
+            message: "An error occurred while fetching member details",
+            error: error.message,
+        });
+    }
+};
+
+
+const getMemberDetailsFromQRCode = async (req, res) => {
+    try {
+        const { qrCode } = req.body; // Expecting QR data in the request body
+
+        if (!qrCode) {
+            return res.status(400).json({ message: "QR Code is required" });
+        }
+
+        // // Parse the QR data
+        // const { userId, type, eventId, uniqueQRCodeData } = qrData;
+
+        // if (!userId || !type || !eventId || !uniqueQRCodeData) {
+        //     return res.status(400).json({ message: "Incomplete QR data" });
+        // }
+
+        // Initialize response object
+        let response = {
+            eventDetails: null,
+            userDetails: null,
+            // guestName: null,
+        };
+
+        // Find the attendance record by QR code
+        const attendanceRecord = await EventAttendance.findOne({ qrCode });
+
+        if (!attendanceRecord) {
+            return res.status(404).json({ message: 'Invalid QR Code. No attendance record found.' });
+        }
+
+        // Fetch event details
+        const event = await Event.findById(attendanceRecord.eventId);
+        if (!event) {
+            return res.status(404).json({ message: "Event not found" });
+        }
+
+        // Add event details to response
+        response.eventDetails = {
+            title: event.eventTitle,
+            date: event.eventStartDate,
+            status: event.status,
+            totalAvailableTickets: event.totalAvailableTickets,
+        };
+
+        if (!attendanceRecord.memberId) {
+            response.userDetails = {
+                name: attendanceRecord.name,
+                email: attendanceRecord.email,
+                mobileNumber: attendanceRecord.mobileNumber,
+                status: "Active",
+            };
+        } else {
+            // If type is not "Guest", fetch user details
+            const user = await User.findById(attendanceRecord.memberId);
+            if (!user) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            // Add user details to response
+            response.userDetails = {
+                name: user.name,
+                email: user.email,
+                mobileNumber: user.mobileNumber,
                 status: user.status,
             };
         }
@@ -183,5 +297,6 @@ module.exports = {
     createAttendanceRecords,
     markAttendance,
     getEventAttendance,
-    getMemberDetailsFromQR
+    getMemberDetailsFromQR,
+    getMemberDetailsFromQRCode
 }

@@ -240,10 +240,6 @@ const getUserDetailsById = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    // const userId = req.user.userId; // Extract userId from the token's decoded data
-
-    // Find the primary user by ID
-    // const users = await User.find({});
     const users = (await User.find({ relation: "Primary" })).reverse();
     // Send the response including the user and their full family tree
     res.status(200).json({
@@ -361,10 +357,7 @@ const qrScanDetails = async (req, res) => {
 
 const getAllActiveUsers = async (req, res) => {
   try {
-    // const userId = req.user.userId; // Extract userId from the token's decoded data
 
-    // Find the primary user by ID
-    // const users = await User.find({ status: "Active", isDeleted: false });
     const users = (await User.find({ status: "Active", isDeleted: false })).reverse();
 
     // Send the response including the user and their full family tree

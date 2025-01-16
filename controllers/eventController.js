@@ -1,6 +1,7 @@
 // const 
 const Event = require('../models/event');
-const User = require("../models/user")
+const User = require("../models/user");
+const Admin = require("../models/Admin");
 const EventBooking = require('../models/eventBooking');
 const QRCodeHelper = require('../utils/helper');
 const { addBilling } = require('./billingController');
@@ -95,7 +96,7 @@ const createEvent = async (req, res) => {
 
         // Calculate totalAvailableTickets
         const totalAvailableTickets = allottedTicketsMember + allottedTicketsGuest;
-
+        const totalAvailableTicketCounts = allottedTicketsMember + allottedTicketsGuest;
         // Parse and validate tax types
         const parsedTaxTypes = Array.isArray(taxTypes)
             ? taxTypes
@@ -118,7 +119,7 @@ const createEvent = async (req, res) => {
             allottedTicketsMember,
             allottedTicketsGuest,
             totalAvailableTickets,
-            totalAvailableTicketCounts: totalAvailableTickets,
+            totalAvailableTicketCounts,
             rsvpStatus,
             eventImage,
             location,
@@ -768,6 +769,22 @@ const bookEvent = async (req, res) => {
             htmlBody,
             emailAttachments
         );
+
+
+        const admins = await Admin.find({ role: 'admin', isDeleted: false });
+        for (const admin of admins) {
+            await sendEmail(admin.email, subject, htmlBody, [
+                {
+                    filename: "qrCodeImage.png", // Corrected filename
+                    content: Buffer.from(
+                        newBooking.allDetailsQRCode.split(",")[1],
+                        "base64"
+                    ), // Convert all details QR code to Buffer
+                    encoding: "base64",
+                    cid: "qrCodeImage", // Inline CID for embedding in email
+                },
+            ]);
+        }
 
         // Send emails to dependents
         for (const dependent of preparedDependents || []) {

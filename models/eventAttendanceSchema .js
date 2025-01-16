@@ -23,6 +23,18 @@ const eventAttendanceSchema = new mongoose.Schema(
                 return !this.memberId; // Required if memberId is not provided
             },
         },
+        name: {
+            type: String, // Name of the guest
+            default: ""
+        },
+        email: {
+            type: String, // Unique QR code for attendance tracking
+            default: ""
+        },
+        mobileNumber: {
+            type: String, // Unique QR code for attendance tracking
+            default: ""
+        },
         qrCode: {
             type: String, // Unique QR code for attendance tracking
             required: true,
