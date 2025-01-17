@@ -1,4 +1,4 @@
-const { createBilling, getAllBillings, getBillingById, deleteBilling, getActiveBill, updateBilling, getBillingByIdAdmin, getMemberBill, uploadConsolidatedBill, getAllBillingsWithFilters, getOfflineBillingById, deleteOfflineBilling, updateOfflineBilling, getOfflineActiveBill } = require("../controllers/billingController");
+const { createBilling, getAllBillings, getBillingById, deleteBilling, getActiveBill, updateBilling, getBillingByIdAdmin, getMemberBill, uploadConsolidatedBill, getAllBillingsWithFilters, getOfflineBillingById, deleteOfflineBilling, updateOfflineBilling, getOfflineActiveBill, getMemberActiveBills, getOfflineMemberActiveBills } = require("../controllers/billingController");
 const { verifyToken } = require("../utils/common");
 const { xslUpload } = require("../utils/upload");
 
@@ -11,6 +11,8 @@ module.exports = (router) => {
     router.get("/active-billings", verifyToken, getActiveBill);
     router.get("/billing-details/:id", getBillingByIdAdmin);
     router.get("/biiling/member/:userId", getMemberBill);
+    router.get("/member-all-billings", verifyToken, getMemberActiveBills);
+
 
 
     //  OFFFLINE BILLING ROUTES
@@ -20,5 +22,8 @@ module.exports = (router) => {
     router.delete("/offline-billing/:id", deleteOfflineBilling);
     router.put("/offline-billing/:id", updateOfflineBilling);
     router.get("/offline-active-billings", verifyToken, getOfflineActiveBill);
+
+    router.get("/member-offline-all-billings", verifyToken, getOfflineMemberActiveBills);
+
 
 };

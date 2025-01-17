@@ -612,6 +612,127 @@ const getMemberBill = async (req, res) => {
 };
 
 
+
+const getMemberActiveBills = async (req, res) => {
+    try {
+        const { userId } = req.user; // Extract user ID and payment status from request parameters
+        const { filterType, customStartDate, customEndDate, paymentStatus, page = 1, limit = 10 } = req.query; // Extract filter type and custom date range from query
+
+
+        // Convert to numbers
+        const pageNumber = parseInt(page);
+        const pageLimit = parseInt(limit);
+
+        // Validate page and limit
+        if (isNaN(pageNumber) || pageNumber < 1) {
+            return res.status(400).json({ message: 'Invalid page number' });
+        }
+        if (isNaN(pageLimit) || pageLimit < 1) {
+            return res.status(400).json({ message: 'Invalid limit value' });
+        }
+
+        // Calculate the skip value for pagination
+        const skip = (pageNumber - 1) * pageLimit;
+
+        let filter = { memberId: userId, isDeleted: false };
+
+        // Add paymentStatus to filter if provided
+        if (paymentStatus) {
+            filter.paymentStatus = paymentStatus;
+        }
+
+        // Handle date filters
+        if (filterType) {
+            const today = moment().startOf('day');
+
+            switch (filterType) {
+                case 'today':
+                    filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() };
+                    break;
+                case 'last7days':
+                    filter.createdAt = { $gte: moment(today).subtract(7, 'days').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last30days':
+                    filter.createdAt = { $gte: moment(today).subtract(30, 'days').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last3months':
+                    filter.createdAt = { $gte: moment(today).subtract(3, 'months').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last6months':
+                    filter.createdAt = { $gte: moment(today).subtract(6, 'months').toDate(), $lt: today.toDate() };
+                    break;
+                case 'last1year':
+                    filter.createdAt = { $gte: moment(today).subtract(1, 'year').toDate(), $lt: today.toDate() };
+                    break;
+                case 'custom':
+                    if (!customStartDate || !customEndDate) {
+                        return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
+                    }
+                    filter.createdAt = {
+                        // $gte: moment(customStartDate, 'YYYY-MM-DD').startOf('day').toDate(),
+                        // $lt: moment(customEndDate, 'YYYY-MM-DD').endOf('day').toDate()
+                        $lt: moment(customStartDate, 'YYYY-MM-DD').endOf('day').toDate(),
+                        $gte: moment(customEndDate, 'YYYY-MM-DD').startOf('day').toDate()
+                    };
+                    break;
+                default:
+                    break; // No filter applied if no valid filterType
+            }
+        }
+
+        // Query to find bills based on the filter
+        const bills = await Billing.find(filter)
+            .skip(skip) // Skip records for pagination
+            .limit(pageLimit) // Limit number of records
+            .sort({ createdAt: -1 });
+
+        // Aggregate pipeline to calculate total outstanding amount
+        const totalOutstandingAmount = await Billing.aggregate([
+            {
+                $match: {
+                    memberId: new mongoose.Types.ObjectId(userId), // Ensure memberId is treated as an ObjectId
+                    isDeleted: false,
+                    // ...(filter.paymentStatus ? { paymentStatus: filter.paymentStatus } : {}),
+                    paymentStatus: "Due",
+                    ...(filter.createdAt ? { createdAt: filter.createdAt } : {}) // Apply date filter in aggregation if applicable
+                }
+            },
+            {
+                $group: {
+                    _id: 'null', // Group by payment status
+                    totalOutstandingAmount: { $sum: '$totalAmount' }
+                }
+            }
+        ]);
+
+        const totalAmount = totalOutstandingAmount[0] ? totalOutstandingAmount[0].totalOutstandingAmount : 0;
+
+
+        // Prepare response object
+        const response = {
+            message: "Total Outstanding & Filtered Bills!",
+            bills,
+            totalOutstandingAmount: Math.round(totalAmount),
+            pagination: {
+                currentPage: pageNumber,
+                totalPages: Math.ceil(
+                    await Billing.countDocuments(filter) /
+                    pageLimit
+                ),
+                totalRecords: await Billing.countDocuments(filter),
+                recordsPerPage: pageLimit
+            },
+        };
+
+        // Send response
+        return res.status(200).json(response);
+    } catch (error) {
+        console.error('Error fetching bills:', error);
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+};
+
+
 // OFFLINE BILL UPLOAD 
 
 // Helper function to generate invoice number
@@ -911,7 +1032,7 @@ const getOfflineActiveBill = async (req, res) => {
                 totalRecords: await ConsolidatedBilling.countDocuments({ memberId: userId, paymentStatus: 'Due', isDeleted: false }),
                 recordsPerPage: pageLimit
             },
-            totalOutstandingAmount: totalAmount
+            totalOutstandingAmount: Math.round(totalAmount)
         };
 
         // Send response
@@ -991,6 +1112,101 @@ const updateOfflineBilling = async (req, res) => {
     }
 };
 
+// API to get all consolidated billings with filters
+const getOfflineMemberActiveBills = async (req, res) => {
+    try {
+        const { userId } = req.user;
+        const { paymentStatus, transactionMonth, page = 1, limit = 10 } = req.query;
+        // Destructure query parameters for pagination
+        // Convert to numbers
+        const pageNumber = parseInt(page);
+        const pageLimit = parseInt(limit);
+
+        // Validate page and limit
+        if (isNaN(pageNumber) || pageNumber < 1) {
+            return res.status(400).json({ message: 'Invalid page number' });
+        }
+        if (isNaN(pageLimit) || pageLimit < 1) {
+            return res.status(400).json({ message: 'Invalid limit value' });
+        }
+
+        // Calculate the skip value for pagination
+        const skip = (pageNumber - 1) * pageLimit;
+
+        // Initialize the filter object
+        let filter = { isDeleted: false };
+
+        // Add filters based on the query parameters
+        if (userId) {
+            filter.memberId = userId;
+        }
+        if (paymentStatus) {
+            filter.paymentStatus = paymentStatus;
+        }
+        if (transactionMonth) {
+            // Parse the transactionMonth to ensure it matches the correct format
+            const parsedTransactionMonth = parseTransactionMonth(transactionMonth);
+            if (parsedTransactionMonth) {
+                filter.transactionMonth = parsedTransactionMonth;
+            } else {
+                return res.status(400).json({ message: 'Invalid transactionMonth format.' });
+            }
+        }
+
+        // Query the ConsolidatedBilling model with the applied filters
+        const billings = await ConsolidatedBilling.find(filter)
+            .populate('memberId') // Populate relevant member fields
+            .skip(skip) // Skip records for pagination
+            .limit(pageLimit) // Limit number of records
+            .sort({ createdAt: -1 }); // Optionally, sort by createdAt in descending order
+
+        // // Check if any billings were found
+        // if (billings.length === 0) {
+        //     return res.status(404).json({ message: 'No billings found.' });
+        // }
+
+        // Calculate totals
+        let totalOutstanding = billings.reduce((sum, billing) => sum + (billing.totalAmount || 0), 0);
+        let totalPaid = billings.reduce(
+            (sum, billing) => sum + (billing.paymentStatus === 'Paid' ? billing.totalAmount : 0),
+            0
+        );
+        let totalOfflinePaid = billings.reduce(
+            (sum, billing) => sum + (billing.paymentStatus === 'Paid Offline' ? billing.totalAmount : 0),
+            0
+        );
+        let totalDue = billings.reduce(
+            (sum, billing) => sum + (billing.paymentStatus === 'Due' ? billing.totalAmount : 0),
+            0
+        );
+
+
+        // Return the response with filtered data
+        return res.status(200).json({
+            message: 'Billings fetched successfully.',
+            totals: {
+                totalOutstanding: Math.round(totalOutstanding), // Total of all records
+                totalPaid: Math.round(totalPaid),        // Total of Paid records
+                totalOfflinePaid: Math.round(totalOfflinePaid), // Total of Offline Paid records
+                totalDue: Math.round(totalDue)          // Total of Due records
+            },
+            billings,
+            pagination: {
+                currentPage: pageNumber,
+                totalPages: Math.ceil(
+                    await ConsolidatedBilling.countDocuments(filter) /
+                    pageLimit
+                ),
+                totalRecords: await ConsolidatedBilling.countDocuments(filter),
+                recordsPerPage: pageLimit
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching billings:', error);
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+};
+
 
 module.exports = {
     createBilling,
@@ -1003,6 +1219,7 @@ module.exports = {
     getActiveBill,
     getBillingByIdAdmin,
     getMemberBill,
+    getMemberActiveBills,
 
     //    OFFFLINE BILLING FUNCTIONS
     uploadConsolidatedBill,
@@ -1011,4 +1228,5 @@ module.exports = {
     deleteOfflineBilling,
     getOfflineActiveBill,
     updateOfflineBilling,
+    getOfflineMemberActiveBills
 };
