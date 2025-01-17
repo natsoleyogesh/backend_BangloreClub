@@ -50,20 +50,6 @@ actionLogSchema.virtual("formattedTimestamp").get(function () {
         })
         : null;
 });
-// actionLogSchema.pre("save", function (next) {
-//     if (this.timestamp) {
-//         this.formattedTimestamp = new Intl.DateTimeFormat("en-IN", {
-//             timeZone: "Asia/Kolkata",
-//             year: "numeric",
-//             month: "short",
-//             day: "numeric",
-//             hour: "2-digit",
-//             minute: "2-digit",
-//             second: "2-digit",
-//         }).format(this.timestamp);
-//     }
-//     next();
-// });
 
 // Ensure virtual fields are included in JSON output
 actionLogSchema.set("toJSON", { virtuals: true });

@@ -103,19 +103,6 @@ const roomrenderTemplate = (template, data) => {
             : "<div class='details-section'><p>No room details available.</p></div>";
     });
 
-    // // Replace taxTypes array placeholder (if needed)
-    // template = template.replace(/{{taxTypes}}/g, () => {
-    //     return data.taxTypes.length > 0
-    //         ? data.taxTypes
-    //             .map(
-    //                 (tax) => `
-    //                     <p><strong>${tax.taxType} (${tax.taxRate}%):</strong> ₹${tax.taxAmount.toFixed(2)}</p>
-    //                 `
-    //             )
-    //             .join("")
-    //         : "<p>No taxes applicable.</p>";
-    // });
-
     // Replace other placeholders
     return template.replace(/{{(.*?)}}/g, (_, key) => data[key] || "");
 };

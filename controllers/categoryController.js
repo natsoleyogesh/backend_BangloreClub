@@ -64,36 +64,6 @@ const getCategoryById = async (req, res) => {
     }
 }
 
-// const updateCategory = async (req, res) => {
-//     try {
-//         const { id } = req.params;
-//         const updates = req.body;
-
-//         // Filter the updates to include only the fields provided in the request body
-//         const filteredUpdates = Object.keys(updates).reduce((acc, key) => {
-//             if (updates[key] !== undefined) {
-//                 acc[key] = updates[key];
-//             }
-//             return acc;
-//         }, {});
-
-//         // Update the category with the filtered updates
-//         const updatedCategory = await Category.findByIdAndUpdate(id, filteredUpdates, {
-//             new: true, // Return the updated document
-//             runValidators: true, // Ensure validation rules are applied
-//         });
-
-//         if (!updatedCategory) {
-//             return res.status(404).json({ message: 'Category not found.' });
-//         }
-
-//         res.json({ message: 'Category updated successfully.', category: updatedCategory });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: 'Server error while updating category.' });
-//     }
-// }
-
 const updateCategory = async (req, res) => {
     try {
         const { id } = req.params;

@@ -137,39 +137,6 @@ const User = require("../models/user");
 const Department = require("../models/department");
 const { toTitleCase } = require("../utils/common");
 
-// const addHOD = async (req, res) => {
-//     const { userId, designation, departmentId, status } = req.body;
-
-//     try {
-//         // Validate if user exists
-//         const user = await User.findById(userId);
-//         if (!user) return res.status(404).json({ message: "User not found" });
-
-//         // Validate if department exists
-//         const department = await Department.findById(departmentId);
-//         if (!department) return res.status(404).json({ message: "Department not found" });
-
-//         // Create new HOD
-//         const newHOD = new HOD({
-//             userId,
-//             designation,
-//             department: departmentId,
-//             status,
-//         });
-
-//         // Save the new HOD
-//         const savedHOD = await newHOD.save();
-//         return res.status(201).json({
-//             message: "HOD created successfully",
-//             hod: savedHOD
-//         });
-//     } catch (error) {
-//         console.error("Error creating HOD:", error);
-//         return res.status(500).json({ message: "Error creating HOD", error: error.message });
-//     }
-// };
-
-
 const addHOD = async (req, res) => {
     try {
         const { name, designation, departmentId, contactNumber, email, status } = req.body;
@@ -299,45 +266,6 @@ const getHODById = async (req, res) => {
     }
 };
 
-
-// const updateHOD = async (req, res) => {
-//     const { id } = req.params;
-//     const { userId, designation, departmentId, status } = req.body;
-
-//     try {
-//         // Validate if user exists
-//         if (userId) {
-
-//             const user = await User.findById(userId);
-//             if (!user) return res.status(404).json({ message: "User not found" });
-//         }
-
-//         // Validate if department exists
-//         if (departmentId) {
-
-//             const department = await Department.findById(departmentId);
-//             if (!department) return res.status(404).json({ message: "Department not found" });
-//         }
-
-//         // Find HOD and update it
-//         const updatedHOD = await HOD.findByIdAndUpdate(id, {
-//             userId,
-//             designation,
-//             department: departmentId,
-//             status
-//         }, { new: true });
-
-//         if (!updatedHOD) return res.status(404).json({ message: "HOD not found" });
-
-//         return res.status(200).json({
-//             message: "HOD updated successfully",
-//             hod: updatedHOD
-//         });
-//     } catch (error) {
-//         console.error("Error updating HOD:", error);
-//         return res.status(500).json({ message: "Error updating HOD", error: error.message });
-//     }
-// };
 
 const updateHOD = async (req, res) => {
     try {

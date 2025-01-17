@@ -101,14 +101,6 @@ const getEventAttendance = async (req, res) => {
             .populate('gatekeeperId', 'name email') // Populate member details
             .lean();
 
-        // const formattedRecords = attendanceRecords.map((record) => ({
-        //     name: record.memberId ? record.memberId.name : record.guestName,
-        //     email: record.memberId ? record.memberId.email : 'N/A',
-        //     gatekeeperName: record.gatekeeperId ? record.gatekeeperId.name : 'N/A',
-        //     attendanceStatus: record.attendanceStatus,
-        //     qrCode: record.qrCode,
-        //     scannedAt: record.scannedAt || 'Not Scanned',
-        // }));
         const formattedRecords = attendanceRecords.map((record) => ({
             name: record.name,
             email: record.email || 'N/A',
@@ -220,12 +212,6 @@ const getMemberDetailsFromQRCode = async (req, res) => {
             return res.status(400).json({ message: "QR Code is required" });
         }
 
-        // // Parse the QR data
-        // const { userId, type, eventId, uniqueQRCodeData } = qrData;
-
-        // if (!userId || !type || !eventId || !uniqueQRCodeData) {
-        //     return res.status(400).json({ message: "Incomplete QR data" });
-        // }
 
         // Initialize response object
         let response = {

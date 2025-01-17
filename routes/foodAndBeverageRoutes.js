@@ -4,12 +4,10 @@ const { FBupload } = require("../utils/upload");
 
 
 module.exports = (router) => {
-    // router.post("/foodAndBeverage/create", FBupload.fields([{ name: "bannerImage", maxCount: 1 }, { name: "subCategoryImages_*" }, { name: "menuFile_*" },]), addFoodAndBeverage);
     router.post("/foodAndBeverage/create", FBupload.any(), addFoodAndBeverage);
     router.get("/foodAndBeverages", getAllFoodAndBeverages);
     router.get("/foodAndBeverage/details/:id", getFoodAndBeverageById);
     router.get("/foodAndBeverage/edit/:id", getEditFoodAndBeverageById)
-    // router.put("/foodAndBeverage/update-foodAndBeverage/:id", FBupload.fields([{ name: "bannerImage", maxCount: 1 }, { name: "subCategoryImages_*" }, { name: "menuFile_*" },]), updateFoodAndBeverage);
     router.put("/foodAndBeverage/update-foodAndBeverage/:id", FBupload.any(), updateFoodAndBeverage);
     router.delete("/foodAndBeverage/deleteimage/:id/:index", deleteFoodAndBeveragesImage);
     router.put("/foodAndBeverage/upload-images/:id", FBupload.any(), uploadFoodAndBeveragesImage);

@@ -4,15 +4,6 @@ const User = require("../models/user");
 require("dotenv").config();
 
 // Generate a new JWT token
-// const generateToken = (payload) => {
-//   return jwt.sign(
-//     { payload },
-//     process.env.JWT_SECRET
-//     //     {
-//     //     expiresIn: "1h",
-//     //   }
-//   );
-// };
 const generateToken = (payload) => {
   const currentTime = Math.floor(Date.now() / 1000); // Get current time in seconds
   const jwtId = uuidv4(); // Generate a unique identifier for the token

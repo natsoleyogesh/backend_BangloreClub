@@ -57,12 +57,6 @@ app.use("/api/*", (req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
 
-// // Start server
-// const PORT = process.env.PORT || 3005;
-// app.listen(PORT, () => {
-//   console.log(`Server running on port ${PORT}`);
-// });
-
 // Create HTTP server and integrate WebSocket
 const server = http.createServer(app); // Create an HTTP server
 const io = initWebSocket(server); // Initialize WebSocket server

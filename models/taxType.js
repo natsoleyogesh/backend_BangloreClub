@@ -5,8 +5,6 @@ const taxTypeSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
-        // enum: ['CGST', 'SGST', 'Luxury', 'Others', 'EmployeesGratisFund'], // Only these tax types are allowed
-        // unique: true, // Ensures each tax type is unique
         trim: true     // Trims leading/trailing spaces
     },
     percentage: {

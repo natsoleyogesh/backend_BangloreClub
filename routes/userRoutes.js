@@ -4,7 +4,6 @@ const { upload, handleMulterError } = require("../utils/upload");
 
 
 module.exports = (router) => {
-    // router.post("/member/create", upload.single("profilePicture"), createUser);
     router.post(
         "/member/create",
         upload.fields([

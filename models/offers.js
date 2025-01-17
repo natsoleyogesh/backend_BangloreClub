@@ -46,11 +46,6 @@ const offerSchema = new mongoose.Schema(
             enum: ["New", "Current"],
             required: [true, "Offer type is required"], // Indicates if it's a "New Offer" or "Current Offer"
         },
-        // department: {
-        //     type: String,
-        //     enum: ["Recharge", "Purchase", "Subscription", "Entertainment", "Other"],
-        //     required: [true, "Offer department is required"], // Categorizes the offer
-        // },
         department: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Department', // Reference to the Department model
@@ -76,14 +71,7 @@ const offerSchema = new mongoose.Schema(
             type: Boolean,
             default: false
         },
-        // createdAt: {
-        //     type: Date,
-        //     default: Date.now,
-        // },
-        // updatedAt: {
-        //     type: Date,
-        //     default: Date.now,
-        // },
+
     },
     { timestamps: true }
 );

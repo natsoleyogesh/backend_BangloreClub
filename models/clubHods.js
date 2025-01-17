@@ -31,12 +31,6 @@ const hodSchema = new mongoose.Schema(
             default: "",
             required: true,
         },
-        // Reference to the User schema
-        // userId: {
-        //     type: mongoose.Schema.Types.ObjectId,
-        //     ref: "User", // Linking the HOD with the User schema
-        //     required: true,
-        // },
         department: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Department', // Reference to the Department model
