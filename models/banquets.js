@@ -60,15 +60,20 @@ const banquetsSchema = new mongoose.Schema({
         type: String,
         default: '',
     },
-    checkInTime: {
-        type: String,
+    // checkInTime: {
+    //     type: String,
+    //     required: true,
+    //     default: '12:00 PM',
+    // },
+    // checkOutTime: {
+    //     type: String,
+    //     required: true,
+    //     default: '01:00 PM',
+    // },
+    minAllowedPerRoom: {
+        type: Number,
         required: true,
-        default: '12:00 PM',
-    },
-    checkOutTime: {
-        type: String,
-        required: true,
-        default: '01:00 PM',
+        min: 1,
     },
     maxAllowedPerRoom: {
         type: Number,
@@ -152,6 +157,15 @@ const banquetsSchema = new mongoose.Schema({
             type: Boolean,
             default: false,
         },
+    },
+    billable: {
+        type: Boolean,
+        default: true,
+        required: true
+    },
+    billableDate: {
+        type: Date,
+        default: null,
     },
     status: {
         type: String,

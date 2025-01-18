@@ -154,6 +154,15 @@ const banquetBookingSchema = new mongoose.Schema(
             enum: ['Pending', 'Confirmed', 'Cancelled'],
             default: 'Pending',
         },
+        billable: {
+            type: Boolean,
+            default: true,
+            required: true
+        },
+        billableDate: {
+            type: Date,
+            default: null,
+        },
 
         // Soft delete field
         isDeleted: {

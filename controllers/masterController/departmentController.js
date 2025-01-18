@@ -5,7 +5,7 @@ const { toTitleCase } = require("../../utils/common");
 // Create a new department
 const createDepartment = async (req, res) => {
     try {
-        const { departmentName, status } = req.body;
+        const { departmentName, email, status } = req.body;
 
         const normalizedName = toTitleCase(departmentName);
 
@@ -16,7 +16,7 @@ const createDepartment = async (req, res) => {
         }
 
         // Create and save the new department
-        const department = new Department({ departmentName, status });
+        const department = new Department({ departmentName, email, status });
         await department.save();
 
         return res.status(201).json({ message: "Department Add Successfully", department });
@@ -58,7 +58,7 @@ const getDepartmentById = async (req, res) => {
 const updateDepartment = async (req, res) => {
     try {
         const { id } = req.params;
-        let { departmentName, status } = req.body;
+        let { departmentName, email, status } = req.body;
 
         const updateData = {};
         if (departmentName) {
@@ -80,6 +80,9 @@ const updateDepartment = async (req, res) => {
         }
         if (status) {
             updateData.status = status
+        }
+        if (email) {
+            updateData.email = email
         }
 
         const updatedDepartment = await Department.findByIdAndUpdate(

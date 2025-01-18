@@ -16,6 +16,8 @@ const { createRequest, updateRequest } = require("./allRequestController");
 const AllRequest = require("../models/allRequest");
 const { toTitleCase } = require("../utils/common");
 const Admin = require("../models/Admin");
+const Department = require("../models/department");
+const User = require("../models/user");
 
 // Banquet Category APIs Functions
 
@@ -188,9 +190,10 @@ const createBanquet = async (req, res) => {
         const {
             banquetName,
             description,
-            checkInTime,
-            checkOutTime,
+            // checkInTime,
+            // checkOutTime,
             maxAllowedPerRoom,
+            minAllowedPerRoom,
             priceRange,
             pricingDetails,
             specialDayTariff,
@@ -201,7 +204,8 @@ const createBanquet = async (req, res) => {
             banquetHallSize,
             features,
             status,
-            pricingDetailDescription
+            pricingDetailDescription,
+            billable,
         } = req.body;
 
         // Validate banquet name
@@ -300,14 +304,23 @@ const createBanquet = async (req, res) => {
         }
         // Parse and handle images
         const images = req.files ? req.files.map(file => `/${file.path.replace(/\\/g, '/')}`) : [];
+        // let billableDate = null;
+        // if (billable === true) {
+        //     billableDate = Date.now()
+        // }
+        const parsedBillable = typeof billable === 'string'
+            ? JSON.parse(billable)
+            : billable
 
+        let billableDate = parsedBillable ? Date.now() : null;
         // Create new banquet instance
         const newBanquet = new Banquet({
             banquetName,
             description: description || '',
-            checkInTime,
-            checkOutTime,
+            // checkInTime,
+            // checkOutTime,
             maxAllowedPerRoom,
+            minAllowedPerRoom,
             images,
             priceRange: parsedPriceRange,
             pricingDetails: validPricingDetails,
@@ -319,7 +332,10 @@ const createBanquet = async (req, res) => {
             banquetHallSize: parseFloat(banquetHallSize),
             features: parsedFeatures,
             status: status || 'Active',
-            pricingDetailDescription
+            pricingDetailDescription,
+            billable: parsedBillable,
+            billableDate
+
         });
 
         // Save the new banquet
@@ -551,9 +567,10 @@ const updateBanquet = async (req, res) => {
         const {
             banquetName,
             description,
-            checkInTime,
-            checkOutTime,
+            // checkInTime,
+            // checkOutTime,
             maxAllowedPerRoom,
+            minAllowedPerRoom,
             priceRange,
             pricingDetails,
             specialDayTariff,
@@ -565,6 +582,7 @@ const updateBanquet = async (req, res) => {
             features,
             status,
             pricingDetailDescription,
+            billable
         } = req.body;
 
         // Find the banquet by ID
@@ -644,12 +662,26 @@ const updateBanquet = async (req, res) => {
             parsedFeatures = JSON.parse(features);
         }
 
+        // let billableDate = null;
+        // if (billable !== undefined && billable === true) {
+        //     billableDate = new Date();
+        // }
+        let parsedBillable = billable;
+
+        if (billable && typeof billable === 'string') {
+            parsedBillable = JSON.parse(billable);
+        }
+
+        let billableDate = parsedBillable ? Date.now() : null;
+
+
         // Update only provided fields
         if (banquetName) banquet.banquetName = banquetName;
         if (description) banquet.description = description;
-        if (checkInTime) banquet.checkInTime = checkInTime;
-        if (checkOutTime) banquet.checkOutTime = checkOutTime;
+        // if (checkInTime) banquet.checkInTime = checkInTime;
+        // if (checkOutTime) banquet.checkOutTime = checkOutTime;
         if (maxAllowedPerRoom) banquet.maxAllowedPerRoom = maxAllowedPerRoom;
+        if (minAllowedPerRoom) banquet.minAllowedPerRoom = minAllowedPerRoom;
         if (parsedPriceRange) banquet.priceRange = parsedPriceRange;
         if (parsedPricingDetails) banquet.pricingDetails = parsedPricingDetails;
         if (parsedSpecialDayTariff) banquet.specialDayTariff = parsedSpecialDayTariff;
@@ -661,6 +693,10 @@ const updateBanquet = async (req, res) => {
         if (parsedFeatures) banquet.features = parsedFeatures;
         if (status) banquet.status = status;
         if (pricingDetailDescription) banquet.pricingDetailDescription = pricingDetailDescription;
+        if (parsedBillable !== undefined) banquet.billable = parsedBillable;
+        // if (billableDate ) banquet.billableDate = billableDate;
+        // Always update `billableDate`, even if it's null
+        banquet.billableDate = billableDate;
 
         // Save the updated banquet
         await banquet.save();
@@ -712,10 +748,15 @@ const getActiveBanquets = async (req, res) => {
             return res.status(400).json({ message: 'Invalid attending guest count.' });
         }
 
-        // Filter banquets by type and size
+        // // Filter banquets by type and size
+        // const filter = {
+        //     isDeleted: false,
+        //     maxAllowedPerRoom: { $gte: guestCount },
+        // };
         const filter = {
             isDeleted: false,
-            maxAllowedPerRoom: { $gte: guestCount },
+            minAllowedPerRoom: { $lte: guestCount }, // Guest count is greater than or equal to minAllowedPerRoom
+            maxAllowedPerRoom: { $gte: guestCount }, // Guest count is less than or equal to maxAllowedPerRoom
         };
 
         if (banquetType) {
@@ -854,6 +895,9 @@ const createBanquetBooking = async (req, res) => {
         if (!banquet) {
             return res.status(400).json({ message: 'Invalid banquet type.' });
         }
+
+        const billable = banquet.billable;
+        const billableDate = banquet.billableDate;
 
         // Validate booking dates
         const checkInDate = new Date(bookingDates.checkIn);
@@ -1010,9 +1054,10 @@ const createBanquetBooking = async (req, res) => {
             },
             paymentMode,
             paymentStatus: 'Pending',
-            bookingStatus: 'Pending'
+            bookingStatus: 'Pending',
         };
         const allDetailsQRCode = await QRCodeHelper.generateQRCode(allDetailsQRCodeData);
+
 
 
 
@@ -1049,7 +1094,10 @@ const createBanquetBooking = async (req, res) => {
             paymentStatus: 'Pending',
             bookingStatus: 'Pending',
             allDetailsQRCode,
-            uniqueQRCode
+            uniqueQRCode,
+            billable,
+            billableDate
+
         });
 
         // Save banquet booking
@@ -1062,9 +1110,14 @@ const createBanquetBooking = async (req, res) => {
             status: banquetBooking.bookingStatus,
             description: "This is a Banquet Booking Request."
         });
-        const admins = await Admin.find({ role: 'admin', isDeleted: false });
+        const admins = await Department.find({ departmentName: 'Banquet', isDeleted: false });
         if (admins.length > 0) {
 
+            // Fetch the primary member's details
+            const member = await User.findById(banquetBooking.primaryMemberId).populate("parentUserId");
+            if (!member) {
+                return res.status(404).json({ message: "Primary member not found." });
+            }
 
             // Send a booking confirmation email
             const memberData = await BanquetBooking.findById(banquetBooking._id)
@@ -1075,7 +1128,16 @@ const createBanquetBooking = async (req, res) => {
                         model: 'BanquetCategory',
                     },
                 })
-                .populate('primaryMemberId')
+                .populate('primaryMemberId');
+
+
+            // Send email to primary member
+            let primaryMemberEmail;
+            if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
+                primaryMemberEmail = memberData.primaryMemberId.email;
+            } else {
+                primaryMemberEmail = member.parentUserId.email;
+            }
 
             // Convert times
             const formattedFrom = QRCodeHelper.formatTimeTo12Hour(banquetBooking.bookingTime.from);
@@ -1083,9 +1145,8 @@ const createBanquetBooking = async (req, res) => {
             // Prepare template data
             const templateData = {
                 uniqueQRCode: banquetBooking.uniqueQRCode,
-                qrCode: allDetailsQRCode, // Base64 string for QR Code
+                // qrCode: allDetailsQRCode, // Base64 string for QR Code
                 banquetName: memberData.banquetType.banquetName.name,
-                // eventDate: event.eventDate.toDateString(),
                 primaryName: memberData.primaryMemberId.name,
                 memberId: memberData.primaryMemberId.memberId,
                 primaryEmail: memberData.primaryMemberId.email,
@@ -1116,15 +1177,28 @@ const createBanquetBooking = async (req, res) => {
 
 
             for (const admin of admins) {
-                await sendEmail(admin.email, subject, htmlBody, [
-                    {
-                        filename: "qrcode.png",
-                        content: allDetailsQRCode.split(",")[1],
-                        encoding: "base64",
-                        cid: "qrCodeImage",
-                    },
-                ]);
+                await sendEmail(admin.email, subject, htmlBody,
+                    // [
+                    //     {
+                    //         filename: "qrcode.png",
+                    //         content: allDetailsQRCode.split(",")[1],
+                    //         encoding: "base64",
+                    //         cid: "qrCodeImage",
+                    //     },
+                    // ]
+                );
             }
+
+            await sendEmail(primaryMemberEmail, subject, htmlBody,
+                //     [
+                //     {
+                //         filename: "qrcode.png",
+                //         content: allDetailsQRCode.split(",")[1],
+                //         encoding: "base64",
+                //         cid: "qrCodeImage",
+                //     },
+                // ]
+            );
 
         }
 
@@ -1166,21 +1240,21 @@ const createBanquetBookingDetails = async (req, res) => {
         }
 
 
-        // let primaryMemberDetails = await User.findById(primaryMemberId);
-        // // If the member is not primary, fetch the actual primary member
-        // if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {
-        //     primaryMemberDetails = await User.findById(primaryMemberDetails.parentUserId);
-        //     if (!primaryMemberDetails) {
-        //         return res.status(404).json({ message: "Primary member not found for the provided member." });
-        //     }
-        // }
+        let primaryMemberDetails = await User.findById(primaryMemberId);
+        // If the member is not primary, fetch the actual primary member
+        if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {
+            primaryMemberDetails = await User.findById(primaryMemberDetails.parentUserId);
+            if (!primaryMemberDetails) {
+                return res.status(404).json({ message: "Primary member not found for the provided member." });
+            }
+        }
 
-        // // Check credit stop and credit limit
-        // if (primaryMemberDetails.creditStop) {
-        //     return res.status(400).json({
-        //         message: "You are currently not eligible for booking. Please contact the club."
-        //     });
-        // }
+        // Check credit stop and credit limit
+        if (primaryMemberDetails.creditStop) {
+            return res.status(400).json({
+                message: "You are currently not eligible for booking. Please contact the club."
+            });
+        }
 
         // Validate banquet type
         const banquet = await Banquet.findById(banquetType)
@@ -1310,12 +1384,12 @@ const createBanquetBookingDetails = async (req, res) => {
 
         const finalTotalAmount = totalAmount + specialDayExtraCharge + totalTaxAmount;
 
-        // // Check credit limit
-        // if (primaryMemberDetails.creditLimit < finalTotalAmount) {
-        //     return res.status(400).json({
-        //         message: "Your credit limit is less than the purchase amount. Please contact the club.",
-        //     });
-        // }
+        // Check credit limit
+        if (primaryMemberDetails.creditLimit < finalTotalAmount) {
+            return res.status(400).json({
+                message: "Your credit limit is less than the purchase amount. Please contact the club.",
+            });
+        }
 
 
         // Create banquet booking object
@@ -1692,6 +1766,11 @@ const allocateBanquet = async (req, res) => {
         if (booking.bookingStatus === 'Confirmed') {
             await addBilling(booking.primaryMemberId, 'Banquet', { banquetBooking: booking._id }, booking.pricingDetails.totalAmount, 0, booking.pricingDetails.totalTaxAmount, booking.pricingDetails.final_totalAmount, userId)
 
+            // Fetch the primary member's details
+            const member = await User.findById(booking.primaryMemberId).populate("parentUserId");
+            if (!member) {
+                return res.status(404).json({ message: "Primary member not found." });
+            }
             // Send a booking confirmation email
             const memberData = await BanquetBooking.findById(booking._id)
                 .populate({
@@ -1709,7 +1788,7 @@ const allocateBanquet = async (req, res) => {
             // Prepare template data
             const templateData = {
                 uniqueQRCode: booking.uniqueQRCode,
-                qrCode: allDetailsQRCode, // Base64 string for QR Code
+                // qrCode: allDetailsQRCode, // Base64 string for QR Code
                 banquetName: memberData.banquetType.banquetName.name,
                 // eventDate: event.eventDate.toDateString(),
                 primaryName: memberData.primaryMemberId.name,
@@ -1740,19 +1819,28 @@ const allocateBanquet = async (req, res) => {
             const htmlBody = banquetrenderTemplate(template.body, templateData);
             const subject = banquetrenderTemplate(template.subject, templateData);
 
+            // Send email to primary member
+            let primaryMemberEmail;
+            if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
+                primaryMemberEmail = memberData.primaryMemberId.email;
+            } else {
+                primaryMemberEmail = member.parentUserId.email;
+            }
+
             // Send email
             await sendEmail(
-                memberData.primaryMemberId.email,
+                // memberData.primaryMemberId.email,
+                primaryMemberEmail,
                 subject,
                 htmlBody,
-                [
-                    {
-                        filename: "qrcode.png",
-                        content: allDetailsQRCode.split(",")[1],
-                        encoding: "base64",
-                        cid: "qrCodeImage",
-                    },
-                ]
+                // [
+                //     {
+                //         filename: "qrcode.png",
+                //         content: allDetailsQRCode.split(",")[1],
+                //         encoding: "base64",
+                //         cid: "qrCodeImage",
+                //     },
+                // ]
             );
 
             // Call the createNotification function
@@ -1826,6 +1914,106 @@ const getAllActiveBanquets = async (req, res) => {
 
 
 
+// const getSearchBanquets = async (req, res) => {
+//     try {
+//         // Extract the 'status' query parameter from the request
+//         const { status, banquetName } = req.query;
+
+//         // Define the filter to exclude deleted records and include status filter if provided
+//         const filter = { isDeleted: false };
+//         if (status) {
+//             // Ensure the status filter is handled as a boolean
+//             filter.status = status // Assuming status is a string ('true' or 'false')
+//         }
+//         if (banquetName) {
+//             filter.banquetName = banquetName
+//         }
+
+//         // Fetch all banquets with related data, applying the filter and sorting by creation date
+//         const banquets = await Banquet.findOne(filter)
+//             .populate('banquetName') // Populate the 'banquetName' field with related data
+//             .sort({ createdAt: -1 }); // Sort by creation date in descending order
+
+//         // Transform the banquets data to include the 'name' field
+//         const allBanquets = banquets.map((banquet) => ({
+//             ...banquet.toObject(), // Convert the mongoose document to a plain object
+//             name: banquet.banquetName ? banquet.banquetName.name : '', // Add 'name' field from the populated data
+//         }));
+
+//         // Return the response with the banquets data
+//         return res.status(200).json({
+//             message: 'Banquets fetched successfully.',
+//             categories: allBanquets,
+//         });
+//     } catch (error) {
+//         // Handle errors and log them for debugging
+//         console.error('Error fetching banquets:', error);
+
+//         // Return an error response
+//         return res.status(500).json({
+//             message: 'Server error while fetching banquets.',
+//             error: error.message,
+//         });
+//     }
+// };
+
+const getSearchBanquets = async (req, res) => {
+    try {
+        // Extract the 'status' and 'banquetName' query parameters
+        const { status, banquetName } = req.query;
+
+        // Define the filter to exclude deleted records and include status filter if provided
+        const filter = { isDeleted: false };
+        if (status) {
+            filter.status = status; // Convert string to boolean
+        }
+        if (banquetName) {
+            filter.banquetName = banquetName;
+        }
+
+        // Fetch banquets with related data, applying the filter and sorting by creation date
+        const banquets = await Banquet.find(filter)
+            .populate("banquetName")
+            .sort({ createdAt: -1 });
+
+        // Transform the banquet data to include the 'name' and formatted day-time details
+        const allBanquets = banquets.map((banquet) => {
+            const pricingDetails = banquet.pricingDetails.map((detail) => {
+                // Extract short form of days (e.g., Mon-Sat)
+                const startDay = detail.days[0].slice(0, 3); // First 3 letters of the first day
+                const endDay = detail.days[detail.days.length - 1].slice(0, 3); // First 3 letters of the last day
+                const shortDays = detail.days.length > 1 ? `${startDay}-${endDay}` : startDay;
+
+                return {
+                    ...detail.toObject(),
+                    dayTime: `${shortDays} (${QRCodeHelper.formatTimeTo12Hour(detail.timeSlots[0].start)} to ${QRCodeHelper.formatTimeTo12Hour(detail.timeSlots[0].end)}) - Rs.${detail.price}`,
+                };
+            });
+
+            return {
+                ...banquet.toObject(), // Convert Mongoose document to plain object
+                name: banquet.banquetName ? banquet.banquetName.name : "",
+                pricingDetails, // Add the updated pricing details
+            };
+        });
+
+        // Return the response with the banquets data
+        return res.status(200).json({
+            message: "Banquets fetched successfully.",
+            categories: allBanquets,
+        });
+    } catch (error) {
+        console.error("Error fetching banquets:", error);
+
+        // Return an error response
+        return res.status(500).json({
+            message: "Server error while fetching banquets.",
+            error: error.message,
+        });
+    }
+};
+
+
 module.exports = {
     // Banquet Cetagory functions
     addCategory,
@@ -1844,6 +2032,7 @@ module.exports = {
     updateBanquet,
     getBanquetEditDetailsById,
     getAllActiveBanquets,
+    getSearchBanquets,
 
     // Banquet Booking Functions
     getActiveBanquets,

@@ -1,4 +1,4 @@
-const { addCategory, getAllCategory, getCategoryById, updateCategory, deleteCategory, getAllBanquets, createBanquet, getBanquetById, deleteBanquet, deleteBanquetImage, uploadBanquetImage, updateBanquet, getActiveBanquets, createBanquetBooking, createBanquetBookingDetails, getAllBanquetBookings, getBookingById, deleteBooking, getMyBookings, allocateBanquet, getBanquetEditDetailsById, getAllActiveBanquets } = require("../controllers/banquetController");
+const { addCategory, getAllCategory, getCategoryById, updateCategory, deleteCategory, getAllBanquets, createBanquet, getBanquetById, deleteBanquet, deleteBanquetImage, uploadBanquetImage, updateBanquet, getActiveBanquets, createBanquetBooking, createBanquetBookingDetails, getAllBanquetBookings, getBookingById, deleteBooking, getMyBookings, allocateBanquet, getBanquetEditDetailsById, getAllActiveBanquets, getSearchBanquets } = require("../controllers/banquetController");
 const { verifyToken } = require("../utils/common");
 const { banquetUpload } = require("../utils/upload");
 
@@ -24,6 +24,9 @@ module.exports = (router) => {
     router.get("/banquet-editDetails/:id", getBanquetEditDetailsById);
 
     router.get("/banquet-categories", getAllActiveBanquets);
+
+    router.get("/banquet-search", getSearchBanquets);
+
 
 
 
