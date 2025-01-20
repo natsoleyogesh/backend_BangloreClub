@@ -1110,72 +1110,73 @@ const createBanquetBooking = async (req, res) => {
             status: banquetBooking.bookingStatus,
             description: "This is a Banquet Booking Request."
         });
+
+
         const admins = await Department.find({ departmentName: 'Banquet', isDeleted: false });
+
+        // Fetch the primary member's details
+        const member = await User.findById(banquetBooking.primaryMemberId).populate("parentUserId");
+        if (!member) {
+            return res.status(404).json({ message: "Primary member not found." });
+        }
+
+        // Send a booking confirmation email
+        const memberData = await BanquetBooking.findById(banquetBooking._id)
+            .populate({
+                path: 'banquetType',
+                populate: {
+                    path: 'banquetName', // Assuming banquetName references BanquetCategory
+                    model: 'BanquetCategory',
+                },
+            })
+            .populate('primaryMemberId');
+
+
+        // Send email to primary member
+        let primaryMemberEmail;
+        if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
+            primaryMemberEmail = memberData.primaryMemberId.email;
+        } else {
+            primaryMemberEmail = member.parentUserId.email;
+        }
+
+        // Convert times
+        const formattedFrom = QRCodeHelper.formatTimeTo12Hour(banquetBooking.bookingTime.from);
+        const formattedTo = QRCodeHelper.formatTimeTo12Hour(banquetBooking.bookingTime.to);
+        // Prepare template data
+        const templateData = {
+            uniqueQRCode: banquetBooking.uniqueQRCode,
+            // qrCode: allDetailsQRCode, // Base64 string for QR Code
+            banquetName: memberData.banquetType.banquetName.name,
+            primaryName: memberData.primaryMemberId.name,
+            memberId: memberData.primaryMemberId.memberId,
+            primaryEmail: memberData.primaryMemberId.email,
+            primaryContact: memberData.primaryMemberId.mobileNumber,
+            attendingGuests: banquetBooking.attendingGuests,
+            bookingDate: banquetBooking?.bookingDates?.checkIn ? banquetBooking.bookingDates.checkIn.toDateString() : "N/A",
+            from: formattedFrom,
+            to: formattedTo,
+            duration: banquetBooking.bookingTime.duration,
+            taxTypes: memberData?.pricingDetails?.taxTypes?.length > 0
+                ? memberData.pricingDetails.taxTypes.map(taxType => ({
+                    taxType: taxType.taxType || "N/A",
+                    taxRate: taxType.taxRate || 0,
+                    taxAmount: taxType.taxAmount || 0,
+                }))
+                : [],
+            totalAmount: banquetBooking.pricingDetails.totalAmount.toFixed(2),
+            totalTaxAmount: banquetBooking.pricingDetails.totalTaxAmount.toFixed(2),
+            final_totalAmount: banquetBooking.pricingDetails.final_totalAmount.toFixed(2),
+
+        };
+        console.log(templateData, "templaedate")
+        const template = emailTemplates.banquetBooking;
+
+        // Render template
+        const htmlBody = banquetrenderTemplate(template.body, templateData);
+        const subject = `Booking Request for ${templateData.banquetName}`;
+
         if (admins.length > 0) {
-
-            // Fetch the primary member's details
-            const member = await User.findById(banquetBooking.primaryMemberId).populate("parentUserId");
-            if (!member) {
-                return res.status(404).json({ message: "Primary member not found." });
-            }
-
-            // Send a booking confirmation email
-            const memberData = await BanquetBooking.findById(banquetBooking._id)
-                .populate({
-                    path: 'banquetType',
-                    populate: {
-                        path: 'banquetName', // Assuming banquetName references BanquetCategory
-                        model: 'BanquetCategory',
-                    },
-                })
-                .populate('primaryMemberId');
-
-
-            // Send email to primary member
-            let primaryMemberEmail;
-            if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
-                primaryMemberEmail = memberData.primaryMemberId.email;
-            } else {
-                primaryMemberEmail = member.parentUserId.email;
-            }
-
-            // Convert times
-            const formattedFrom = QRCodeHelper.formatTimeTo12Hour(banquetBooking.bookingTime.from);
-            const formattedTo = QRCodeHelper.formatTimeTo12Hour(banquetBooking.bookingTime.to);
-            // Prepare template data
-            const templateData = {
-                uniqueQRCode: banquetBooking.uniqueQRCode,
-                // qrCode: allDetailsQRCode, // Base64 string for QR Code
-                banquetName: memberData.banquetType.banquetName.name,
-                primaryName: memberData.primaryMemberId.name,
-                memberId: memberData.primaryMemberId.memberId,
-                primaryEmail: memberData.primaryMemberId.email,
-                primaryContact: memberData.primaryMemberId.mobileNumber,
-                attendingGuests: banquetBooking.attendingGuests,
-                bookingDate: banquetBooking?.bookingDates?.checkIn ? banquetBooking.bookingDates.checkIn.toDateString() : "N/A",
-                from: formattedFrom,
-                to: formattedTo,
-                duration: banquetBooking.bookingTime.duration,
-                taxTypes: memberData?.pricingDetails?.taxTypes?.length > 0
-                    ? memberData.pricingDetails.taxTypes.map(taxType => ({
-                        taxType: taxType.taxType || "N/A",
-                        taxRate: taxType.taxRate || 0,
-                        taxAmount: taxType.taxAmount || 0,
-                    }))
-                    : [],
-                totalAmount: banquetBooking.pricingDetails.totalAmount.toFixed(2),
-                totalTaxAmount: banquetBooking.pricingDetails.totalTaxAmount.toFixed(2),
-                final_totalAmount: banquetBooking.pricingDetails.final_totalAmount.toFixed(2),
-
-            };
-            console.log(templateData, "templaedate")
-            const template = emailTemplates.banquetBooking;
-
-            // Render template
-            const htmlBody = banquetrenderTemplate(template.body, templateData);
-            const subject = `Booking Request for ${templateData.banquetName}`;
-
-
             for (const admin of admins) {
                 await sendEmail(admin.email, subject, htmlBody,
                     // [
@@ -1189,18 +1190,18 @@ const createBanquetBooking = async (req, res) => {
                 );
             }
 
-            await sendEmail(primaryMemberEmail, subject, htmlBody,
-                //     [
-                //     {
-                //         filename: "qrcode.png",
-                //         content: allDetailsQRCode.split(",")[1],
-                //         encoding: "base64",
-                //         cid: "qrCodeImage",
-                //     },
-                // ]
-            );
-
         }
+
+        await sendEmail(primaryMemberEmail, subject, htmlBody,
+            //     [
+            //     {
+            //         filename: "qrcode.png",
+            //         content: allDetailsQRCode.split(",")[1],
+            //         encoding: "base64",
+            //         cid: "qrCodeImage",
+            //     },
+            // ]
+        );
 
         return res.status(201).json({
             message: 'Banquet booking created successfully.',
@@ -1889,11 +1890,27 @@ const getAllActiveBanquets = async (req, res) => {
             .populate('banquetName') // Populate the 'banquetName' field with related data
             .sort({ createdAt: -1 }); // Sort by creation date in descending order
 
-        // Transform the banquets data to include the 'name' field
-        const allBanquets = banquets.map((banquet) => ({
-            ...banquet.toObject(), // Convert the mongoose document to a plain object
-            name: banquet.banquetName ? banquet.banquetName.name : '', // Add 'name' field from the populated data
-        }));
+
+        // Transform the banquet data to include the 'name' and formatted day-time details
+        const allBanquets = banquets.map((banquet) => {
+            const pricingDetails = banquet.pricingDetails.map((detail) => {
+                // Extract short form of days (e.g., Mon-Sat)
+                const startDay = detail.days[0].slice(0, 3); // First 3 letters of the first day
+                const endDay = detail.days[detail.days.length - 1].slice(0, 3); // First 3 letters of the last day
+                const shortDays = detail.days.length > 1 ? `${startDay}-${endDay}` : startDay;
+
+                return {
+                    ...detail.toObject(),
+                    dayTime: `${shortDays} (${QRCodeHelper.formatTimeTo12Hour(detail.timeSlots[0].start)} to ${QRCodeHelper.formatTimeTo12Hour(detail.timeSlots[0].end)}) - Rs.${detail.price}`,
+                };
+            });
+
+            return {
+                ...banquet.toObject(), // Convert Mongoose document to plain object
+                name: banquet.banquetName ? banquet.banquetName.name : "",
+                pricingDetails, // Add the updated pricing details
+            };
+        });
 
         // Return the response with the banquets data
         return res.status(200).json({
