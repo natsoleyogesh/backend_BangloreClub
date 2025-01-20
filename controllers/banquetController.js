@@ -769,81 +769,158 @@ const getActiveBanquets = async (req, res) => {
             return res.status(404).json({ message: 'No banquets available for the specified criteria.' });
         }
 
-        // Filter available banquets based on pricing details and bookings
+        //  // Filter available banquets based on pricing details and bookings
+        // const availableBanquets = [];
+
+        // for (const banquet of banquets) {
+        //     const bookingDay = checkInDate.toLocaleString('en-US', { weekday: 'long' });
+
+        //     // Check if the check-in day matches banquet pricing details
+        //     const applicablePricing = banquet.pricingDetails.find(pricing => pricing.days.includes(bookingDay));
+
+        //     if (!applicablePricing) continue;
+
+        //     // Check if the time slots are available
+        //     const isTimeSlotAvailable = applicablePricing.timeSlots.some(slot => {
+        //         const [slotStartHours, slotStartMinutes] = slot.start.split(':').map(Number);
+        //         const [slotEndHours, slotEndMinutes] = slot.end.split(':').map(Number);
+
+        //         const slotStart = slotStartHours * 60 + slotStartMinutes;
+        //         const slotEnd = slotEndHours * 60 + slotEndMinutes;
+
+        //         const requestedStart = fromHours * 60 + fromMinutes;
+        //         const requestedEnd = toHours * 60 + toMinutes;
+
+        //         return requestedStart >= slotStart && requestedEnd <= slotEnd;
+        //     });
+        //     console.log(isTimeSlotAvailable, "isTimeSlotAvailable")
+        //     if (!isTimeSlotAvailable) continue;
+
+
+        //     console.log(checkInDate, checkOutDate, "utcformat")
+        //     // Check for overlapping bookings
+        //     const overlappingBookings = await BanquetBooking.find({
+        //         banquetType: banquet._id,
+        //         // 'bookingDates.checkIn': { $lt: endOfCheckOut },
+        //         // 'bookingDates.checkOut': { $gt: startOfCheckIn },
+        //         isDeleted: false,
+        //     });
+
+        //     const isBookingTimeAvailable = !overlappingBookings.some(booking => {
+        //         console.log("Booking CheckIn:", booking.bookingDates.checkIn, "Booking CheckOut:", booking.bookingDates.checkOut);
+
+        //         // Convert booking dates to only date parts for comparison
+        //         const bookingCheckInDate = new Date(booking.bookingDates.checkIn).toISOString().split('T')[0];
+        //         const bookingCheckOutDate = new Date(booking.bookingDates.checkOut).toISOString().split('T')[0];
+
+        //         const requestedCheckInDate = new Date(checkInDate).toISOString().split('T')[0];
+        //         const requestedCheckOutDate = new Date(checkOutDate).toISOString().split('T')[0];
+
+        //         // Check if dates overlap
+        //         const isDateOverlap =
+        //             requestedCheckInDate <= bookingCheckOutDate &&
+        //             requestedCheckOutDate >= bookingCheckInDate;
+
+        //         if (!isDateOverlap) {
+        //             return false; // Skip if the dates do not overlap
+        //         }
+
+        //         // Extract time components and compare
+        //         const [bookingFromHours, bookingFromMinutes] = booking.bookingTime.from.split(':').map(Number);
+        //         const [bookingToHours, bookingToMinutes] = booking.bookingTime.to.split(':').map(Number);
+
+        //         const bookingStart = bookingFromHours * 60 + bookingFromMinutes;
+        //         const bookingEnd = bookingToHours * 60 + bookingToMinutes;
+
+        //         const requestedStart = fromHours * 60 + fromMinutes;
+        //         const requestedEnd = toHours * 60 + toMinutes;
+
+        //         // Check if time ranges overlap
+        //         const isTimeOverlap = requestedStart < bookingEnd && requestedEnd > bookingStart;
+
+        //         console.log("Date Overlap:", isDateOverlap, "Time Overlap:", isTimeOverlap);
+
+        //         return isDateOverlap && isTimeOverlap; // Return true only if both date and time overlap
+        //     });
+
+        //     if (isBookingTimeAvailable) {
+        //         availableBanquets.push(banquet);
+        //     }
+        // }
+
+        // if (availableBanquets.length === 0) {
+        //     return res.status(404).json({ message: 'No available banquets found for the specified criteria.' });
+        // }
+
         const availableBanquets = [];
 
         for (const banquet of banquets) {
             const bookingDay = checkInDate.toLocaleString('en-US', { weekday: 'long' });
 
-            // Check if the check-in day matches banquet pricing details
-            const applicablePricing = banquet.pricingDetails.find(pricing => pricing.days.includes(bookingDay));
+            // Find all applicable pricing for the booking day
+            const applicablePricing = banquet.pricingDetails.filter(pricing => pricing.days.includes(bookingDay));
 
-            if (!applicablePricing) continue;
+            if (!applicablePricing || applicablePricing.length === 0) continue;
 
-            // Check if the time slots are available
-            const isTimeSlotAvailable = applicablePricing.timeSlots.some(slot => {
-                const [slotStartHours, slotStartMinutes] = slot.start.split(':').map(Number);
-                const [slotEndHours, slotEndMinutes] = slot.end.split(':').map(Number);
+            let isAvailable = false; // Track availability for this banquet
+            for (const pricing of applicablePricing) {
+                const matchingSlots = pricing.timeSlots.filter(slot => {
+                    const [slotStartHours, slotStartMinutes] = slot.start.split(':').map(Number);
+                    const [slotEndHours, slotEndMinutes] = slot.end.split(':').map(Number);
 
-                const slotStart = slotStartHours * 60 + slotStartMinutes;
-                const slotEnd = slotEndHours * 60 + slotEndMinutes;
+                    const slotStart = slotStartHours * 60 + slotStartMinutes;
+                    const slotEnd = slotEndHours * 60 + slotEndMinutes;
 
-                const requestedStart = fromHours * 60 + fromMinutes;
-                const requestedEnd = toHours * 60 + toMinutes;
+                    const requestedStart = fromHours * 60 + fromMinutes;
+                    const requestedEnd = toHours * 60 + toMinutes;
 
-                return requestedStart >= slotStart && requestedEnd <= slotEnd;
-            });
+                    return requestedStart < slotEnd && requestedEnd > slotStart; // Overlap logic
+                });
 
-            if (!isTimeSlotAvailable) continue;
+                if (matchingSlots.length > 0) {
+                    console.log("Matching Slots:", matchingSlots);
 
+                    // Check for overlapping bookings for each slot
+                    const overlappingBookings = await BanquetBooking.find({
+                        banquetType: banquet._id,
+                        isDeleted: false,
+                    });
 
-            console.log(checkInDate, checkOutDate, "utcformat")
-            // Check for overlapping bookings
-            const overlappingBookings = await BanquetBooking.find({
-                banquetType: banquet._id,
-                // 'bookingDates.checkIn': { $lt: endOfCheckOut },
-                // 'bookingDates.checkOut': { $gt: startOfCheckIn },
-                isDeleted: false,
-            });
+                    const isBookingTimeAvailable = !overlappingBookings.some(booking => {
+                        const bookingCheckInDate = new Date(booking.bookingDates.checkIn).toISOString().split('T')[0];
+                        const bookingCheckOutDate = new Date(booking.bookingDates.checkOut).toISOString().split('T')[0];
 
-            const isBookingTimeAvailable = !overlappingBookings.some(booking => {
-                console.log("Booking CheckIn:", booking.bookingDates.checkIn, "Booking CheckOut:", booking.bookingDates.checkOut);
+                        const requestedCheckInDate = new Date(checkInDate).toISOString().split('T')[0];
+                        const requestedCheckOutDate = new Date(checkOutDate).toISOString().split('T')[0];
 
-                // Convert booking dates to only date parts for comparison
-                const bookingCheckInDate = new Date(booking.bookingDates.checkIn).toISOString().split('T')[0];
-                const bookingCheckOutDate = new Date(booking.bookingDates.checkOut).toISOString().split('T')[0];
+                        const isDateOverlap =
+                            requestedCheckInDate <= bookingCheckOutDate &&
+                            requestedCheckOutDate >= bookingCheckInDate;
 
-                const requestedCheckInDate = new Date(checkInDate).toISOString().split('T')[0];
-                const requestedCheckOutDate = new Date(checkOutDate).toISOString().split('T')[0];
+                        if (!isDateOverlap) return false;
 
-                // Check if dates overlap
-                const isDateOverlap =
-                    requestedCheckInDate <= bookingCheckOutDate &&
-                    requestedCheckOutDate >= bookingCheckInDate;
+                        const [bookingFromHours, bookingFromMinutes] = booking.bookingTime.from.split(':').map(Number);
+                        const [bookingToHours, bookingToMinutes] = booking.bookingTime.to.split(':').map(Number);
 
-                if (!isDateOverlap) {
-                    return false; // Skip if the dates do not overlap
+                        const bookingStart = bookingFromHours * 60 + bookingFromMinutes;
+                        const bookingEnd = bookingToHours * 60 + bookingToMinutes;
+
+                        const requestedStart = fromHours * 60 + fromMinutes;
+                        const requestedEnd = toHours * 60 + toMinutes;
+
+                        const isTimeOverlap = requestedStart < bookingEnd && requestedEnd > bookingStart;
+
+                        return isDateOverlap && isTimeOverlap;
+                    });
+
+                    if (isBookingTimeAvailable) {
+                        isAvailable = true;
+                        break; // Stop checking further slots for this pricing
+                    }
                 }
+            }
 
-                // Extract time components and compare
-                const [bookingFromHours, bookingFromMinutes] = booking.bookingTime.from.split(':').map(Number);
-                const [bookingToHours, bookingToMinutes] = booking.bookingTime.to.split(':').map(Number);
-
-                const bookingStart = bookingFromHours * 60 + bookingFromMinutes;
-                const bookingEnd = bookingToHours * 60 + bookingToMinutes;
-
-                const requestedStart = fromHours * 60 + fromMinutes;
-                const requestedEnd = toHours * 60 + toMinutes;
-
-                // Check if time ranges overlap
-                const isTimeOverlap = requestedStart < bookingEnd && requestedEnd > bookingStart;
-
-                console.log("Date Overlap:", isDateOverlap, "Time Overlap:", isTimeOverlap);
-
-                return isDateOverlap && isTimeOverlap; // Return true only if both date and time overlap
-            });
-
-            if (isBookingTimeAvailable) {
+            if (isAvailable) {
                 availableBanquets.push(banquet);
             }
         }
