@@ -153,6 +153,26 @@ const hodupload = multer({
 });
 
 
+// Set up storage configuration for Multer
+const gcmstorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/gcm'); // Directory for uploaded images
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`);
+    },
+});
+
+
+// Multer upload instance
+const gcmupload = multer({
+    storage: gcmstorage,
+    fileFilter,
+    limits: { fileSize: 20 * 1024 * 1024 }, // Limit file size to 20MB
+});
+
+
 // Configure Multer storage
 const downloadStorage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -363,4 +383,4 @@ const xslUpload = multer({
 });
 
 
-module.exports = { upload, eventupload, roomUpload, offerupload, hodupload, downloadUpload, noticeUpload, FBupload, ICONupload, banquetUpload, notificationUpload, handleMulterError, xslUpload };
+module.exports = { upload, eventupload, roomUpload, offerupload, hodupload, downloadUpload, noticeUpload, FBupload, ICONupload, banquetUpload, notificationUpload, handleMulterError, xslUpload, gcmupload };
