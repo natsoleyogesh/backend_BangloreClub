@@ -226,6 +226,16 @@ const roomBookingSchema = new mongoose.Schema(
       default: 'Pending',
     },
 
+    // billable: {
+    //   type: Boolean,
+    //   default: true,
+    //   required: true
+    // },
+    // billableDate: {
+    //   type: Date,
+    //   default: null,
+    // },
+
     // Soft delete field
     isDeleted: {
       type: Boolean,

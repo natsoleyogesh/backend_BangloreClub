@@ -12,6 +12,10 @@ const clubNoticeSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        bannerImage: {
+            type: String,
+            required: true,
+        },
         fileUrl: {
             type: String,
             required: true,

@@ -32,7 +32,7 @@ const allBannerImages = async (req, res) => {
                 showBanner: true,
                 expiredDate: { $gte: currentDateTime }, // Check if expiredDate is not expired
             },
-            { fileUrl: 1, showBanner: 1 }
+            { bannerImage: 1, showBanner: 1 }
         );
 
         // Transform the data to include model name
@@ -52,7 +52,7 @@ const allBannerImages = async (req, res) => {
 
         const clubNoticeBanners = clubNotices.map((notice) => ({
             _id: notice._id,
-            image: notice.fileUrl,
+            image: notice.bannerImage,
             showBanner: notice.showBanner,
             model: "ClubNotice",
         }));

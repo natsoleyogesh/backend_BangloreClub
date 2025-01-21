@@ -25,6 +25,7 @@ const affiliatedClubRoutes = require("./affiliatedClubRoutes");
 
 // master data routes
 const departmentRoutes = require("./masterRoutes/departmentRoutes");
+const designationRoutes = require("./masterRoutes/designationRoutes");
 const restaurantRoutes = require("./masterRoutes/restaurantRoutes");
 const amenitiesRoutes = require("./masterRoutes/amenitiesRoutes");
 const taxTypeRoutes = require("./masterRoutes/taxTypeRoutes");
@@ -61,6 +62,7 @@ affiliatedClubRoutes(router);
 
 // master data
 departmentRoutes(router);
+designationRoutes(router);
 restaurantRoutes(router);
 amenitiesRoutes(router);
 taxTypeRoutes(router);

@@ -2,10 +2,15 @@ const mongoose = require("mongoose");
 
 const subCategorySchema = new mongoose.Schema(
     {
+        // name: {
+        //     type: String,
+        //     required: true,
+        //     trim: true, // Subcategory name, e.g., "Go Green"
+        // },
         name: {
-            type: String,
-            required: true,
-            trim: true, // Subcategory name, e.g., "Go Green"
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Department', // Reference to the Department model
+            required: true
         },
     },
     { timestamps: true } // Enable timestamps for future updates
@@ -13,10 +18,15 @@ const subCategorySchema = new mongoose.Schema(
 
 const categorySchema = new mongoose.Schema(
     {
+        // name: {
+        //     type: String,
+        //     required: true,
+        //     trim: true, // Category name, e.g., "Chairman"
+        // },
         name: {
-            type: String,
-            required: true,
-            trim: true, // Category name, e.g., "Chairman"
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Designation', // Reference to the Department model
+            required: true
         },
         subCategories: {
             type: [subCategorySchema], // List of subcategories under this category
@@ -37,6 +47,11 @@ const generalCommitteeMemberSchema = new mongoose.Schema(
             type: String,
             required: false, // Designation, e.g., "President", "Vice President"
         },
+        image: {
+            type: String, // URL to the profile image
+            default: "",
+            required: true,
+        },
         categories: {
             type: [categorySchema], // List of categories this member belongs to
             required: true,
@@ -45,6 +60,11 @@ const generalCommitteeMemberSchema = new mongoose.Schema(
             type: String,
             enum: ["Active", "Inactive"], // Status can be "Active" or "Inactive"
             default: "Active",
+        },
+        priority: {
+            type: Number, // Priority for the category
+            required: true,
+            default: 0, // Default priority
         },
     },
     {

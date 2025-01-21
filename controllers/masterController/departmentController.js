@@ -126,7 +126,8 @@ const deleteDepartment = async (req, res) => {
 const getActiveDepartments = async (req, res) => {
     try {
         const activeDepartments = await Department.find({ status: 'active', isDeleted: false })
-            .sort({ createdAt: -1 }); // Sort by creation date in descending order
+            // .sort({ createdAt: -1 }); // Sort by creation date in descending order
+            .sort({ departmentName: 1 }); // Sort by name in ascending order
         return res.status(200).json({ message: "Active Departments", activeDepartments });
     } catch (err) {
         return res.status(500).json({ message: 'Server error', error: err });
