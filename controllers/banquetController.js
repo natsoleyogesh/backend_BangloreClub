@@ -1008,51 +1008,112 @@ const createBanquetBooking = async (req, res) => {
 
         // Calculate pricing based on the day and time slots
         const bookingDay = checkInDate.toLocaleString('en-US', { weekday: 'long' });
-        const applicablePricing = banquet.pricingDetails.find(pricing => pricing.days.includes(bookingDay));
+        // const applicablePricing = banquet.pricingDetails.find(pricing => pricing.days.includes(bookingDay));
 
-        if (!applicablePricing) {
+        // if (!applicablePricing) {
+        //     return res.status(400).json({ message: 'No pricing details available for the selected day.' });
+        // }
+
+        // const timeSlot = applicablePricing.timeSlots.find(slot => {
+        //     // Parse slot start and end times
+        //     const parseTime = timeStr => {
+        //         const [time, modifier] = timeStr.split(' ');
+        //         let [hours, minutes] = time.split(':').map(Number);
+
+        //         if (modifier === 'PM' && hours !== 12) {
+        //             hours += 12; // Convert PM to 24-hour format
+        //         }
+        //         if (modifier === 'AM' && hours === 12) {
+        //             hours = 0; // Handle midnight
+        //         }
+
+        //         return { hours, minutes };
+        //     };
+
+        //     const { hours: slotStartHours, minutes: slotStartMinutes } = parseTime(slot.start);
+        //     const { hours: slotEndHours, minutes: slotEndMinutes } = parseTime(slot.end);
+
+        //     const slotStartTotalMinutes = slotStartHours * 60 + slotStartMinutes;
+        //     const slotEndTotalMinutes = slotEndHours * 60 + slotEndMinutes;
+
+        //     // Booking start and end times
+        //     const bookingStartTotalMinutes = fromHours * 60 + fromMinutes;
+        //     const bookingEndTotalMinutes = toHours * 60 + toMinutes;
+
+        //     return (
+        //         // bookingStartTotalMinutes >= slotStartTotalMinutes &&
+        //         // bookingEndTotalMinutes <= slotEndTotalMinutes
+        //         bookingStartTotalMinutes < slotEndTotalMinutes && bookingEndTotalMinutes > slotStartTotalMinutes
+
+        //     );
+        // });
+
+
+        // if (!timeSlot) {
+        //     return res.status(400).json({ message: 'No pricing details available for the selected time slot.' });
+        // }
+
+        // // const totalAmount = applicablePricing.price * durationInHours;
+        // let totalAmount = applicablePricing.price;
+
+        const applicablePricing = banquet.pricingDetails.filter(pricing => pricing.days.includes(bookingDay));
+
+        if (!applicablePricing && applicablePricing.length === 0) {
             return res.status(400).json({ message: 'No pricing details available for the selected day.' });
         }
 
-        const timeSlot = applicablePricing.timeSlots.find(slot => {
-            // Parse slot start and end times
-            const parseTime = timeStr => {
-                const [time, modifier] = timeStr.split(' ');
-                let [hours, minutes] = time.split(':').map(Number);
+        let isAvailable = false;
+        let finalPrice = 0;
+        for (const pricing of applicablePricing) {
+            const timeSlot = pricing.timeSlots.find(slot => {
+                // Parse slot start and end times
+                const parseTime = timeStr => {
+                    const [time, modifier] = timeStr.split(' ');
+                    let [hours, minutes] = time.split(':').map(Number);
 
-                if (modifier === 'PM' && hours !== 12) {
-                    hours += 12; // Convert PM to 24-hour format
-                }
-                if (modifier === 'AM' && hours === 12) {
-                    hours = 0; // Handle midnight
-                }
+                    if (modifier === 'PM' && hours !== 12) {
+                        hours += 12; // Convert PM to 24-hour format
+                    }
+                    if (modifier === 'AM' && hours === 12) {
+                        hours = 0; // Handle midnight
+                    }
 
-                return { hours, minutes };
-            };
+                    return { hours, minutes };
+                };
 
-            const { hours: slotStartHours, minutes: slotStartMinutes } = parseTime(slot.start);
-            const { hours: slotEndHours, minutes: slotEndMinutes } = parseTime(slot.end);
+                const { hours: slotStartHours, minutes: slotStartMinutes } = parseTime(slot.start);
+                const { hours: slotEndHours, minutes: slotEndMinutes } = parseTime(slot.end);
 
-            const slotStartTotalMinutes = slotStartHours * 60 + slotStartMinutes;
-            const slotEndTotalMinutes = slotEndHours * 60 + slotEndMinutes;
+                const slotStartTotalMinutes = slotStartHours * 60 + slotStartMinutes;
+                const slotEndTotalMinutes = slotEndHours * 60 + slotEndMinutes;
 
-            // Booking start and end times
-            const bookingStartTotalMinutes = fromHours * 60 + fromMinutes;
-            const bookingEndTotalMinutes = toHours * 60 + toMinutes;
+                // Booking start and end times
+                const bookingStartTotalMinutes = fromHours * 60 + fromMinutes;
+                const bookingEndTotalMinutes = toHours * 60 + toMinutes;
 
-            return (
-                bookingStartTotalMinutes >= slotStartTotalMinutes &&
-                bookingEndTotalMinutes <= slotEndTotalMinutes
-            );
-        });
+                return (
+                    bookingStartTotalMinutes >= slotStartTotalMinutes &&
+                    bookingEndTotalMinutes <= slotEndTotalMinutes
+                    // bookingStartTotalMinutes < slotEndTotalMinutes && bookingEndTotalMinutes > slotStartTotalMinutes
+                );
+
+            });
+
+            if (timeSlot) {
+                isAvailable = true;
+                finalPrice = pricing.price;
+                break; // Stop checking further slots for this pricing
+            }
+        }
 
 
-        if (!timeSlot) {
+
+        if (!isAvailable) {
             return res.status(400).json({ message: 'No pricing details available for the selected time slot.' });
         }
 
-        // const totalAmount = applicablePricing.price * durationInHours;
-        let totalAmount = applicablePricing.price;
+        // let totalAmount = applicablePricing.price;
+        let totalAmount = finalPrice;
 
 
         // // Calculate special day charges if applicable
@@ -1374,63 +1435,65 @@ const createBanquetBookingDetails = async (req, res) => {
 
         // Calculate pricing based on the day and time slots
         const bookingDay = checkInDate.toLocaleString('en-US', { weekday: 'long' });
-        const applicablePricing = banquet.pricingDetails.find(pricing => pricing.days.includes(bookingDay));
+        const applicablePricing = banquet.pricingDetails.filter(pricing => pricing.days.includes(bookingDay));
 
-        if (!applicablePricing) {
+        if (!applicablePricing && applicablePricing.length === 0) {
             return res.status(400).json({ message: 'No pricing details available for the selected day.' });
         }
 
+        let isAvailable = false;
+        let finalPrice = 0;
+        for (const pricing of applicablePricing) {
+            const timeSlot = pricing.timeSlots.find(slot => {
+                // Parse slot start and end times
+                const parseTime = timeStr => {
+                    const [time, modifier] = timeStr.split(' ');
+                    let [hours, minutes] = time.split(':').map(Number);
 
-        const timeSlot = applicablePricing.timeSlots.find(slot => {
-            // Parse slot start and end times
-            const parseTime = timeStr => {
-                const [time, modifier] = timeStr.split(' ');
-                let [hours, minutes] = time.split(':').map(Number);
+                    if (modifier === 'PM' && hours !== 12) {
+                        hours += 12; // Convert PM to 24-hour format
+                    }
+                    if (modifier === 'AM' && hours === 12) {
+                        hours = 0; // Handle midnight
+                    }
 
-                if (modifier === 'PM' && hours !== 12) {
-                    hours += 12; // Convert PM to 24-hour format
-                }
-                if (modifier === 'AM' && hours === 12) {
-                    hours = 0; // Handle midnight
-                }
+                    return { hours, minutes };
+                };
 
-                return { hours, minutes };
-            };
+                const { hours: slotStartHours, minutes: slotStartMinutes } = parseTime(slot.start);
+                const { hours: slotEndHours, minutes: slotEndMinutes } = parseTime(slot.end);
 
-            const { hours: slotStartHours, minutes: slotStartMinutes } = parseTime(slot.start);
-            const { hours: slotEndHours, minutes: slotEndMinutes } = parseTime(slot.end);
+                const slotStartTotalMinutes = slotStartHours * 60 + slotStartMinutes;
+                const slotEndTotalMinutes = slotEndHours * 60 + slotEndMinutes;
 
-            const slotStartTotalMinutes = slotStartHours * 60 + slotStartMinutes;
-            const slotEndTotalMinutes = slotEndHours * 60 + slotEndMinutes;
+                // Booking start and end times
+                const bookingStartTotalMinutes = fromHours * 60 + fromMinutes;
+                const bookingEndTotalMinutes = toHours * 60 + toMinutes;
 
-            // Booking start and end times
-            const bookingStartTotalMinutes = fromHours * 60 + fromMinutes;
-            const bookingEndTotalMinutes = toHours * 60 + toMinutes;
+                return (
+                    bookingStartTotalMinutes >= slotStartTotalMinutes &&
+                    bookingEndTotalMinutes <= slotEndTotalMinutes
+                    // bookingStartTotalMinutes < slotEndTotalMinutes && bookingEndTotalMinutes > slotStartTotalMinutes
+                );
 
-            return (
-                bookingStartTotalMinutes >= slotStartTotalMinutes &&
-                bookingEndTotalMinutes <= slotEndTotalMinutes
-            );
-        });
+            });
+
+            if (timeSlot) {
+                isAvailable = true;
+                finalPrice = pricing.price;
+                break; // Stop checking further slots for this pricing
+            }
+        }
 
 
-        if (!timeSlot) {
+
+        if (!isAvailable) {
             return res.status(400).json({ message: 'No pricing details available for the selected time slot.' });
         }
 
-        let totalAmount = applicablePricing.price;
+        // let totalAmount = applicablePricing.price;
+        let totalAmount = finalPrice;
 
-        // // Calculate special day charges if applicable
-        // let specialDayExtraCharge = 0;
-        // if (banquet.specialDayTariff && Array.isArray(banquet.specialDayTariff)) {
-        //     banquet.specialDayTariff.forEach(specialDay => {
-        //         const start = new Date(specialDay.startDate);
-        //         const end = new Date(specialDay.endDate);
-        //         if (checkInDate >= start && checkOutDate <= end) {
-        //             specialDayExtraCharge += specialDay.extraCharge;
-        //         }
-        //     });
-        // }
 
         // Calculate special day charges in percentage and add to the total amount
         let specialDayExtraCharge = 0;
