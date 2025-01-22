@@ -1,8 +1,14 @@
 const mongoose = require("mongoose");
 const TimingSchema = new mongoose.Schema({
-    title: {
+    menu: {
         type: String,
-        // default: ""
+        enum: ["Buffet Menu", "A la carte Menu", "Both Menu"],
+        required: true
+    },
+    menuType: {
+        type: String,
+        enum: ["Breakfast", "Lunch", "Dinner", "Brunch", "Snacks", "Beverages", "Fine Dining", "Cafe Bistro", "Bar Lounge"],
+        required: true
     },
     startDay: {
         type: String, // Start day (e.g., "Mon")

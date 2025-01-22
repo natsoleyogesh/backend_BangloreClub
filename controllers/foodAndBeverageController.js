@@ -143,7 +143,8 @@ const getFoodAndBeverageById = async (req, res) => {
             bannerImage: category.bannerImage || [],
             mainmenu: category.mainmenu || null,
             timings: category.timings.map(timing => ({
-                title: timing.title || "",
+                menu: timing.menu || "",
+                menuType: timing.menuType || "",
                 startDay: timing.startDay || "",
                 endDay: timing.endDay || "",
                 startTime: timing.startTime || "",
@@ -215,7 +216,8 @@ const getAllFoodAndBeverages = async (req, res) => {
             bannerImage: fb.bannerImage || [],
             mainmenu: fb.mainmenu || null,
             timings: fb.timings.map(timing => ({
-                title: timing.title || "",
+                menu: timing.menu || "",
+                menuType: timing.menuType || "",
                 startDay: timing.startDay || "",
                 endDay: timing.endDay || "",
                 startTime: timing.startTime || "",
@@ -294,7 +296,8 @@ const getActiveFoodAndBeverages = async (req, res) => {
             bannerImage: fb.bannerImage || [],
             mainmenu: fb.mainmenu || null,
             timings: fb.timings.map(timing => ({
-                title: timing.title || "",
+                menu: timing.menu || "",
+                menuType: timing.menuType || "",
                 startDay: timing.startDay || "",
                 endDay: timing.endDay || "",
                 startTime: timing.startTime || "",

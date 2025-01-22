@@ -733,7 +733,8 @@ const getActiveGCM = async (req, res) => {
             .populate('userId', 'title name mobileNumber profilePicture memberId')
             .populate('categories.name', '_id designationName')
             .populate('categories.subCategories.name', '_id departmentName')
-            .sort({ createdAt: -1 });
+            // .sort({ createdAt: -1 });
+            .sort({ priority: 1 });
 
         const activeGCMs = gcms.map(gcm => ({
             _id: gcm._id,
