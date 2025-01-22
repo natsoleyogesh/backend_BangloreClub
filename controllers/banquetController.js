@@ -1250,7 +1250,7 @@ const createBanquetBooking = async (req, res) => {
         });
 
 
-        const admins = await Department.find({ departmentName: 'Banquet', isDeleted: false });
+        const admins = await Department.find({ departmentName: 'Banquets', isDeleted: false });
 
         // Fetch the primary member's details
         const member = await User.findById(banquetBooking.primaryMemberId).populate("parentUserId");

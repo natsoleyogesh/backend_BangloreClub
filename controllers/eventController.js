@@ -11,7 +11,8 @@ const { eventrenderTemplate, eventrenderDependentTemplate } = require('../utils/
 const { toTitleCase } = require('../utils/common');
 const { default: mongoose } = require('mongoose');
 const { createAttendanceRecords } = require('./eventAttendanceController');
-const moment = require('moment')
+const moment = require('moment');
+const Department = require('../models/department');
 
 const createEvent = async (req, res) => {
     try {
@@ -771,7 +772,8 @@ const bookEvent = async (req, res) => {
         );
 
 
-        const admins = await Admin.find({ role: 'admin', isDeleted: false });
+        // const admins = await Admin.find({ role: 'admin', isDeleted: false });
+        const admins = await Department.find({ departmentName: 'Events', isDeleted: false });
         for (const admin of admins) {
             await sendEmail(admin.email, subject, htmlBody, [
                 {
