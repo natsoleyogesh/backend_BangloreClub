@@ -1284,6 +1284,7 @@ const createBanquetBooking = async (req, res) => {
         // Prepare template data
         const templateData = {
             uniqueQRCode: banquetBooking.uniqueQRCode,
+            bookingReferenceId: banquetBooking._id,
             // qrCode: allDetailsQRCode, // Base64 string for QR Code
             banquetName: memberData.banquetType.banquetName.name,
             primaryName: memberData.primaryMemberId.name,
@@ -1929,6 +1930,7 @@ const allocateBanquet = async (req, res) => {
             // Prepare template data
             const templateData = {
                 uniqueQRCode: booking.uniqueQRCode,
+                bookingReferenceId: booking._id,
                 // qrCode: allDetailsQRCode, // Base64 string for QR Code
                 banquetName: memberData.banquetType.banquetName.name,
                 // eventDate: event.eventDate.toDateString(),
