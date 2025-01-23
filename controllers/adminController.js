@@ -146,6 +146,21 @@ const getAdmins = async (req, res) => {
   }
 };
 
+// Get all admins
+const getAdminDetails = async (req, res) => {
+  const { userId } = req.user;
+  try {
+
+    const admin = await Admin.findById(userId).select("-password");
+    return res.status(200).json({ message: "Admin Details", admin });
+  } catch (error) {
+    console.error("Error fetching admins:", error);
+    return res
+      .status(500)
+      .json({ message: "Error fetching admins", error: error.message });
+  }
+};
+
 const fetchFamilyTree = async (userId) => {
   const familyMembers = await User.find({ parentUserId: userId }, "-otp -__v").populate('parentUserId');
 
@@ -380,5 +395,7 @@ module.exports = {
   deleteMember,
   adminLogout,
   qrScanDetails,
-  getAllActiveUsers
+  getAllActiveUsers,
+
+  getAdminDetails
 };

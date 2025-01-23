@@ -35,6 +35,10 @@ const notificationRoutes = require("./notificationRoutes");
 const allRequestRoutes = require("./allRequestRoutes");
 const locationRoutes = require("./masterRoutes/locationRoutes");
 
+//  settings routes
+const smtpSecretRoutes = require("./settings/SmtpSecretRoutes");
+const logActionRoutes = require("./settings/logActionRoutes");
+
 adminRoutes(router);
 userRoutes(router);
 profileRequestRoutes(router);
@@ -67,5 +71,9 @@ restaurantRoutes(router);
 amenitiesRoutes(router);
 taxTypeRoutes(router);
 locationRoutes(router);
+
+// setting data
+smtpSecretRoutes(router);
+logActionRoutes(router);
 
 module.exports = router;
