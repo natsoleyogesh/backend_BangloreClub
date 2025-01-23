@@ -7,6 +7,9 @@
 # Ignore all .zip files
 *.zip
 
-# Ignore .env files
-*.env
-.env.*
+# # Ignore .env files
+# *.env
+# .env.*
+
+# Firebase Admin SDK keys
+*.json
