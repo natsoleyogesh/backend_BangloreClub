@@ -117,7 +117,8 @@ const sendEmail = async (to, subject, htmlBody, attachments = []) => {
 
         // Prepare email options
         const mailOptions = {
-            from: smtpConfig.smtpFrom,
+            // from: smtpConfig.smtpFrom,
+            from: `"Bangalore Club" <${smtpConfig.smtpFrom}>`,
             to,
             subject,
             html: htmlBody,
