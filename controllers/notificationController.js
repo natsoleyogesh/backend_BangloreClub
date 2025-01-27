@@ -124,6 +124,7 @@ const getNotification = async (req, res) => {
                     departmentId: data.departmentId,
                     createdAt: data.createdAt,
                     timeAgo,
+                    isRead: data.isRead
                 };
             });
 
@@ -281,6 +282,7 @@ const getUserNotification = async (req, res) => {
                         departmentId: data.departmentId,
                         createdAt: data.createdAt,
                         timeAgo,
+                        isRead: data.isRead
                     };
                 });
 
