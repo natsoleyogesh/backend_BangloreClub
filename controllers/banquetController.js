@@ -206,6 +206,7 @@ const createBanquet = async (req, res) => {
             status,
             pricingDetailDescription,
             billable,
+            guideline
         } = req.body;
 
         // Validate banquet name
@@ -334,7 +335,8 @@ const createBanquet = async (req, res) => {
             status: status || 'Active',
             pricingDetailDescription,
             billable: parsedBillable,
-            billableDate
+            billableDate,
+            guideline
 
         });
 
@@ -582,7 +584,8 @@ const updateBanquet = async (req, res) => {
             features,
             status,
             pricingDetailDescription,
-            billable
+            billable,
+            guideline
         } = req.body;
 
         // Find the banquet by ID
@@ -694,6 +697,7 @@ const updateBanquet = async (req, res) => {
         if (status) banquet.status = status;
         if (pricingDetailDescription) banquet.pricingDetailDescription = pricingDetailDescription;
         if (parsedBillable !== undefined) banquet.billable = parsedBillable;
+        if (guideline) banquet.guideline = guideline;
         // if (billableDate ) banquet.billableDate = billableDate;
         // Always update `billableDate`, even if it's null
         banquet.billableDate = billableDate;

@@ -34,7 +34,7 @@ const smtpSecretSchema = new mongoose.Schema(
         },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "User", // Reference to admin user
+            ref: "Admin", // Reference to admin user
         },
     },
     {

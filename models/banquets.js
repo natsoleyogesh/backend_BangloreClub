@@ -167,6 +167,11 @@ const banquetsSchema = new mongoose.Schema({
         type: Date,
         default: null,
     },
+    guideline: {
+        type: String,
+        required: true,
+        default: ""
+    },
     status: {
         type: String,
         enum: ['Active', 'Inactive'],

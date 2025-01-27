@@ -2,7 +2,7 @@ const { addContact, getAllContacts, getContactById, updateContact, deleteContact
 const { verifyToken } = require("../../utils/common");
 
 module.exports = (router) => {
-    router.post("/contact", addContact);
+    router.post("/contact", verifyToken, addContact);
     router.get("/contacts", getAllContacts);
     router.get("/contact/:id", getContactById);
     router.put("/contact/:id", updateContact);

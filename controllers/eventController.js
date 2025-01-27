@@ -27,6 +27,9 @@ const createEvent = async (req, res) => {
             primaryMemberPrice,
             dependentMemberPrice,
             guestMemberPrice,
+            kidsMemberPrice,
+            spouseMemberPrice,
+            seniorDependentMemberPrice,
             allottedTicketsMember,
             allottedTicketsGuest,
             rsvpStatus,
@@ -39,7 +42,9 @@ const createEvent = async (req, res) => {
             bookingPermissionSpouse,
             bookingPermissionSon,
             bookingPermissionDaughter,
+            bookingPermissionDependent,
             bookingPermissionSeniorDependent,
+            guideline
         } = req.body;
 
         // Check if the required image file is uploaded
@@ -117,6 +122,9 @@ const createEvent = async (req, res) => {
             primaryMemberPrice,
             dependentMemberPrice,
             guestMemberPrice,
+            kidsMemberPrice,
+            spouseMemberPrice,
+            seniorDependentMemberPrice,
             allottedTicketsMember,
             allottedTicketsGuest,
             totalAvailableTickets,
@@ -132,7 +140,9 @@ const createEvent = async (req, res) => {
             bookingPermissionSpouse: bookingPermissionSpouse || false,
             bookingPermissionSon: bookingPermissionSon || false,
             bookingPermissionDaughter: bookingPermissionDaughter || false,
+            bookingPermissionDependent: bookingPermissionDependent || false,
             bookingPermissionSeniorDependent: bookingPermissionSeniorDependent || false,
+            guideline
         });
 
         // Save the new event to the database
@@ -148,7 +158,148 @@ const createEvent = async (req, res) => {
     }
 };
 
+// const createEvent = async (req, res) => {
+//     try {
+//         const {
+//             eventTitle,
+//             eventSubtitle,
+//             eventStartDate,
+//             eventEndDate,
+//             startTime,
+//             endTime,
+//             ticketPrice,
+//             memberPrices,
+//             allottedTicketsMember,
+//             allottedTicketsGuest,
+//             rsvpStatus,
+//             location,
+//             aboutEvent,
+//             organizer,
+//             showBanner,
+//             bookingPermissionPrimary,
+//             bookingPermissionSpouse,
+//             bookingPermissionSon,
+//             bookingPermissionDaughter,
+//             bookingPermissionDependent,
+//             bookingPermissionSeniorDependent,
+//         } = req.body;
 
+//         // Check if the required image file is uploaded
+//         if (!req.file) {
+//             return res.status(400).json({ message: 'Event Banner Image is Required!' });
+//         }
+
+//         // Normalize event title
+//         const normalizedTitle = eventTitle
+//             .toLowerCase()
+//             .split(' ')
+//             .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+//             .join(' ');
+
+//         // Check if the event already exists
+//         const existingEvent = await Event.findOne({ eventTitle: normalizedTitle, isDeleted: false });
+//         if (existingEvent) {
+//             return res.status(400).json({ message: 'Event with the same title already exists.' });
+//         }
+
+//         const eventImage = `/uploads/event/${req.file.filename}`;
+
+//         // Get current date and time for validation
+//         const currentDateTime = new Date();
+//         const eventStartDateTime = new Date(eventStartDate);
+//         const eventEndDateTime = new Date(eventEndDate);
+
+//         // Parse startTime and endTime into hours and minutes
+//         const [startHour, startMinute] = startTime.split(':').map(Number);
+//         const [endHour, endMinute] = endTime.split(':').map(Number);
+
+//         // Create Date objects with times included
+//         const eventStartDateTimeWithTime = new Date(eventStartDateTime.setHours(startHour, startMinute));
+//         const eventEndDateTimeWithTime = new Date(eventEndDateTime.setHours(endHour, endMinute));
+
+//         // Validation 1: Event start date must not be in the past
+//         if (eventStartDateTime < currentDateTime.setHours(0, 0, 0, 0)) {
+//             return res.status(400).json({ message: 'Event start date must be today or a future date.' });
+//         }
+
+//         // Validation 2: If the event starts today, ensure the start time is in the future
+//         if (
+//             eventStartDateTime.toDateString() === currentDateTime.toDateString() &&
+//             eventStartDateTimeWithTime <= currentDateTime
+//         ) {
+//             return res.status(400).json({
+//                 message: 'Event start time must be later than the current time if the event starts today.',
+//             });
+//         }
+
+//         // Validation 3: Event end date must be after the start date
+//         if (eventEndDateTime < eventStartDateTime) {
+//             return res.status(400).json({ message: 'Event end date must be after the start date.' });
+//         }
+
+//         // Validation 4: Event end time must be after start time if they are on the same day
+//         if (
+//             eventStartDateTime.toDateString() === eventEndDateTime.toDateString() &&
+//             eventEndDateTimeWithTime <= eventStartDateTimeWithTime
+//         ) {
+//             return res.status(400).json({ message: 'Event end time must be after the start time.' });
+//         }
+
+//         // Calculate totalAvailableTickets
+//         const totalAvailableTickets = (allottedTicketsMember || 0) + (allottedTicketsGuest || 0);
+
+//         // Parse memberPrices for tax types
+//         const parsedMemberPrices = {};
+//         for (const key in memberPrices) {
+//             parsedMemberPrices[key] = {
+//                 price: memberPrices[key]?.price || 0,
+//                 taxTypes: Array.isArray(memberPrices[key]?.taxTypes)
+//                     ? memberPrices[key].taxTypes
+//                     : typeof memberPrices[key]?.taxTypes === 'string'
+//                         ? JSON.parse(memberPrices[key].taxTypes)
+//                         : [],
+//             };
+//         }
+
+//         // Create a new event
+//         const newEvent = new Event({
+//             eventTitle: normalizedTitle,
+//             eventSubtitle,
+//             eventStartDate,
+//             eventEndDate,
+//             startTime,
+//             endTime,
+//             ticketPrice,
+//             memberPrices: parsedMemberPrices,
+//             allottedTicketsMember,
+//             allottedTicketsGuest,
+//             totalAvailableTickets,
+//             rsvpStatus,
+//             eventImage,
+//             location,
+//             aboutEvent,
+//             organizer,
+//             showBanner: showBanner || false,
+//             bookingPermissionPrimary: bookingPermissionPrimary || true,
+//             bookingPermissionSpouse: bookingPermissionSpouse || false,
+//             bookingPermissionSon: bookingPermissionSon || false,
+//             bookingPermissionDaughter: bookingPermissionDaughter || false,
+//             bookingPermissionDependent: bookingPermissionDependent || false,
+//             bookingPermissionSeniorDependent: bookingPermissionSeniorDependent || false,
+//         });
+
+//         // Save the new event to the database
+//         const savedEvent = await newEvent.save();
+
+//         res.status(201).json({
+//             message: 'Event created successfully.',
+//             event: savedEvent,
+//         });
+//     } catch (error) {
+//         console.error('Error creating event:', error.message);
+//         res.status(500).json({ message: 'Internal server error.' });
+//     }
+// };
 
 const getAllEvents = async (req, res) => {
     try {
@@ -197,6 +348,61 @@ const getAllEvents = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error.' });
     }
 };
+
+
+// const getAllEvents = async (req, res) => {
+//     try {
+//         const { isAdmin } = req.query;
+
+//         // Get the current date and time
+//         const currentDateTime = new Date();
+
+//         // Determine the query for events based on admin or non-admin access
+//         let query = { isDeleted: false };
+
+//         if (isAdmin === 'true') {
+//             // Admin access: Fetch all non-deleted events without filtering by date
+//             query = { isDeleted: false };
+//         } else {
+//             // Non-admin access: Fetch only non-expired events
+//             query = {
+//                 isDeleted: false,
+//                 $or: [
+//                     // Future or ongoing events
+//                     { eventEndDate: { $gte: currentDateTime.toISOString().split('T')[0] } },
+//                     // Events ending today but still ongoing based on time
+//                     {
+//                         $and: [
+//                             { eventEndDate: currentDateTime.toISOString().split('T')[0] },
+//                             { endTime: { $gt: currentDateTime.toTimeString().split(' ')[0] } },
+//                         ],
+//                     },
+//                 ],
+//             };
+//         }
+
+//         // Fetch events and populate the nested taxTypes fields for each member price
+//         const events = await Event.find(query)
+//             .populate('memberPrices.primaryMemberPrice.taxTypes')
+//             .populate('memberPrices.dependentMemberPrice.taxTypes')
+//             .populate('memberPrices.guestMemberPrice.taxTypes')
+//             .populate('memberPrices.kidsMemberPrice.taxTypes')
+//             .populate('memberPrices.spouseMemberPrice.taxTypes')
+//             .populate('memberPrices.seniorDependentMemberPrice.taxTypes');
+
+//         // Reverse events to show the latest first
+//         const allEvents = events.reverse();
+
+//         // Return the fetched events
+//         return res.status(200).json({
+//             message: 'Events fetched successfully.',
+//             allEvents,
+//         });
+//     } catch (error) {
+//         console.error('Error fetching events:', error);
+//         return res.status(500).json({ message: 'Internal server error.' });
+//     }
+// };
 
 
 const getEventById = async (req, res) => {
@@ -250,6 +456,9 @@ const updateEvent = async (req, res) => {
             primaryMemberPrice,
             dependentMemberPrice,
             guestMemberPrice,
+            kidsMemberPrice,
+            spouseMemberPrice,
+            seniorDependentMemberPrice,
             allottedTicketsMember,
             allottedTicketsGuest,
             rsvpStatus,
@@ -263,7 +472,9 @@ const updateEvent = async (req, res) => {
             bookingPermissionSpouse,
             bookingPermissionSon,
             bookingPermissionDaughter,
+            bookingPermissionDependent,
             bookingPermissionSeniorDependent,
+            guideline
         } = req.body;
 
         // Find the existing event
@@ -381,6 +592,9 @@ const updateEvent = async (req, res) => {
             primaryMemberPrice: primaryMemberPrice || existingEvent.primaryMemberPrice,
             dependentMemberPrice: dependentMemberPrice || existingEvent.dependentMemberPrice,
             guestMemberPrice: guestMemberPrice || existingEvent.guestMemberPrice,
+            kidsMemberPrice: kidsMemberPrice || existingEvent.kidsMemberPrice,
+            spouseMemberPrice: spouseMemberPrice || existingEvent.spouseMemberPrice,
+            seniorDependentMemberPrice: seniorDependentMemberPrice || existingEvent.seniorDependentMemberPrice,
             allottedTicketsMember: allottedTicketsMember || existingEvent.allottedTicketsMember,
             allottedTicketsGuest: allottedTicketsGuest || existingEvent.allottedTicketsGuest,
             totalAvailableTickets: totalAvailableTickets,
@@ -389,6 +603,7 @@ const updateEvent = async (req, res) => {
             eventImage: eventImage,
             location: location || existingEvent.location,
             aboutEvent: aboutEvent || existingEvent.aboutEvent,
+            guideline: guideline || existingEvent.guideline,
             organizer: organizer || existingEvent.organizer,
             status: status || existingEvent.status,
             taxTypes: parsedTaxTypes || existingEvent.taxTypes,
@@ -405,6 +620,10 @@ const updateEvent = async (req, res) => {
                 bookingPermissionSeniorDependent !== undefined
                     ? bookingPermissionSeniorDependent
                     : existingEvent.bookingPermissionSeniorDependent,
+            bookingPermissionDependent:
+                bookingPermissionDependent !== undefined
+                    ? bookingPermissionDependent
+                    : existingEvent.bookingPermissionDependent,
         };
 
         // Update the event using findByIdAndUpdate
@@ -426,6 +645,255 @@ const updateEvent = async (req, res) => {
         res.status(500).json({ message: 'Internal server error.' });
     }
 };
+
+
+// const getEventById = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const { operation } = req.query;
+
+//         // Validate event ID
+//         if (!id) {
+//             return res.status(400).json({ message: 'Please provide the Event ID.' });
+//         }
+
+//         // Create a query to find the event by ID
+//         const query = Event.findById(id);
+
+//         // If operation is not 'edit', populate the nested taxTypes fields
+//         if (operation !== 'edit') {
+//             query
+//                 .populate('memberPrices.primaryMemberPrice.taxTypes')
+//                 .populate('memberPrices.dependentMemberPrice.taxTypes')
+//                 .populate('memberPrices.guestMemberPrice.taxTypes')
+//                 .populate('memberPrices.kidsMemberPrice.taxTypes')
+//                 .populate('memberPrices.spouseMemberPrice.taxTypes')
+//                 .populate('memberPrices.seniorDependentMemberPrice.taxTypes');
+//         }
+
+//         const event = await query;
+
+//         // Check if event exists and is not deleted
+//         if (!event || event.isDeleted) {
+//             return res.status(404).json({ message: 'Event not found.' });
+//         }
+
+//         // Respond with the event details
+//         res.status(200).json({
+//             message: 'Event fetched successfully.',
+//             event,
+//         });
+//     } catch (error) {
+//         console.error('Error fetching event:', error);
+//         res.status(500).json({ message: 'Internal server error.' });
+//     }
+// };
+
+
+
+// const updateEvent = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         let {
+//             eventTitle,
+//             eventSubtitle,
+//             eventStartDate,
+//             eventEndDate,
+//             startTime,
+//             endTime,
+//             ticketPrice,
+//             memberPrices,
+//             allottedTicketsMember,
+//             allottedTicketsGuest,
+//             rsvpStatus,
+//             location,
+//             aboutEvent,
+//             organizer,
+//             status,
+//             showBanner,
+//             bookingPermissionPrimary,
+//             bookingPermissionSpouse,
+//             bookingPermissionSon,
+//             bookingPermissionDaughter,
+//             bookingPermissionDependent,
+//             bookingPermissionSeniorDependent,
+//         } = req.body;
+
+//         // Find the existing event
+//         const existingEvent = await Event.findById(id);
+
+//         if (!existingEvent) {
+//             return res.status(404).json({ message: 'Event not found.' });
+//         }
+
+//         let normalizedTitle;
+//         if (eventTitle) {
+//             normalizedTitle = eventTitle
+//                 .toLowerCase()
+//                 .split(' ')
+//                 .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+//                 .join(' ');
+
+//             const duplicateEvent = await Event.findOne({
+//                 eventTitle: normalizedTitle,
+//                 _id: { $ne: id }, // Exclude the current event by ID
+//             });
+
+//             if (duplicateEvent) {
+//                 return res.status(400).json({ message: 'An event with this title already exists.' });
+//             }
+//         }
+
+//         // Get the current date and time
+//         const currentDateTime = new Date();
+
+//         // Validate eventStartDate and eventEndDate if provided
+//         let updatedEventStartDate = existingEvent.eventStartDate;
+//         let updatedEventEndDate = existingEvent.eventEndDate;
+
+//         if (eventStartDate) {
+//             updatedEventStartDate = new Date(eventStartDate);
+
+//             // Check if the provided start date is in the past
+//             if (updatedEventStartDate < currentDateTime.setHours(0, 0, 0, 0)) {
+//                 return res.status(400).json({
+//                     message: 'Event start date cannot be in the past.',
+//                 });
+//             }
+//         }
+
+//         if (eventEndDate) {
+//             updatedEventEndDate = new Date(eventEndDate);
+
+//             // Check if the end date is before the start date
+//             if (updatedEventEndDate < updatedEventStartDate) {
+//                 return res.status(400).json({
+//                     message: 'Event end date must be after the start date.',
+//                 });
+//             }
+//         }
+
+//         let eventStartTime, eventEndTime;
+
+//         // Validate startTime and endTime if provided
+//         if (updatedEventStartDate || startTime || endTime) {
+//             const eventStartDateTime = updatedEventStartDate || existingEvent.eventStartDate;
+//             const [startHour, startMinute] = (startTime || existingEvent.startTime).split(':').map(Number);
+//             const [endHour, endMinute] = (endTime || existingEvent.endTime).split(':').map(Number);
+
+//             // Create Date objects for startTime and endTime
+//             eventStartTime = new Date(eventStartDateTime);
+//             eventStartTime.setHours(startHour, startMinute);
+
+//             eventEndTime = new Date(updatedEventEndDate || eventStartDateTime);
+//             eventEndTime.setHours(endHour, endMinute);
+
+//             // If the event starts today, validate start time against the current time
+//             if (eventStartDateTime.toDateString() === currentDateTime.toDateString()) {
+//                 if (eventStartTime <= currentDateTime) {
+//                     return res.status(400).json({
+//                         message: 'Event start time must be later than the current time if the event starts today.',
+//                     });
+//                 }
+//             }
+
+//             // Check if end time is after start time
+//             if (eventEndTime <= eventStartTime) {
+//                 return res.status(400).json({
+//                     message: 'Event end time must be after the start time.',
+//                 });
+//             }
+//         }
+
+//         // Calculate totalAvailableTickets if ticket numbers are provided
+//         const totalAvailableTickets =
+//             (allottedTicketsMember !== undefined ? parseInt(allottedTicketsMember) : existingEvent.allottedTicketsMember) +
+//             (allottedTicketsGuest !== undefined ? parseInt(allottedTicketsGuest) : existingEvent.allottedTicketsGuest);
+
+//         // Parse memberPrices
+//         const parsedMemberPrices = {};
+//         if (memberPrices) {
+//             for (const key in memberPrices) {
+//                 parsedMemberPrices[key] = {
+//                     price: memberPrices[key]?.price || existingEvent.memberPrices[key]?.price || 0,
+//                     taxTypes: Array.isArray(memberPrices[key]?.taxTypes)
+//                         ? memberPrices[key].taxTypes
+//                         : existingEvent.memberPrices[key]?.taxTypes || [],
+//                 };
+//             }
+//         }
+
+//         // // Handle bookingPermissions individually if provided
+//         // const updatedBookingPermissions = {
+//         //     primary: bookingPermissions?.primary !== undefined ? bookingPermissions.primary : existingEvent.bookingPermissions?.primary,
+//         //     spouse: bookingPermissions?.spouse !== undefined ? bookingPermissions.spouse : existingEvent.bookingPermissions?.spouse,
+//         //     son: bookingPermissions?.son !== undefined ? bookingPermissions.son : existingEvent.bookingPermissions?.son,
+//         //     daughter: bookingPermissions?.daughter !== undefined ? bookingPermissions.daughter : existingEvent.bookingPermissions?.daughter,
+//         //     dependent: bookingPermissions?.dependent !== undefined ? bookingPermissions.dependent : existingEvent.bookingPermissions?.dependent,
+//         //     seniorDependent: bookingPermissions?.seniorDependent !== undefined ? bookingPermissions.seniorDependent : existingEvent.bookingPermissions?.seniorDependent,
+//         // };
+
+//         // Handle image upload if a new file is provided
+//         const eventImage = req.file ? `/uploads/event/${req.file.filename}` : existingEvent.eventImage;
+
+//         // Update the event fields only if they are provided in the request
+//         const updateData = {
+//             eventTitle: normalizedTitle || existingEvent.eventTitle,
+//             eventSubtitle: eventSubtitle || existingEvent.eventSubtitle,
+//             eventStartDate: updatedEventStartDate || existingEvent.eventStartDate,
+//             eventEndDate: updatedEventEndDate || existingEvent.eventEndDate,
+//             startTime: startTime || existingEvent.startTime,
+//             endTime: endTime || existingEvent.endTime,
+//             ticketPrice: ticketPrice || existingEvent.ticketPrice,
+//             memberPrices: Object.keys(parsedMemberPrices).length > 0 ? parsedMemberPrices : existingEvent.memberPrices,
+//             allottedTicketsMember: allottedTicketsMember || existingEvent.allottedTicketsMember,
+//             allottedTicketsGuest: allottedTicketsGuest || existingEvent.allottedTicketsGuest,
+//             totalAvailableTickets: totalAvailableTickets,
+//             rsvpStatus: rsvpStatus || existingEvent.rsvpStatus,
+//             eventImage: eventImage,
+//             location: location || existingEvent.location,
+//             aboutEvent: aboutEvent || existingEvent.aboutEvent,
+//             organizer: organizer || existingEvent.organizer,
+//             status: status || existingEvent.status,
+//             showBanner: showBanner !== undefined ? showBanner : existingEvent.showBanner,
+//             bookingPermissionPrimary:
+//                 bookingPermissionPrimary !== undefined ? bookingPermissionPrimary : existingEvent.bookingPermissionPrimary,
+//             bookingPermissionSpouse:
+//                 bookingPermissionSpouse !== undefined ? bookingPermissionSpouse : existingEvent.bookingPermissionSpouse,
+//             bookingPermissionSon:
+//                 bookingPermissionSon !== undefined ? bookingPermissionSon : existingEvent.bookingPermissionSon,
+//             bookingPermissionDaughter:
+//                 bookingPermissionDaughter !== undefined ? bookingPermissionDaughter : existingEvent.bookingPermissionDaughter,
+//             bookingPermissionSeniorDependent:
+//                 bookingPermissionSeniorDependent !== undefined
+//                     ? bookingPermissionSeniorDependent
+//                     : existingEvent.bookingPermissionSeniorDependent,
+//             bookingPermissionDependent:
+//                 bookingPermissionDependent !== undefined
+//                     ? bookingPermissionDependent
+//                     : existingEvent.bookingPermissionDependent,
+//         };
+
+//         // Update the event using findByIdAndUpdate
+//         const updatedEvent = await Event.findByIdAndUpdate(id, updateData, {
+//             new: true,
+//             runValidators: true,
+//         });
+
+//         if (!updatedEvent) {
+//             return res.status(404).json({ message: 'Event not found.' });
+//         }
+
+//         res.status(200).json({
+//             message: 'Event updated successfully.',
+//             event: updatedEvent,
+//         });
+//     } catch (error) {
+//         console.error('Error updating event:', error);
+//         res.status(500).json({ message: 'Internal server error.' });
+//     }
+// };
+
 
 
 const deleteEvent = async (req, res) => {
@@ -490,6 +958,7 @@ const bookEvent = async (req, res) => {
             "Spouse": "Spouse",
             "Son": "Son",
             "Daughter": "Daughter",
+            "Dependent": "Dependent",
             "Senior Dependent": "SeniorDependent",
         };
 

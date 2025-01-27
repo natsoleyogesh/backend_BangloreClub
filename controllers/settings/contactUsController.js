@@ -4,7 +4,8 @@ const ContactUs = require('../../models/contactUs');
 const addContact = async (req, res) => {
     try {
         // Destructure the request body
-        const { organizationName, address, phoneNumbers, fax, email, createdBy, status } = req.body;
+        const { organizationName, address, phoneNumbers, fax, email, status } = req.body;
+        const { userId } = req.user;
 
         // Check if the organization already exists
         const existingContact = await ContactUs.findOne({ organizationName });
@@ -19,7 +20,7 @@ const addContact = async (req, res) => {
             phoneNumbers,
             fax,
             email,
-            createdBy,
+            createdBy: userId,
             status,
         });
 
