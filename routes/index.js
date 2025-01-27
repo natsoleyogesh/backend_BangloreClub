@@ -38,6 +38,11 @@ const locationRoutes = require("./masterRoutes/locationRoutes");
 //  settings routes
 const smtpSecretRoutes = require("./settings/SmtpSecretRoutes");
 const logActionRoutes = require("./settings/logActionRoutes");
+// const rolePermissionRoutes = require("./settings/role_permissionRoutes");
+const aboutUsRoutes = require("./settings/aboutUsRoutes");
+const contactUsRoutes = require("./settings/contactUsRoutes");
+
+
 
 adminRoutes(router);
 userRoutes(router);
@@ -75,5 +80,8 @@ locationRoutes(router);
 // setting data
 smtpSecretRoutes(router);
 logActionRoutes(router);
+// rolePermissionRoutes(router);
+aboutUsRoutes(router);
+contactUsRoutes(router);
 
 module.exports = router;
