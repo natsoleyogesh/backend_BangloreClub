@@ -58,6 +58,11 @@ const notificationSchema = new mongoose.Schema(
             type: Boolean,
             default: false, // Default to false
         },
+        // Read/Unread status for the notification
+        isRead: {
+            type: Boolean,
+            default: false, // Default to unread
+        },
     },
     {
         timestamps: true, // Automatically adds `createdAt` and `updatedAt` fields

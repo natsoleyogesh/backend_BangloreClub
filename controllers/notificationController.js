@@ -304,9 +304,48 @@ const getUserNotification = async (req, res) => {
 };
 
 
+const updateNotification = async (req, res) => {
+    try {
+        const { notificationId } = req.params; // Get the notification ID from the request parameters
+        let { isRead } = req.body; // Get the new isRead state from the request body
+
+        // Convert isRead string to boolean
+        if (typeof isRead === 'string') {
+            isRead = isRead.toLowerCase() === 'true'; // Convert "true"/"false" string to boolean
+        }
+
+        // Validate isRead
+        if (typeof isRead !== 'boolean') {
+            return res.status(400).json({ message: 'Invalid isRead value. It must be a boolean.' });
+        }
+
+        // Update the notification's isRead state
+        const updatedNotification = await Notification.findByIdAndUpdate(
+            notificationId,
+            { isRead },
+            { new: true } // Return the updated document
+        );
+
+        // Check if the notification exists
+        if (!updatedNotification) {
+            return res.status(404).json({ message: 'Notification not found.' });
+        }
+
+        // Return the updated notification
+        return res.status(200).json({
+            message: 'Notification updated successfully.',
+            notification: updatedNotification,
+        });
+    } catch (error) {
+        console.error('Error updating notification:', error);
+        return res.status(500).json({ message: 'Internal server error.' });
+    }
+}
+
 module.exports = {
     sendNotification,
     getNotification,
     deleteNotification,
-    getUserNotification
+    getUserNotification,
+    updateNotification
 }
