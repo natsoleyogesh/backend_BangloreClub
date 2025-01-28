@@ -23,13 +23,13 @@ const notificationSchema = new mongoose.Schema(
             default: null, // Null if no department is associated
             required: function () {
                 // departmentId is required unless department is 'All', 'Offer', or 'Event'
-                return !['All', 'Offer', 'Event'].includes(this.department);
+                return !['All', 'Offer', 'Event', "Notice"].includes(this.department);
             },
         },
 
         department: {
             type: String,
-            enum: ['eventBooking', 'RoomBooking', 'BanquetBooking', 'Offer', 'Event'], // Valid model names
+            enum: ['eventBooking', 'RoomBooking', 'BanquetBooking', 'Offer', 'Event', "Notice"], // Valid model names
             required: [true, 'Department is required'],
         },
 

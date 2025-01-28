@@ -183,6 +183,7 @@
 
 const ClubNotice = require('../models/clubNotice'); // The ClubNotice model
 const { toTitleCase } = require('../utils/common');
+const { createNotification } = require('../utils/pushNotification');
 
 // Middleware function for adding a notice
 const addNotice = async (req, res) => {
@@ -223,6 +224,15 @@ const addNotice = async (req, res) => {
 
         // Save to the database
         await newNotice.save();
+
+        // Call the createNotification function
+        await createNotification({
+            title: `${newNotice.title} Is Created`,
+            send_to: "All",
+            push_message: `${newNotice.description}`,
+            department: "Notice",
+            image: bannerImage, // Assign the value directly
+        });
 
         return res.status(201).json({
             message: 'Club Notice added successfully',
