@@ -13,6 +13,7 @@ const { default: mongoose } = require('mongoose');
 const { createAttendanceRecords } = require('./eventAttendanceController');
 const moment = require('moment');
 const Department = require('../models/department');
+const { createNotification } = require('../utils/pushNotification');
 
 const createEvent = async (req, res) => {
     try {
@@ -147,6 +148,16 @@ const createEvent = async (req, res) => {
 
         // Save the new event to the database
         const savedEvent = await newEvent.save();
+
+        // Call the createNotification function
+        await createNotification({
+            title: `${savedEvent.eventTitle} Is Scheduled`,
+            send_to: "All",
+            push_message: `The ${savedEvent.eventTitle} Is Scheduled On ${savedEvent.eventStartDate} To ${savedEvent.eventEndDate} In ${savedEvent.location}`,
+            department: "Event",
+            image: eventImage, // Assign the value directly
+        });
+
 
         res.status(201).json({
             message: 'Event created successfully.',

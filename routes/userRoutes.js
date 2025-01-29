@@ -1,6 +1,6 @@
-const { createUser, loginRequest, verifyOtp, getUserDetails, updateProfilePicture, userLogout, uploadProofs, deleteProofs, updateProfilePictureByUser } = require("../controllers/userController");
+const { createUser, loginRequest, verifyOtp, getUserDetails, updateProfilePicture, userLogout, uploadProofs, deleteProofs, updateProfilePictureByUser, uploadMemberData, uploadMemberAddress } = require("../controllers/userController");
 const { verifyToken } = require("../utils/common");
-const { upload, handleMulterError } = require("../utils/upload");
+const { upload, handleMulterError, xslUpload } = require("../utils/upload");
 
 
 module.exports = (router) => {
@@ -28,5 +28,10 @@ module.exports = (router) => {
     router.put("/member/update-profile-picture/:userId", upload.single("profilePicture"), updateProfilePicture)
     router.post("/update-profile-picture", upload.single("profilePicture"), verifyToken, updateProfilePictureByUser)
 
-    router.post("/member/logout", verifyToken, userLogout)
+    router.post("/member/logout", verifyToken, userLogout);
+
+    router.post("/upload-members", xslUpload.single('file'), uploadMemberData);
+    router.post("/upload-members-address", xslUpload.single('file'), uploadMemberAddress);
+
+
 }

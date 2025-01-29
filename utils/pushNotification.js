@@ -69,7 +69,7 @@ const pushNotification = async (deviceTokens, payload) => {
 const createNotification = async ({ title, send_to, push_message, department, departmentId = null, image = '' }) => {
     try {
         // Validate departmentId if department is not 'All', 'Event', or 'Offer'
-        if (!['All', 'Event', 'Offer'].includes(department) && !departmentId) {
+        if (!['All', 'Event', 'Offer', 'Notice'].includes(department) && !departmentId) {
             throw new Error('Department ID is required for the specified department.');
         }
         // Save notification in database

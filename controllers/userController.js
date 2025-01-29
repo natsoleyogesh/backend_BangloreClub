@@ -6,6 +6,9 @@ const path = require("path");
 const QRCodeHelper = require('../utils/helper');
 const { logAction } = require("./commonController");
 
+const xlsx = require('xlsx');
+
+
 require("dotenv").config();
 // const twilio = require("twilio"); // Uncomment this when you want to use Twilio for OTPs
 
@@ -652,6 +655,215 @@ const deleteProofs = async (req, res) => {
 
 
 
+
+const uploadMemberData = async (req, res) => {
+    try {
+        const filePath = req.file.path;
+        const workbook = xlsx.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+        const savedMembers = [];
+
+        for (const member of data) {
+            // if (member.CATEGORY === "Permanent Member") {
+            if (member.CATEGORY && member.CATEGORY.startsWith("Permanent Member")) {
+                const existingMember = await User.findOne({ memberId: member.MEMBERACCNO });
+                if (existingMember) {
+                    console.log(`Skipping duplicate entry for memberId: ${member.MEMBERACCNO}`);
+                    continue;
+                }
+                // Create Primary Member
+                const primaryMember = new User({
+                    memberId: member.MEMBERACCNO,
+                    title: member.TITLEDESCRIPTION || "Mr.",
+                    name: member.MEMBERNAME,
+                    dateOfBirth: member.DATEOFBIRTH ? new Date(member.DATEOFBIRTH) : null,
+                    relation: "Primary",
+                    maritalStatus: member.MARITALINFO || "Single",
+                    address: "",
+                    address1: "",
+                    address2: "",
+                    city: "",
+                    state: "",
+                    country: "",
+                    pin: "",
+                    email: "", // Placeholder, as email is not in the file
+                    mobileNumber: "", // Placeholder, as mobileNumber is not in the file
+                    otp: null,
+                    age: null,
+                    marriageDate: null,
+                    status: "Active",
+                    activatedDate: Date.now(),
+                    profilePicture: "",
+                    isDeleted: false,
+                    fcmToken: "",
+                    lastLogin: Date.now(),
+                    vehicleNumber: "",
+                    vehicleModel: "",
+                    drivingLicenceNumber: "",
+                    uploadProofs: [],
+                    creditStop: false,
+                    creditLimit: 0,
+                });
+
+                const savedPrimary = await primaryMember.save();
+                savedMembers.push(savedPrimary);
+
+                // Create Spouse if available
+                if (member.SPOUSEID && member.SPOUSENAME) {
+                    const existingSpouse = await User.findOne({ memberId: member.SPOUSEID });
+                    if (existingSpouse) {
+                        console.log(`Skipping duplicate entry for spouseId: ${member.SPOUSEID}`);
+                        continue;
+                    }
+                    const spouseMember = new User({
+                        memberId: member.SPOUSEID,
+                        title: member.SPOUSETITLE || "Mrs.",
+                        name: member.SPOUSENAME,
+                        dateOfBirth: member.SPOUSEDATEOFBIRTH ? new Date(member.SPOUSEDATEOFBIRTH) : null,
+                        relation: "Spouse",
+                        maritalStatus: "Married",
+                        parentUserId: savedPrimary._id,
+                        address: "",
+                        address1: "",
+                        address2: "",
+                        city: "",
+                        state: "",
+                        country: "",
+                        pin: "",
+                        email: "", // Placeholder
+                        mobileNumber: "", // Placeholder
+                        otp: null,
+                        age: null,
+                        marriageDate: null,
+                        status: "Active",
+                        activatedDate: Date.now(),
+                        profilePicture: "",
+                        isDeleted: false,
+                        fcmToken: "",
+                        lastLogin: Date.now(),
+                        vehicleNumber: "",
+                        vehicleModel: "",
+                        drivingLicenceNumber: "",
+                        uploadProofs: [],
+                        creditStop: false,
+                        creditLimit: 0,
+                    });
+
+                    const savedSpouse = await spouseMember.save();
+                    savedMembers.push(savedSpouse);
+                }
+            }
+        }
+        // Delete the uploaded file
+        fs.unlinkSync(filePath);
+
+        return res.status(200).json({ message: "Members and their spouses uploaded successfully", data: savedMembers });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Error uploading members", error: error.message });
+    }
+}
+
+
+const uploadMemberAddress = async (req, res) => {
+    try {
+        const filePath = req.file.path;
+        const workbook = xlsx.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+        const updatedMembers = [];
+
+        for (const address of data) {
+            try {
+                const member = await User.findOne({ memberId: address.ACCNO });
+                if (!member) {
+                    console.log(`Member with memberId: ${address.ACCNO} not found, skipping.`);
+                    continue;
+                }
+
+                // Update the member's address and additional contact details
+                member.address = address.ADDR1 || member.address;
+                member.address1 = address.ADDR2 || member.address1;
+                member.address2 = address.ADDR3 || member.address2;
+                member.city = address.CITY || member.city;
+                member.state = address.STATEDESCRIPTION || member.state;
+                member.country = address.COUNTRYDESCRIPTION || member.country;
+                member.pin = address.PIN || member.pin;
+
+                // Update additional fields if available
+                if (address.PH1 && /^[0-9]{10}$/.test(address.PH1)) {
+                    member.mobileNumber = address.PH1;
+                }
+                if (address.EMAIL1 && /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(address.EMAIL1)) {
+                    member.email = address.EMAIL1;
+                }
+
+                const updatedMember = await member.save();
+                updatedMembers.push(updatedMember);
+            } catch (error) {
+                console.error(`Error updating memberId: ${address.ACCNO}, skipping.`, error.message);
+                continue;
+            }
+        }
+        // Delete the uploaded file
+        fs.unlinkSync(filePath);
+
+        return res.status(200).json({ message: "Member addresses and contact details updated successfully", data: updatedMembers });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Error updating member addresses", error: error.message });
+    }
+}
+
+
+
+// try {
+//     const filePath = req.file.path;
+//     const workbook = xlsx.readFile(filePath);
+//     const sheetName = workbook.SheetNames[0];
+//     const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+//     const updatedMembers = [];
+
+//     for (const address of data) {
+//         const member = await User.findOne({ memberId: address.ACCNO });
+//         if (!member) {
+//             console.log(`Member with memberId: ${address.ACCNO} not found, skipping.`);
+//             continue;
+//         }
+
+//         // Update the member's address and additional contact details
+//         member.address = address.ADDR1 || member.address;
+//         member.address1 = address.ADDR2 || member.address1;
+//         member.address2 = address.ADDR3 || member.address2;
+//         member.city = address.CITY || member.city;
+//         member.state = address.STATEDESCRIPTION || member.state;
+//         member.country = address.COUNTRYDESCRIPTION || member.country;
+//         member.pin = address.PIN || member.pin;
+
+//         // Update additional fields if available
+//         if (address.PH1) {
+//             member.mobileNumber = address.PH1 || member.mobileNumber;
+//         }
+//         if (address.EMAIL1) {
+//             member.email = address.EMAIL1 || member.email;
+//         }
+
+//         const updatedMember = await member.save();
+//         updatedMembers.push(updatedMember);
+//     }
+//     // Delete the uploaded file
+//     fs.unlinkSync(filePath);
+
+//     return res.status(200).json({ message: "Member addresses and contact details updated successfully", data: updatedMembers });
+// } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ message: "Error updating member addresses", error: error.message });
+// }
+
 module.exports = {
     createUser,
     loginRequest,
@@ -661,5 +873,11 @@ module.exports = {
     userLogout,
     uploadProofs,
     deleteProofs,
-    updateProfilePictureByUser
+    updateProfilePictureByUser,
+
+
+
+    // upload apis
+    uploadMemberData,
+    uploadMemberAddress
 };
