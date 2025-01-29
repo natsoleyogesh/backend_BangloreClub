@@ -240,6 +240,7 @@ const createNotification = async ({ title, send_to, push_message, department, de
             notification.successCount = response.successCount || 0;
             notification.failureCount = response.failureCount || 0;
             notification.isShow = true;
+            notification.isSent = true;
             await notification.save();
 
             return {

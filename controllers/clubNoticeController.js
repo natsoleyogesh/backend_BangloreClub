@@ -229,7 +229,8 @@ const addNotice = async (req, res) => {
         await createNotification({
             title: `${newNotice.title} Is Created`,
             send_to: "All",
-            push_message: `${newNotice.description}`,
+            // push_message: `${newNotice.description}`,
+            push_message: `Notice is Created Please check to Notices In Banglore Club`,
             department: "Notice",
             image: bannerImage, // Assign the value directly
         });

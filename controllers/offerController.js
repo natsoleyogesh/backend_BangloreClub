@@ -68,7 +68,8 @@ const addOffer = async (req, res) => {
         await createNotification({
             title: `${newOffer.title} Is Created`,
             send_to: "All",
-            push_message: `${newOffer.description}`,
+            // push_message: `${newOffer.description}`,
+            push_message: `Offer is Created Please Go To The Banglore Club App`,
             department: "Offer",
             image: bannerImagePath, // Assign the value directly
         });
