@@ -1346,6 +1346,15 @@ const createBanquetBooking = async (req, res) => {
             // ]
         );
 
+        // Call the createNotification function
+        await createNotification({
+            title: `${memberData.banquetType.banquetName.name}Banquet Booking Request Is Generated`,
+            send_to: "User",
+            push_message: "Your banquet Booking Requested Is Generated And Request Send For Club To Verification",
+            department: "BanquetBooking",
+            departmentId: banquetBooking._id
+        });
+
         return res.status(201).json({
             message: 'Banquet booking created successfully.',
             banquetBooking

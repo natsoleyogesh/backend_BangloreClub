@@ -42,7 +42,7 @@ const getNotification = async (req, res) => {
     try {
         const { filterType, customStartDate, customEndDate } = req.query;
 
-        let filter = { isDeleted: false };
+        let filter = { isDeleted: false, isShow: true };
 
         // Apply time range filters based on `filterType`
         if (filterType) {
@@ -118,13 +118,15 @@ const getNotification = async (req, res) => {
                 return {
                     _id: data._id,
                     send_to: data.send_to,
+                    title: data.title || "N/A",
                     push_message: data.push_message,
                     image: data.image,
                     department: data.department,
                     departmentId: data.departmentId,
                     createdAt: data.createdAt,
                     timeAgo,
-                    isRead: data.isRead
+                    isRead: data.isRead,
+                    isShow: data.isShow
                 };
             });
 
@@ -184,7 +186,7 @@ const getUserNotification = async (req, res) => {
     try {
         const { filterType, customStartDate, customEndDate } = req.query;
 
-        let filter = { isDeleted: false };
+        let filter = { isDeleted: false, isShow: true };
 
         // Apply time range filters based on `filterType`
         if (filterType) {
@@ -276,6 +278,7 @@ const getUserNotification = async (req, res) => {
                     return {
                         _id: data._id,
                         send_to: data.send_to,
+                        title: data.title || "N/A",
                         push_message: data.push_message,
                         image: data.image,
                         department: data.department,

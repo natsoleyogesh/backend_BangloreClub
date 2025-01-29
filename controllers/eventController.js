@@ -1338,6 +1338,16 @@ const bookEvent = async (req, res) => {
 
         await addBilling(billingPrimaryMember, 'Event', { eventBooking: newBooking._id }, newBooking.ticketDetails.subtotal, 0, newBooking.ticketDetails.taxAmount, newBooking.ticketDetails.totalAmount, newBooking.primaryMemberId)
 
+
+        // Call the createNotification function
+        await createNotification({
+            title: `${memberData.eventId.eventTitle}Event Booking Is ${newBooking.bookingStatus}`,
+            send_to: "User",
+            push_message: "Your Event Booking Is Confirmed.",
+            department: "eventBooking",
+            departmentId: newBooking._id
+        });
+
         let primaryMemberDetails = await User.findById(primaryMemberId);
         // If the member is not primary, fetch the actual primary member
         if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {

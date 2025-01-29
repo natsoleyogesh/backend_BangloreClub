@@ -13,6 +13,7 @@ firebase.initializeApp({
     credential: firebase.credential.cert(serviceAccount),
     debug: true,
 });
+
 const pushNotification = async (deviceTokens, payload) => {
     try {
         const validDeviceTokens = deviceTokens.filter(
@@ -66,19 +67,121 @@ const pushNotification = async (deviceTokens, payload) => {
 };
 
 
+// const createNotification = async ({ title, send_to, push_message, department, departmentId = null, image = '' }) => {
+//     try {
+//         // Validate departmentId if department is not 'All', 'Event', or 'Offer'
+//         if (!['All', 'Event', 'Offer', 'Notice'].includes(department) && !departmentId) {
+//             throw new Error('Department ID is required for the specified department.');
+//         }
+//         // Save notification in database
+//         const notification = new Notification({
+//             send_to,
+//             push_message,
+//             department,
+//             departmentId,
+//             image,
+//         });
+
+//         await notification.save();
+
+//         // Fetch user tokens based on recipient type
+//         let allDeviceTokens = [];
+//         if (send_to === 'All') {
+//             const userTokens = await User.find({}, 'fcmToken').exec();
+//             allDeviceTokens = userTokens.map((user) => user.fcmToken);
+//         } else if (send_to === 'User') {
+//             // Dynamically fetch the user based on department and departmentId
+//             let userId = null;
+
+//             // Determine the booking model based on department
+//             const bookingModelMap = {
+//                 RoomBooking: RoomBooking,
+//                 EventBooking: EventBooking,
+//                 BanquetBooking: BanquetBooking,
+//                 // Add more models here as needed
+//             };
+
+//             const BookingModel = bookingModelMap[department];
+//             if (!BookingModel) {
+//                 throw new Error(`Invalid department specified: ${department}`);
+//             }
+
+//             // Fetch the booking document to get the userId
+//             const booking = await BookingModel.findById(departmentId, 'primaryMemberId').exec();
+//             if (!booking) {
+//                 throw new Error(`No booking found with ID: ${departmentId}`);
+//             }
+
+//             userId = booking.primaryMemberId;
+
+//             // Fetch the user's FCM token
+//             const user = await User.findById(userId, 'fcmToken').exec();
+//             if (user && user.fcmToken) {
+//                 allDeviceTokens.push(user.fcmToken);
+//             }
+//         } else if (send_to === 'Admin') {
+//             const adminTokens = await User.find({ role: 'Admin' }, 'fcmToken').exec();
+//             allDeviceTokens = adminTokens.map((admin) => admin.fcmToken);
+//         } else {
+//             throw new Error('Invalid recipient type specified.');
+//         }
+
+//         // Prepare the notification payload
+//         const payload = {
+//             notification: {
+//                 title: title,
+//                 body: push_message,
+//             },
+//             data: {
+//                 push_message,
+//                 image,
+//                 isAdd: 'true',
+//             },
+//         };
+
+//         // Send push notification
+//         const response = await pushNotification(allDeviceTokens, payload);
+
+//         // Update notification with success and failure counts
+//         notification.successCount = response.successCount || 0;
+//         notification.failureCount = response.failureCount || 0;
+//         await notification.save();
+
+//         return {
+//             message: 'Notification sent successfully.',
+//             totalSuccess: response.successCount,
+//             totalFailure: response.failureCount,
+//         };
+//     } catch (error) {
+//         console.error('Error in createNotification:', error.message);
+//         throw error;
+//     }
+// };
+
 const createNotification = async ({ title, send_to, push_message, department, departmentId = null, image = '' }) => {
     try {
-        // Validate departmentId if department is not 'All', 'Event', or 'Offer'
         if (!['All', 'Event', 'Offer', 'Notice'].includes(department) && !departmentId) {
             throw new Error('Department ID is required for the specified department.');
         }
-        // Save notification in database
+
+        let scheduledTime = null;
+        let isDelayed = false;
+
+        // Delay notification by 30 minutes only for booking-related departments
+        if (['eventBooking', 'RoomBooking', 'BanquetBooking'].includes(department)) {
+            scheduledTime = new Date();
+            scheduledTime.setMinutes(scheduledTime.getMinutes() + 2); // 30
+            isDelayed = true;
+        }
+
         const notification = new Notification({
+            title,
             send_to,
             push_message,
             department,
             departmentId,
             image,
+            scheduledTime,
         });
 
         await notification.save();
@@ -89,15 +192,12 @@ const createNotification = async ({ title, send_to, push_message, department, de
             const userTokens = await User.find({}, 'fcmToken').exec();
             allDeviceTokens = userTokens.map((user) => user.fcmToken);
         } else if (send_to === 'User') {
-            // Dynamically fetch the user based on department and departmentId
             let userId = null;
 
-            // Determine the booking model based on department
             const bookingModelMap = {
                 RoomBooking: RoomBooking,
-                EventBooking: EventBooking,
+                eventBooking: EventBooking,
                 BanquetBooking: BanquetBooking,
-                // Add more models here as needed
             };
 
             const BookingModel = bookingModelMap[department];
@@ -105,7 +205,6 @@ const createNotification = async ({ title, send_to, push_message, department, de
                 throw new Error(`Invalid department specified: ${department}`);
             }
 
-            // Fetch the booking document to get the userId
             const booking = await BookingModel.findById(departmentId, 'primaryMemberId').exec();
             if (!booking) {
                 throw new Error(`No booking found with ID: ${departmentId}`);
@@ -113,7 +212,6 @@ const createNotification = async ({ title, send_to, push_message, department, de
 
             userId = booking.primaryMemberId;
 
-            // Fetch the user's FCM token
             const user = await User.findById(userId, 'fcmToken').exec();
             if (user && user.fcmToken) {
                 allDeviceTokens.push(user.fcmToken);
@@ -121,11 +219,8 @@ const createNotification = async ({ title, send_to, push_message, department, de
         } else if (send_to === 'Admin') {
             const adminTokens = await User.find({ role: 'Admin' }, 'fcmToken').exec();
             allDeviceTokens = adminTokens.map((admin) => admin.fcmToken);
-        } else {
-            throw new Error('Invalid recipient type specified.');
         }
 
-        // Prepare the notification payload
         const payload = {
             notification: {
                 title: title,
@@ -138,26 +233,26 @@ const createNotification = async ({ title, send_to, push_message, department, de
             },
         };
 
-        // Send push notification
-        const response = await pushNotification(allDeviceTokens, payload);
+        // If it's not a delayed notification, send it immediately
+        if (!isDelayed) {
+            const response = await pushNotification(allDeviceTokens, payload);
 
-        // Update notification with success and failure counts
-        notification.successCount = response.successCount || 0;
-        notification.failureCount = response.failureCount || 0;
-        await notification.save();
+            notification.successCount = response.successCount || 0;
+            notification.failureCount = response.failureCount || 0;
+            notification.isShow = true;
+            await notification.save();
 
-        return {
-            message: 'Notification sent successfully.',
-            totalSuccess: response.successCount,
-            totalFailure: response.failureCount,
-        };
+            return {
+                message: 'Notification sent successfully.',
+                totalSuccess: response.successCount,
+                totalFailure: response.failureCount,
+            };
+        }
     } catch (error) {
         console.error('Error in createNotification:', error.message);
         throw error;
     }
 };
-
-
 
 module.exports = {
     pushNotification,

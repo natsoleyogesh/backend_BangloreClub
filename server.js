@@ -6,6 +6,9 @@ const routes = require("./routes");
 const isAuthenticated = require("./utils/auth");
 const { initWebSocket } = require("./utils/websocket");
 const http = require("http"); // Import http to create server
+const cron = require("./utils/cronJobs"); // Import the cron job
+
+
 require("dotenv").config();
 
 const app = express();
@@ -46,6 +49,8 @@ app.use("/api/uploads", express.static("uploads"));
 
 // Database Connection
 connectDB();
+
+// cron();
 
 // Routes
 // app.use("/", isAuthenticated(), routes);
