@@ -88,17 +88,44 @@ const eventBookingSchema = new mongoose.Schema(
                 required: true,
                 default: 0,
             },
+            spouseMemberCount: {
+                type: Number,
+                required: true,
+                default: 0,
+            },
+            kidsMemberCount: {
+                type: Number,
+                required: true,
+                default: 0,
+            },
+            seniorDependentMemberCount: {
+                type: Number,
+                required: true,
+                default: 0,
+            },
         },
         ticketDetails: {
             primaryMemberPrice: {
                 type: Number,
                 required: true,
             },
-            dependentPrice: {
+            dependentMemberPrice: {
                 type: Number,
                 required: true,
             },
             guestPrice: {
+                type: Number,
+                required: true,
+            },
+            spouseMemberPrice: {
+                type: Number,
+                required: true,
+            },
+            kidsMemberPrice: {
+                type: Number,
+                required: true,
+            },
+            seniorDependentMemberPrice: {
                 type: Number,
                 required: true,
             },

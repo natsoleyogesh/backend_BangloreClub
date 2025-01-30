@@ -151,7 +151,7 @@ const createEvent = async (req, res) => {
 
         // Call the createNotification function
         await createNotification({
-            title: `${savedEvent.eventTitle} Is Scheduled`,
+            title: `Event - ${savedEvent.eventTitle} Is Scheduled`,
             send_to: "All",
             push_message: `The ${savedEvent.eventTitle} Is Scheduled On ${savedEvent.eventStartDate} To ${savedEvent.eventEndDate} In ${savedEvent.location}`,
             department: "Event",
@@ -932,6 +932,590 @@ const deleteEvent = async (req, res) => {
     }
 }
 
+// const bookEvent = async (req, res) => {
+//     try {
+//         const { eventId, primaryMemberId, dependents, guests, primaryMemberChecked } = req.body;
+
+//         // Validate request data
+//         if (!eventId || !primaryMemberId) {
+//             return res.status(400).json({ message: 'Event ID and Primary Member ID are required.' });
+//         }
+
+//         // Check if the user has already booked this event
+//         const existingBooking = await EventBooking.findOne({ eventId, primaryMemberId, bookingStatus: "Confirmed" });
+//         // if (existingBooking) {
+//         //     return res.status(400).json({ message: 'You have already booked this event.' });
+//         // }
+
+//         // Fetch the event details
+//         const event = await Event.findById(eventId).populate("taxTypes");
+//         if (!event) {
+//             return res.status(404).json({ message: 'Event not found.' });
+//         }
+
+//         if (event.status !== 'Active') {
+//             return res.status(400).json({ message: 'Event is not active or available for booking.' });
+//         }
+
+//         // Fetch the primary member's details
+//         const member = await User.findById(primaryMemberId).populate("parentUserId");
+//         if (!member) {
+//             return res.status(404).json({ message: "Primary member not found." });
+//         }
+
+//         // Define a mapping for relation types
+//         const relationMapping = {
+//             "Primary": "Primary",
+//             "Spouse": "Spouse",
+//             "Son": "Son",
+//             "Daughter": "Daughter",
+//             "Dependent": "Dependent",
+//             "Senior Dependent": "SeniorDependent",
+//         };
+
+//         const permissionKey = relationMapping[member.relation];
+
+//         // Validate the booking permission for the relation
+//         if (!permissionKey || !event[`bookingPermission${permissionKey}`]) {
+//             return res.status(403).json({
+//                 message: `Members with the relationship type '${member.relation}' are not eligible for booking this event.`,
+//             });
+//         }
+
+//         // Calculate ticket requirements
+//         const primaryMemberCount = primaryMemberChecked ? 1 : 0;
+//         const dependentMemberCount = dependents ? dependents.length : 0;
+//         const guestMemberCount = guests ? guests.length : 0;
+
+//         const totalMemberCount = primaryMemberCount + dependentMemberCount + guestMemberCount;
+
+//         // Check ticket availability
+//         if (event.totalAvailableTickets < totalMemberCount) {
+//             return res.status(400).json({ message: "Not enough tickets available for this event." });
+//         }
+
+//         const subtotal =
+//             primaryMemberCount * event.primaryMemberPrice +
+//             dependentMemberCount * event.dependentMemberPrice +
+//             guestMemberCount * event.guestMemberPrice;
+
+//         // Calculate taxes based on taxTypes
+//         const taxDetails = event.taxTypes.map(taxType => {
+//             const taxAmount = (subtotal * taxType.percentage) / 100;
+//             return {
+//                 taxType: taxType.name || "N/A",
+//                 taxRate: taxType.percentage || 0,
+//                 taxAmount: Math.round(taxAmount * 100) / 100, // Round to 2 decimal places
+//             };
+//         });
+
+//         const totalTaxAmount = taxDetails.reduce((acc, tax) => acc + tax.taxAmount, 0);
+//         const totalAmount = subtotal + totalTaxAmount;
+
+//         // Members for QR code generation
+//         const members = [
+//             ...(primaryMemberChecked ? [{ userId: primaryMemberId, type: "Primary", eventId }] : []),
+//             ...(dependents || []).map(dep => ({ userId: dep.userId, type: "Dependent", eventId })),
+//             ...(guests || []).map(guest => ({ userId: guest.name, type: "Guest", eventId })), // Guest uses name
+//         ];
+
+//         // Generate QR codes for members
+//         const qrCodes = await QRCodeHelper.generateMultipleQRCodes(members);
+
+//         // Generate primary member QR code if checked
+//         const primaryMemberQRCodeData = primaryMemberChecked
+//             ? qrCodes.find(qr => qr.userId.toString() === primaryMemberId.toString())
+//             : null;
+
+//         // Generate QR code for all details
+//         const uniqueNumber = Math.floor(Math.random() * 10000000000); // Generates a random 10-digit number
+//         const uniqueQRCodeId = `QR${uniqueNumber}`; // The unique QR code string
+//         const allDetailsQRCodeData = {
+//             uniqueQRCodeId,
+//             eventId,
+//             eventTitle: event.eventTitle,
+//             primaryMemberId,
+//             dependents,
+//             guests,
+//             ticketDetails: {
+//                 primaryMemberPrice: event.primaryMemberPrice,
+//                 dependentPrice: event.dependentMemberPrice,
+//                 guestPrice: event.guestMemberPrice,
+//                 taxTypes: taxDetails,
+//                 subtotal,
+//                 taxAmount: totalTaxAmount,
+//                 totalAmount,
+//             },
+//         };
+//         const allDetailsQRCode = await QRCodeHelper.generateQRCode(allDetailsQRCodeData);
+
+//         // Prepare dependents and guests with QR codes
+//         const preparedDependents = dependents
+//             ? dependents.map(dep => ({
+//                 userId: dep.userId,
+//                 qrCode: qrCodes.find(qr => qr.userId.toString() === dep.userId.toString()).qrCode,
+//                 uniqueQRCode: qrCodes.find(qr => qr.userId.toString() === dep.userId.toString()).uniqueQRCodeData,
+//             }))
+//             : [];
+//         const preparedGuests = guests
+//             ? guests.map(guest => ({
+//                 name: guest.name,
+//                 email: guest.email,
+//                 phone: guest.phone,
+//                 qrCode: qrCodes.find(qr => qr.userId === guest.name).qrCode,
+//                 uniqueQRCode: qrCodes.find(qr => qr.userId === guest.name).uniqueQRCodeData,
+//             }))
+//             : [];
+
+//         // Save the booking
+//         const newBooking = new EventBooking({
+//             eventId,
+//             primaryMemberId,
+//             // primaryMemberQRCode: qrCodes.find(qr => qr.userId.toString() === primaryMemberId.toString()).qrCode,
+//             // uniqueQRCode: qrCodes.find(qr => qr.userId.toString() === primaryMemberId.toString()).uniqueQRCodeData,
+//             primaryMemberQRCode: primaryMemberQRCodeData ? primaryMemberQRCodeData.qrCode : null,
+//             uniqueQRCode: primaryMemberQRCodeData ? primaryMemberQRCodeData.uniqueQRCodeData : null,
+//             dependents: preparedDependents,
+//             guests: preparedGuests,
+//             counts: {
+//                 primaryMemberCount,
+//                 dependentMemberCount,
+//                 guestMemberCount,
+//             },
+//             ticketDetails: {
+//                 primaryMemberPrice: event.primaryMemberPrice,
+//                 dependentPrice: event.dependentMemberPrice,
+//                 guestPrice: event.guestMemberPrice,
+//                 taxTypes: taxDetails,
+//                 subtotal,
+//                 taxAmount: totalTaxAmount,
+//                 totalAmount,
+//             },
+//             allDetailsQRCode,
+//             allDetailsUniqueQRCode: uniqueQRCodeId,
+//             paymentStatus: 'Pending',
+//             bookingStatus: 'Confirmed',
+//         });
+
+//         await newBooking.save();
+
+//         // Update the available tickets in the Event schema
+//         // Update available tickets in the database
+//         event.allottedTicketsMember -= primaryMemberCount + dependentMemberCount;
+//         event.allottedTicketsGuest -= guestMemberCount;
+//         event.totalAvailableTickets -= totalMemberCount;
+
+//         // Validate updated ticket counts
+//         if (event.allottedTicketsMember < 0 || event.allottedTicketsGuest < 0) {
+//             return res.status(400).json({
+//                 message: "Invalid ticket count update. Ensure the requested tickets are available.",
+//             });
+//         }
+
+//         await event.save();
+
+//         // Call this function after booking is created
+//         await createAttendanceRecords(newBooking);
+
+//         // Send confirmation email
+//         const memberData = await EventBooking.findById(newBooking._id)
+//             .populate("eventId")
+//             .populate("primaryMemberId")
+//             .populate("dependents.userId");
+
+
+//         let primaryName;
+//         let primaryEmail;
+//         let primaryContact;
+
+//         // Send email to primary member
+//         if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
+//             primaryName = memberData?.primaryMemberId?.name
+//             primaryEmail = memberData?.primaryMemberId?.email
+//             primaryContact = memberData?.primaryMemberId?.mobileNumber
+//         } else {
+//             primaryName = member.parentUserId.name
+//             primaryEmail = member.parentUserId.email
+//             primaryContact = member.parentUserId.mobileNumber
+//         }
+
+
+//         const templateData = {
+//             uniqueQRCode: primaryMemberChecked ? newBooking.uniqueQRCode : newBooking.allDetailsUniqueQRCode,
+//             qrCode: allDetailsQRCode, // Base64 string for QR Code
+//             eventTitle: event.eventTitle,
+//             eventDate: event.eventStartDate.toDateString(),
+//             bookedBy: memberData?.primaryMemberId?.name,
+//             primaryName: primaryName,
+//             primaryEmail: primaryEmail,
+//             primaryContact: primaryContact,
+//             familyMembers: memberData.dependents.length > 0
+//                 ? memberData.dependents.map(dep => ({ name: dep.userId.name, email: dep.userId.email, contact: dep.userId.mobileNumber }))
+//                 : [],
+//             guests: memberData.guests.length > 0
+//                 ? memberData.guests.map(guest => ({
+//                     name: guest.name,
+//                     email: guest.email,
+//                     contact: guest.phone,
+//                 }))
+//                 : [],
+//             taxTypes: newBooking.ticketDetails.taxTypes.length > 0
+//                 ? newBooking.ticketDetails.taxTypes.map(taxType => ({
+//                     taxType: taxType.taxType || "N/A",
+//                     taxRate: taxType.taxRate || 0,
+//                     taxAmount: taxType.taxAmount || 0,
+//                 }))
+//                 : [],
+//             subtotal: newBooking.ticketDetails.subtotal.toFixed(2),
+//             taxAmount: newBooking.ticketDetails.taxAmount.toFixed(2),
+//             totalAmount: newBooking.ticketDetails.totalAmount.toFixed(2),
+//         };
+
+//         const emailTemplate = emailTemplates.eventBooking;
+//         const htmlBody = eventrenderTemplate(emailTemplate.body, templateData);
+//         const subject = eventrenderTemplate(emailTemplate.subject, templateData);
+
+//         const emailDependentTemplate = emailTemplates.eventBookingDependentTemplate;
+//         const emailGuestTemplate = emailTemplates.eventBookingGuestTemplate;
+//         const subjectDependent = eventrenderTemplate(emailDependentTemplate.subject, templateData);
+
+//         // Send email to primary member
+//         let primaryMemberEmail;
+//         if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
+//             primaryMemberEmail = memberData.primaryMemberId.email;
+//         } else {
+//             primaryMemberEmail = member.parentUserId.email;
+//         }
+
+//         // // Prepare email content
+//         // const emailAttachments = primaryMemberChecked
+//         //     ? [
+//         //         {
+//         //             filename: "qrCodeImage .png",
+//         //             content: Buffer.from(
+//         //                 primaryMemberQRCodeData.qrCode.split(",")[1],
+//         //                 "base64"
+//         //             ),
+//         //             encoding: "base64",
+//         //             cid: "qrCodeImage",
+//         //         },
+//         //     ]
+//         //     : [
+//         //         {
+//         //             filename: "qrCodeImage.png",
+//         //             content: Buffer.from(newBooking.allDetailsQRCode.split(",")[1], "base64"),
+//         //             encoding: "base64",
+//         //             cid: "qrCodeImage",
+//         //         },
+//         //     ];
+//         // Prepare email content
+//         const emailAttachments = primaryMemberChecked
+//             ? [
+//                 {
+//                     filename: "qrCodeImage.png", // Corrected filename
+//                     content: Buffer.from(
+//                         primaryMemberQRCodeData.qrCode.split(",")[1],
+//                         "base64"
+//                     ), // Convert primary member QR code to Buffer
+//                     encoding: "base64",
+//                     cid: "qrCodeImage", // Inline CID for embedding in email
+//                 },
+//             ]
+//             : [
+//                 {
+//                     filename: "qrCodeImage.png", // Corrected filename
+//                     content: Buffer.from(
+//                         newBooking.allDetailsQRCode.split(",")[1],
+//                         "base64"
+//                     ), // Convert all details QR code to Buffer
+//                     encoding: "base64",
+//                     cid: "qrCodeImage", // Inline CID for embedding in email
+//                 },
+//             ];
+
+
+//         await sendEmail(
+//             primaryMemberEmail,
+//             subject,
+//             htmlBody,
+//             emailAttachments
+//         );
+
+
+//         // const admins = await Admin.find({ role: 'admin', isDeleted: false });
+//         const admins = await Department.find({ departmentName: 'Events', isDeleted: false });
+//         for (const admin of admins) {
+//             await sendEmail(admin.email, subject, htmlBody, [
+//                 {
+//                     filename: "qrCodeImage.png", // Corrected filename
+//                     content: Buffer.from(
+//                         newBooking.allDetailsQRCode.split(",")[1],
+//                         "base64"
+//                     ), // Convert all details QR code to Buffer
+//                     encoding: "base64",
+//                     cid: "qrCodeImage", // Inline CID for embedding in email
+//                 },
+//             ]);
+//         }
+
+//         // Send emails to dependents
+//         for (const dependent of preparedDependents || []) {
+//             const user = await User.findById(dependent.userId);
+//             if (user) {
+//                 // Generate a customized email body for the dependent
+//                 const dependentTemplateData = {
+//                     ...templateData,
+//                     uniqueQRCode: dependent.uniqueQRCode, // Dependent's unique QR Code
+//                     dependentName: user.name,
+//                     dependentMail: user.email,
+//                     dependentContact: user.mobileNumber,
+//                     relation: user.relation,
+//                 };
+//                 const htmlDependentBody = eventrenderDependentTemplate(emailDependentTemplate.body, dependentTemplateData);
+
+//                 // Send email
+//                 await sendEmail(
+//                     user.email,
+//                     subjectDependent,
+//                     htmlDependentBody,
+//                     [
+//                         {
+//                             filename: "qrcode.png",
+//                             content: Buffer.from(dependent.qrCode.split(",")[1], "base64"), // Convert to Buffer
+//                             encoding: "base64",
+//                             cid: "qrCodeImage",
+//                         },
+//                     ]
+//                 );
+//             }
+//         }
+
+//         // Send emails to guests
+//         for (const guest of preparedGuests || []) {
+//             if (guest.email) {
+//                 // Generate a customized email body for the guest
+//                 const guestTemplateData = {
+//                     ...templateData,
+//                     uniqueQRCode: guest.uniqueQRCode, // Guest's unique QR Code
+//                     guestName: guest.name,
+//                     guestEmail: guest.email,
+//                     guestContact: guest.phone
+//                 };
+//                 const htmlGuestBody = eventrenderDependentTemplate(emailGuestTemplate.body, guestTemplateData);
+
+//                 // Send email
+//                 await sendEmail(
+//                     guest.email,
+//                     subjectDependent,
+//                     htmlGuestBody,
+//                     [
+//                         {
+//                             filename: "qrcode.png",
+//                             content: Buffer.from(guest.qrCode.split(",")[1], "base64"), // Convert to Buffer
+//                             encoding: "base64",
+//                             cid: "qrCodeImage",
+//                         },
+//                     ]
+//                 );
+//             }
+//         }
+//         let billingPrimaryMember;
+//         if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
+//             billingPrimaryMember = newBooking.primaryMemberId;
+//         } else {
+//             billingPrimaryMember = member.parentUserId._id;
+//         }
+
+
+//         await addBilling(billingPrimaryMember, 'Event', { eventBooking: newBooking._id }, newBooking.ticketDetails.subtotal, 0, newBooking.ticketDetails.taxAmount, newBooking.ticketDetails.totalAmount, newBooking.primaryMemberId)
+
+
+//         // Call the createNotification function
+//         await createNotification({
+//             title: `${memberData.eventId.eventTitle} - Event Booking Is ${newBooking.bookingStatus}`,
+//             send_to: "User",
+//             push_message: "Your Event Booking Is Confirmed.",
+//             department: "eventBooking",
+//             departmentId: newBooking._id
+//         });
+
+//         let primaryMemberDetails = await User.findById(primaryMemberId);
+//         // If the member is not primary, fetch the actual primary member
+//         if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {
+//             primaryMemberDetails = await User.findById(primaryMemberDetails.parentUserId);
+//             if (!primaryMemberDetails) {
+//                 return res.status(404).json({ message: "Primary member not found for the provided member." });
+//             }
+//         }
+
+//         primaryMemberDetails.creditLimit = primaryMemberDetails.creditLimit - newBooking.ticketDetails.totalAmount
+//         await primaryMemberDetails.save();
+//         // Return the response
+//         return res.status(201).json({
+//             message: 'Booking successful',
+//             bookingDetails: newBooking,
+//         });
+//     } catch (error) {
+//         console.error('Error booking event:', error);
+//         return res.status(500).json({ message: 'An error occurred while booking the event.', error });
+//     }
+// };
+
+
+// const bookingDetails = async (req, res) => {
+//     try {
+//         const { eventId, primaryMemberId, dependents, guests, primaryMemberChecked } = req.body;
+
+//         // Validate request data
+//         if (!eventId || !primaryMemberId) {
+//             return res.status(400).json({ message: "Event ID and Primary Member ID are required." });
+//         }
+
+//         // Fetch the event details
+//         const event = await Event.findById(eventId).populate("taxTypes");
+//         if (!event) {
+//             return res.status(404).json({ message: "Event not found." });
+//         }
+
+//         if (event.status !== "Active") {
+//             return res.status(400).json({ message: "Event is not active or available for booking." });
+//         }
+
+// // Fetch the primary member's details
+// const member = await User.findById(primaryMemberId);
+// if (!member) {
+//     return res.status(404).json({ message: "Primary member not found." });
+// }
+
+//         let primaryMemberDetails = await User.findById(primaryMemberId);
+//         // If the member is not primary, fetch the actual primary member
+//         if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {
+//             primaryMemberDetails = await User.findById(primaryMemberDetails.parentUserId);
+//             if (!primaryMemberDetails) {
+//                 return res.status(404).json({ message: "Primary member not found for the provided member." });
+//             }
+//         }
+
+//         // Check credit stop and credit limit
+//         if (primaryMemberDetails.creditStop) {
+//             return res.status(400).json({
+//                 message: "You are currently not eligible for booking. Please contact the club."
+//             });
+//         }
+
+
+//         // Define a mapping for relation types
+//         const relationMapping = {
+//             "Primary": "Primary",
+//             "Spouse": "Spouse",
+//             "Son": "Son",
+//             "Daughter": "Daughter",
+//             "Dependent": "Dependent",
+//             "Senior Dependent": "SeniorDependent",
+//         };
+
+//         // Get the primary member's relation and map it
+//         // const { relation } = member;
+//         const permissionKey = relationMapping[member.relation];
+
+//         // Validate the booking permission for the relation
+//         if (!permissionKey || !event[`bookingPermission${permissionKey}`]) {
+//             return res.status(400).json({
+//                 message: `Members with the relationship type '${member.relation}' are not eligible for booking this event.`,
+//             });
+//         }
+
+
+//         // Calculate ticket requirements
+//         const primaryMemberCount = primaryMemberChecked ? 1 : 0;
+//         const dependentMemberCount = dependents ? dependents.length : 0;
+//         const guestMemberCount = guests ? guests.length : 0;
+
+//         const totalMemberCount = primaryMemberCount + dependentMemberCount + guestMemberCount;
+
+//         // Check ticket availability
+//         if (event.totalAvailableTickets < totalMemberCount) {
+//             return res.status(400).json({ message: "Not enough tickets available for this event." });
+//         }
+
+//         const subtotal =
+//             primaryMemberCount * event.primaryMemberPrice +
+//             dependentMemberCount * event.dependentMemberPrice +
+//             guestMemberCount * event.guestMemberPrice;
+
+//         // Calculate taxes based on taxTypes
+//         const taxDetails = event.taxTypes.map(taxType => {
+//             const taxAmount = (subtotal * taxType.percentage) / 100;
+//             return {
+//                 taxType: taxType.name,
+//                 taxRate: taxType.percentage,
+//                 taxAmount: Math.round(taxAmount * 100) / 100, // Round to 2 decimal places
+//             };
+//         });
+
+//         const totalTaxAmount = taxDetails.reduce((acc, tax) => acc + tax.taxAmount, 0);
+//         const totalAmount = subtotal + totalTaxAmount;
+
+//         // Check credit limit
+//         if (primaryMemberDetails.creditLimit < totalAmount) {
+//             return res.status(400).json({
+//                 message: "Your credit limit is less than the purchase amount. Please contact the club.",
+//             });
+//         }
+
+//         // Update available tickets in the database
+//         event.allottedTicketsMember -= primaryMemberCount + dependentMemberCount;
+//         event.allottedTicketsGuest -= guestMemberCount;
+//         event.totalAvailableTickets -= totalMemberCount;
+
+//         // Validate updated ticket counts
+//         if (event.allottedTicketsMember < 0 || event.allottedTicketsGuest < 0) {
+//             return res.status(400).json({
+//                 message: "Invalid ticket count update. Ensure the requested tickets are available.",
+//             });
+//         }
+
+//         // await event.save();
+
+//         // Prepare the response data
+//         const bookingDetails = {
+//             eventId,
+//             primaryMemberId,
+//             dependents: dependents || [],
+//             guests: guests || [],
+//             counts: {
+//                 primaryMemberCount,
+//                 dependentMemberCount,
+//                 guestMemberCount,
+//             },
+//             ticketDetails: {
+//                 primaryMemberPrice: event.primaryMemberPrice,
+//                 dependentPrice: event.dependentMemberPrice,
+//                 guestPrice: event.guestMemberPrice,
+//                 taxTypes: taxDetails,
+//                 subtotal,
+//                 taxAmount: totalTaxAmount,
+//                 totalAmount,
+//             },
+//             paymentStatus: "Pending", // Default status
+//             bookingStatus: "Pending", // Default status
+//         };
+
+//         // Return the booking details
+//         return res.status(200).json({
+//             message: "Booking details calculated successfully.",
+//             bookingDetails,
+//         });
+//     } catch (error) {
+//         console.error("Error calculating booking details:", error);
+//         return res.status(500).json({
+//             message: "An error occurred while calculating the event booking details.",
+//             error: error.message,
+//         });
+//     }
+// };
+
+
 const bookEvent = async (req, res) => {
     try {
         const { eventId, primaryMemberId, dependents, guests, primaryMemberChecked } = req.body;
@@ -973,8 +1557,6 @@ const bookEvent = async (req, res) => {
             "Senior Dependent": "SeniorDependent",
         };
 
-        // Get the primary member's relation and map it
-        // const { relation } = member;
         const permissionKey = relationMapping[member.relation];
 
         // Validate the booking permission for the relation
@@ -984,43 +1566,73 @@ const bookEvent = async (req, res) => {
             });
         }
 
-        // Calculate ticket requirements
-        const primaryMemberCount = primaryMemberChecked ? 1 : 0;
-        const dependentMemberCount = dependents ? dependents.length : 0;
-        const guestMemberCount = guests ? guests.length : 0;
 
-        const totalMemberCount = primaryMemberCount + dependentMemberCount + guestMemberCount;
+        // Mapping for relations to price fields
+        const relationPriceMapping = {
+            "Primary": "primaryMemberPrice",
+            "Spouse": "spouseMemberPrice",
+            "Son": "kidsMemberPrice",
+            "Daughter": "kidsMemberPrice",
+            "Dependent": "dependentMemberPrice",
+            "Senior Dependent": "seniorDependentMemberPrice",
+        };
 
-        // Check ticket availability
+        let totalAmount = 0;
+        let subtotal = 0;
+        let counts = {
+            primaryMemberCount: primaryMemberChecked ? 1 : 0,
+            spouseMemberCount: 0,
+            kidsMemberCount: 0,
+            dependentMemberCount: 0,
+            seniorDependentMemberCount: 0,
+            guestMemberCount: guests ? guests.length : 0,
+        };
+
+        let ticketDetails = {
+            primaryMemberPrice: primaryMemberChecked ? event.primaryMemberPrice : 0,
+            spouseMemberPrice: 0,
+            kidsMemberPrice: 0,
+            dependentMemberPrice: 0,
+            seniorDependentMemberPrice: 0,
+            guestPrice: counts.guestMemberCount * event.guestMemberPrice,
+        };
+
+        // Calculate primary member price
+        subtotal += ticketDetails.primaryMemberPrice;
+
+        // Calculate dependents' price
+        if (dependents && dependents.length) {
+            for (const dependent of dependents) {
+                const dependentUser = await User.findById(dependent.userId);
+                if (!dependentUser) {
+                    return res.status(404).json({ message: `Dependent with ID ${dependent.userId} not found.` });
+                }
+                const priceField = relationPriceMapping[dependentUser.relation] || "dependentMemberPrice";
+                ticketDetails[priceField] += event[priceField];
+                counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
+                subtotal += event[priceField];
+            }
+        }
+
+        subtotal += ticketDetails.guestPrice;
+        let totalMemberCount = Object.values(counts).reduce((acc, val) => acc + val, 0);
+
         if (event.totalAvailableTickets < totalMemberCount) {
             return res.status(400).json({ message: "Not enough tickets available for this event." });
         }
 
-        const subtotal =
-            primaryMemberCount * event.primaryMemberPrice +
-            dependentMemberCount * event.dependentMemberPrice +
-            guestMemberCount * event.guestMemberPrice;
-
-        // Calculate taxes based on taxTypes
+        // Calculate tax amounts
         const taxDetails = event.taxTypes.map(taxType => {
             const taxAmount = (subtotal * taxType.percentage) / 100;
             return {
-                taxType: taxType.name || "N/A",
-                taxRate: taxType.percentage || 0,
-                taxAmount: Math.round(taxAmount * 100) / 100, // Round to 2 decimal places
+                taxType: taxType.name,
+                taxRate: taxType.percentage,
+                taxAmount: Math.round(taxAmount * 100) / 100,
             };
         });
 
         const totalTaxAmount = taxDetails.reduce((acc, tax) => acc + tax.taxAmount, 0);
-        const totalAmount = subtotal + totalTaxAmount;
-
-        // // Generate QR codes for all members
-        // const members = [
-        //     { userId: primaryMemberId, type: 'Primary', eventId },
-        //     ...(dependents || []).map(dep => ({ userId: dep.userId, type: 'Dependent', eventId })),
-        //     ...(guests || []).map(guest => ({ userId: guest.name, type: 'Guest', eventId })), // For guest, use name instead of userId
-        // ];
-        // const qrCodes = await QRCodeHelper.generateMultipleQRCodes(members);
+        totalAmount = subtotal + totalTaxAmount;
 
         // Members for QR code generation
         const members = [
@@ -1048,9 +1660,7 @@ const bookEvent = async (req, res) => {
             dependents,
             guests,
             ticketDetails: {
-                primaryMemberPrice: event.primaryMemberPrice,
-                dependentPrice: event.dependentMemberPrice,
-                guestPrice: event.guestMemberPrice,
+                ...ticketDetails,
                 taxTypes: taxDetails,
                 subtotal,
                 taxAmount: totalTaxAmount,
@@ -1087,15 +1697,9 @@ const bookEvent = async (req, res) => {
             uniqueQRCode: primaryMemberQRCodeData ? primaryMemberQRCodeData.uniqueQRCodeData : null,
             dependents: preparedDependents,
             guests: preparedGuests,
-            counts: {
-                primaryMemberCount,
-                dependentMemberCount,
-                guestMemberCount,
-            },
+            counts,
             ticketDetails: {
-                primaryMemberPrice: event.primaryMemberPrice,
-                dependentPrice: event.dependentMemberPrice,
-                guestPrice: event.guestMemberPrice,
+                ...ticketDetails,
                 taxTypes: taxDetails,
                 subtotal,
                 taxAmount: totalTaxAmount,
@@ -1111,8 +1715,8 @@ const bookEvent = async (req, res) => {
 
         // Update the available tickets in the Event schema
         // Update available tickets in the database
-        event.allottedTicketsMember -= primaryMemberCount + dependentMemberCount;
-        event.allottedTicketsGuest -= guestMemberCount;
+        event.allottedTicketsMember -= counts.primaryMemberCount + counts.dependentMemberCount + counts.kidsMemberCount + counts.seniorDependentMemberCount + counts.spouseMemberCount;
+        event.allottedTicketsGuest -= counts.guestMemberCount;
         event.totalAvailableTickets -= totalMemberCount;
 
         // Validate updated ticket counts
@@ -1156,11 +1760,13 @@ const bookEvent = async (req, res) => {
             eventTitle: event.eventTitle,
             eventDate: event.eventStartDate.toDateString(),
             bookedBy: memberData?.primaryMemberId?.name,
+            memberShipId: memberData?.primaryMemberId?.memberId,
+            memberContact: memberData?.primaryMemberId?.mobileNumber,
             primaryName: primaryName,
             primaryEmail: primaryEmail,
             primaryContact: primaryContact,
             familyMembers: memberData.dependents.length > 0
-                ? memberData.dependents.map(dep => ({ name: dep.userId.name, email: dep.userId.email, contact: dep.userId.mobileNumber }))
+                ? memberData.dependents.map(dep => ({ name: dep.userId.name, email: dep.userId.email, contact: dep.userId.mobileNumber, relation: dep.userId.relation }))
                 : [],
             guests: memberData.guests.length > 0
                 ? memberData.guests.map(guest => ({
@@ -1197,27 +1803,6 @@ const bookEvent = async (req, res) => {
             primaryMemberEmail = member.parentUserId.email;
         }
 
-        // // Prepare email content
-        // const emailAttachments = primaryMemberChecked
-        //     ? [
-        //         {
-        //             filename: "qrCodeImage .png",
-        //             content: Buffer.from(
-        //                 primaryMemberQRCodeData.qrCode.split(",")[1],
-        //                 "base64"
-        //             ),
-        //             encoding: "base64",
-        //             cid: "qrCodeImage",
-        //         },
-        //     ]
-        //     : [
-        //         {
-        //             filename: "qrCodeImage.png",
-        //             content: Buffer.from(newBooking.allDetailsQRCode.split(",")[1], "base64"),
-        //             encoding: "base64",
-        //             cid: "qrCodeImage",
-        //         },
-        //     ];
         // Prepare email content
         const emailAttachments = primaryMemberChecked
             ? [
@@ -1278,7 +1863,8 @@ const bookEvent = async (req, res) => {
                     uniqueQRCode: dependent.uniqueQRCode, // Dependent's unique QR Code
                     dependentName: user.name,
                     dependentMail: user.email,
-                    dependentContact: user.mobileNumber
+                    dependentContact: user.mobileNumber,
+                    dependentrelation: user.relation,
                 };
                 const htmlDependentBody = eventrenderDependentTemplate(emailDependentTemplate.body, dependentTemplateData);
 
@@ -1341,7 +1927,7 @@ const bookEvent = async (req, res) => {
 
         // Call the createNotification function
         await createNotification({
-            title: `${memberData.eventId.eventTitle}Event Booking Is ${newBooking.bookingStatus}`,
+            title: `${memberData.eventId.eventTitle} - Event Booking Is ${newBooking.bookingStatus}`,
             send_to: "User",
             push_message: "Your Event Booking Is Confirmed.",
             department: "eventBooking",
@@ -1370,7 +1956,6 @@ const bookEvent = async (req, res) => {
     }
 };
 
-
 const bookingDetails = async (req, res) => {
     try {
         const { eventId, primaryMemberId, dependents, guests, primaryMemberChecked } = req.body;
@@ -1390,14 +1975,15 @@ const bookingDetails = async (req, res) => {
             return res.status(400).json({ message: "Event is not active or available for booking." });
         }
 
+
         // Fetch the primary member's details
         const member = await User.findById(primaryMemberId);
         if (!member) {
             return res.status(404).json({ message: "Primary member not found." });
         }
 
+        // Fetch the primary member's details
         let primaryMemberDetails = await User.findById(primaryMemberId);
-        // If the member is not primary, fetch the actual primary member
         if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {
             primaryMemberDetails = await User.findById(primaryMemberDetails.parentUserId);
             if (!primaryMemberDetails) {
@@ -1405,13 +1991,9 @@ const bookingDetails = async (req, res) => {
             }
         }
 
-        // Check credit stop and credit limit
         if (primaryMemberDetails.creditStop) {
-            return res.status(400).json({
-                message: "You are currently not eligible for booking. Please contact the club."
-            });
+            return res.status(400).json({ message: "You are currently not eligible for booking. Please contact the club." });
         }
-
 
         // Define a mapping for relation types
         const relationMapping = {
@@ -1419,6 +2001,7 @@ const bookingDetails = async (req, res) => {
             "Spouse": "Spouse",
             "Son": "Son",
             "Daughter": "Daughter",
+            "Dependent": "Dependent",
             "Senior Dependent": "SeniorDependent",
         };
 
@@ -1434,56 +2017,76 @@ const bookingDetails = async (req, res) => {
         }
 
 
-        // Calculate ticket requirements
-        const primaryMemberCount = primaryMemberChecked ? 1 : 0;
-        const dependentMemberCount = dependents ? dependents.length : 0;
-        const guestMemberCount = guests ? guests.length : 0;
+        // Mapping for relations to price fields
+        const relationPriceMapping = {
+            "Primary": "primaryMemberPrice",
+            "Spouse": "spouseMemberPrice",
+            "Son": "kidsMemberPrice",
+            "Daughter": "kidsMemberPrice",
+            "Dependent": "dependentMemberPrice",
+            "Senior Dependent": "seniorDependentMemberPrice",
+        };
 
-        const totalMemberCount = primaryMemberCount + dependentMemberCount + guestMemberCount;
+        let totalAmount = 0;
+        let subtotal = 0;
+        let counts = {
+            primaryMemberCount: primaryMemberChecked ? 1 : 0,
+            spouseMemberCount: 0,
+            kidsMemberCount: 0,
+            dependentMemberCount: 0,
+            seniorDependentMemberCount: 0,
+            guestMemberCount: guests ? guests.length : 0,
+        };
 
-        // Check ticket availability
+        let ticketDetails = {
+            primaryMemberPrice: primaryMemberChecked ? event.primaryMemberPrice : 0,
+            spouseMemberPrice: 0,
+            kidsMemberPrice: 0,
+            dependentMemberPrice: 0,
+            seniorDependentMemberPrice: 0,
+            guestPrice: counts.guestMemberCount * event.guestMemberPrice,
+        };
+
+        // Calculate primary member price
+        subtotal += ticketDetails.primaryMemberPrice;
+
+        // Calculate dependents' price
+        if (dependents && dependents.length) {
+            for (const dependent of dependents) {
+                const dependentUser = await User.findById(dependent.userId);
+                if (!dependentUser) {
+                    return res.status(404).json({ message: `Dependent with ID ${dependent.userId} not found.` });
+                }
+                const priceField = relationPriceMapping[dependentUser.relation] || "dependentMemberPrice";
+                ticketDetails[priceField] += event[priceField];
+                counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
+                subtotal += event[priceField];
+            }
+        }
+
+        subtotal += ticketDetails.guestPrice;
+        let totalMemberCount = Object.values(counts).reduce((acc, val) => acc + val, 0);
+
         if (event.totalAvailableTickets < totalMemberCount) {
             return res.status(400).json({ message: "Not enough tickets available for this event." });
         }
 
-        const subtotal =
-            primaryMemberCount * event.primaryMemberPrice +
-            dependentMemberCount * event.dependentMemberPrice +
-            guestMemberCount * event.guestMemberPrice;
-
-        // Calculate taxes based on taxTypes
+        // Calculate tax amounts
         const taxDetails = event.taxTypes.map(taxType => {
             const taxAmount = (subtotal * taxType.percentage) / 100;
             return {
                 taxType: taxType.name,
                 taxRate: taxType.percentage,
-                taxAmount: Math.round(taxAmount * 100) / 100, // Round to 2 decimal places
+                taxAmount: Math.round(taxAmount * 100) / 100,
             };
         });
 
         const totalTaxAmount = taxDetails.reduce((acc, tax) => acc + tax.taxAmount, 0);
-        const totalAmount = subtotal + totalTaxAmount;
+        totalAmount = subtotal + totalTaxAmount;
 
-        // Check credit limit
         if (primaryMemberDetails.creditLimit < totalAmount) {
-            return res.status(400).json({
-                message: "Your credit limit is less than the purchase amount. Please contact the club.",
-            });
+            return res.status(400).json({ message: "Your credit limit is less than the purchase amount. Please contact the club." });
         }
-
-        // Update available tickets in the database
-        event.allottedTicketsMember -= primaryMemberCount + dependentMemberCount;
-        event.allottedTicketsGuest -= guestMemberCount;
-        event.totalAvailableTickets -= totalMemberCount;
-
-        // Validate updated ticket counts
-        if (event.allottedTicketsMember < 0 || event.allottedTicketsGuest < 0) {
-            return res.status(400).json({
-                message: "Invalid ticket count update. Ensure the requested tickets are available.",
-            });
-        }
-
-        // await event.save();
 
         // Prepare the response data
         const bookingDetails = {
@@ -1491,37 +2094,29 @@ const bookingDetails = async (req, res) => {
             primaryMemberId,
             dependents: dependents || [],
             guests: guests || [],
-            counts: {
-                primaryMemberCount,
-                dependentMemberCount,
-                guestMemberCount,
-            },
+            counts,
             ticketDetails: {
-                primaryMemberPrice: event.primaryMemberPrice,
-                dependentPrice: event.dependentMemberPrice,
-                guestPrice: event.guestMemberPrice,
+                ...ticketDetails,
                 taxTypes: taxDetails,
                 subtotal,
                 taxAmount: totalTaxAmount,
                 totalAmount,
             },
-            paymentStatus: "Pending", // Default status
-            bookingStatus: "Pending", // Default status
+            paymentStatus: "Pending",
+            bookingStatus: "Pending",
         };
 
-        // Return the booking details
         return res.status(200).json({
             message: "Booking details calculated successfully.",
             bookingDetails,
         });
     } catch (error) {
         console.error("Error calculating booking details:", error);
-        return res.status(500).json({
-            message: "An error occurred while calculating the event booking details.",
-            error: error.message,
-        });
+        return res.status(500).json({ message: "An error occurred while calculating the event booking details.", error: error.message });
     }
 };
+
+
 
 const getAllBookings = async (req, res) => {
     try {

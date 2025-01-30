@@ -3,7 +3,8 @@ const eventrenderTemplate = (template, data) => {
     template = template.replace(/{{familyMembers}}/g, () => {
         return data.familyMembers.length > 0
             ? data.familyMembers
-                .map((member, index) => `<p><strong>Family Member ${index + 1}:</strong> ${member.name}</p>
+                // .map((member, index) => `<p><strong>Family Member ${index + 1}:</strong> ${member.name}</p>
+                .map((member, index) => `<p><strong>${member.relation}:</strong> ${member.name}</p>
                                          <p><strong>Email:</strong> ${member.email}</p>
                                          <p><strong>Contact Number:</strong> ${member.contact}</p>`)
                 .join("")

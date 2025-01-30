@@ -41,7 +41,7 @@ const logActionRoutes = require("./settings/logActionRoutes");
 // const rolePermissionRoutes = require("./settings/role_permissionRoutes");
 const aboutUsRoutes = require("./settings/aboutUsRoutes");
 const contactUsRoutes = require("./settings/contactUsRoutes");
-
+const roomGuidelineOrCondition = require("./roomGuidOrCond");
 
 
 adminRoutes(router);
@@ -83,5 +83,6 @@ logActionRoutes(router);
 // rolePermissionRoutes(router);
 aboutUsRoutes(router);
 contactUsRoutes(router);
+roomGuidelineOrCondition(router);
 
 module.exports = router;
