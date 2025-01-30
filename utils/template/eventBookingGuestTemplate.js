@@ -169,6 +169,8 @@ module.exports = {
             </div>
               <div class="details-section">
                <h3>Booked By :- {{bookedBy}}</h3>
+                <p><strong>Member A/C No:</strong> {{memberShipId}}</p>
+                <p><strong>Contact Number:</strong> {{memberContact}}</p>
             </div>
 
             <div class="details-section">
