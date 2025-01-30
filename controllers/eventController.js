@@ -1609,7 +1609,12 @@ const bookEvent = async (req, res) => {
                 }
                 const priceField = relationPriceMapping[dependentUser.relation] || "dependentMemberPrice";
                 ticketDetails[priceField] += event[priceField];
-                counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
+                // counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
+                if (dependentUser.relation === "Son" || dependentUser.relation === "Daughter") {
+                    counts.kidsMemberCount++;
+                } else {
+                    counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
+                }
                 subtotal += event[priceField];
             }
         }
@@ -2059,7 +2064,12 @@ const bookingDetails = async (req, res) => {
                 }
                 const priceField = relationPriceMapping[dependentUser.relation] || "dependentMemberPrice";
                 ticketDetails[priceField] += event[priceField];
-                counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
+                // counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
+                if (dependentUser.relation === "Son" || dependentUser.relation === "Daughter") {
+                    counts.kidsMemberCount++;
+                } else {
+                    counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
+                }
                 subtotal += event[priceField];
             }
         }
