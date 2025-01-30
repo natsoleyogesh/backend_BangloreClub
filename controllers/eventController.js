@@ -1612,6 +1612,8 @@ const bookEvent = async (req, res) => {
                 // counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
                 if (dependentUser.relation === "Son" || dependentUser.relation === "Daughter") {
                     counts.kidsMemberCount++;
+                } else if (dependentUser.relation === "Senior Dependent") {
+                    counts.seniorDependentMemberCount++;
                 } else {
                     counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
                 }
@@ -2067,6 +2069,8 @@ const bookingDetails = async (req, res) => {
                 // counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
                 if (dependentUser.relation === "Son" || dependentUser.relation === "Daughter") {
                     counts.kidsMemberCount++;
+                } else if (dependentUser.relation === "Senior Dependent") {
+                    counts.seniorDependentMemberCount++;
                 } else {
                     counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
                 }
