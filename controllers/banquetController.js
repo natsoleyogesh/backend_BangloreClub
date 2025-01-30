@@ -1313,7 +1313,7 @@ const createBanquetBooking = async (req, res) => {
 
         };
         console.log(templateData, "templaedate")
-        const template = emailTemplates.banquetBooking;
+        const template = emailTemplates.banquetBookingReq;
 
         // Render template
         const htmlBody = banquetrenderTemplate(template.body, templateData);
@@ -1348,7 +1348,7 @@ const createBanquetBooking = async (req, res) => {
 
         // Call the createNotification function
         await createNotification({
-            title: `${memberData.banquetType.banquetName.name}Banquet Booking Request Is Generated`,
+            title: `${memberData.banquetType.banquetName.name} - Banquet Booking Request Is Generated`,
             send_to: "User",
             push_message: "Your banquet Booking Requested Is Generated And Request Send For Club To Verification",
             department: "BanquetBooking",
@@ -1891,7 +1891,7 @@ const allocateBanquet = async (req, res) => {
             await booking.save();
             // Call the createNotification function
             await createNotification({
-                title: `${booking.banquetType.banquetName.name}Banquet Booking Is Rejected`,
+                title: `${booking.banquetType.banquetName.name} - Banquet Booking Is Rejected`,
                 send_to: "User",
                 push_message: "Your banquet Booking Is Rejected For Some Details Are Not Validate!",
                 department: "BanquetBooking",
@@ -2001,7 +2001,7 @@ const allocateBanquet = async (req, res) => {
 
             // Call the createNotification function
             await createNotification({
-                title: `${memberData.banquetType.banquetName.name}Banquet Booking Is ${booking.bookingStatus}`,
+                title: `${memberData.banquetType.banquetName.name} - Banquet Booking Is ${booking.bookingStatus}`,
                 send_to: "User",
                 push_message: "Your banquet Booking Is Confirmed.",
                 department: "BanquetBooking",

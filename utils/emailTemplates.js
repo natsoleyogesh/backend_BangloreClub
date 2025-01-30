@@ -1,4 +1,6 @@
 const banquetBookingTemplate = require("./template/banquetBookingTemplate");
+const banquetBookingReqTemplate = require("./template/banquetBookingReqTemplate");
+
 const eventBookingTemplate = require("./template/eventBookingTemplate");
 const familymemberEditTemplate = require("./template/familymemberEditTemplate");
 const memberEditRequestTemplate = require("./template/memberEditRequestTemplate");
@@ -14,6 +16,7 @@ module.exports = {
     // banquetBooking: banquetBookingTemplate,
     eventBooking: eventBookingTemplate,
     banquetBooking: banquetBookingTemplate,
+    banquetBookingReq: banquetBookingReqTemplate,
     memberEditRequestTemplate: memberEditRequestTemplate,
     familymemberEditTemplate: familymemberEditTemplate,
 

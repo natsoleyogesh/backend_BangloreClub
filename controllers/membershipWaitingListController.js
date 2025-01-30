@@ -715,6 +715,47 @@ const addWaiting = async (req, res) => {
 }
 
 
+// const getAllApplications = async (req, res) => {
+//     try {
+//         const { search } = req.query;
+
+//         // Build the search query
+//         const searchQuery = search
+//             ? {
+//                 $or: [
+//                     { applicantName: { $regex: search, $options: "i" } },
+//                     { "proposer.name": { $regex: search, $options: "i" } },
+//                     { "proposer.accountNumber": { $regex: search, $options: "i" } },
+//                     { "seconders.name": { $regex: search, $options: "i" } },
+//                     { "seconders.accountNumber": { $regex: search, $options: "i" } },
+//                     { applicationNumber: { $regex: search, $options: "i" } },
+//                 ],
+//             }
+//             : {};
+
+//         // Fetch matching entries from the database
+//         const results = await MembershipList.find(searchQuery).lean();
+
+//         // Format the response to include seconders as seconder-1, seconder-2, etc.
+//         const formattedResults = results.map(entry => {
+//             const seconders = {};
+//             entry.seconders.forEach((seconder, index) => {
+//                 seconders[`seconder-${index + 1}`] = seconder;
+//             });
+
+//             return {
+//                 ...entry,
+//                 seconders,
+//             };
+//         });
+
+//         res.status(200).json(formattedResults);
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: "An error occurred", error: error.message });
+//     }
+// }
+
 const getAllApplications = async (req, res) => {
     try {
         const { search } = req.query;
@@ -736,25 +777,19 @@ const getAllApplications = async (req, res) => {
         // Fetch matching entries from the database
         const results = await MembershipList.find(searchQuery).lean();
 
-        // Format the response to include seconders as seconder-1, seconder-2, etc.
-        const formattedResults = results.map(entry => {
-            const seconders = {};
-            entry.seconders.forEach((seconder, index) => {
-                seconders[`seconder-${index + 1}`] = seconder;
-            });
-
-            return {
-                ...entry,
-                seconders,
-            };
-        });
+        // Format the response ensuring seconders remain an array
+        const formattedResults = results.map(entry => ({
+            ...entry,
+            seconders: Array.isArray(entry.seconders) ? entry.seconders : [], // Ensure seconders is an array
+        }));
 
         res.status(200).json(formattedResults);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "An error occurred", error: error.message });
     }
-}
+};
+
 
 module.exports = {
     addWaiting,
