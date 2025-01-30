@@ -174,8 +174,9 @@ module.exports = {
             </div>
 
             <div class="details-section">
-                 <h3>Dependent Member Details</h3>
+                 <h3>Family Member Details</h3>
                 <p><strong>Name:</strong> {{dependentName}}</p>
+                <p><strong>Relation:</strong> {{dependentrelation}}</p>
                 <p><strong>Email:</strong> {{dependentMail}}</p>
                 <p><strong>Contact Number:</strong> {{dependentContact}}</p>
 
