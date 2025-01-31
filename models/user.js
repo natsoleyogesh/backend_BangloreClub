@@ -37,7 +37,7 @@ const userSchema = new mongoose.Schema({
     },
     relation: {
         type: String,
-        enum: ["Primary", "Spouse", "Child", "Senior Dependent", "Dependent"], //"Daughter", "Son",
+        enum: ["Primary", "Spouse", "Child", "Senior Dependent", "Dependent", "Senior Dependent Spouse", "Dependent Spouse",], //"Daughter", "Son",
         required: true,
     },
     parentUserId: {
@@ -87,7 +87,7 @@ const userSchema = new mongoose.Schema({
     },
     maritalStatus: {
         type: String,
-        enum: ['Single', 'Married', 'Divorced', 'Widowed'],
+        enum: ['Single', 'Married', 'Divorced', 'Widowed', "Widower"],
         default: 'Single',
     },
     marriageDate: {

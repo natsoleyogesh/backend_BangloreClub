@@ -1556,6 +1556,8 @@ const bookEvent = async (req, res) => {
         const relationMapping = {
             "Primary": "Primary",
             "Spouse": "Spouse",
+            "Dependent Spouse": "Spouse",
+            "Senior Dependent Spouse": "Spouse",
             "Child": "Child",
             // "Son": "Son",
             // "Daughter": "Daughter",
@@ -1577,6 +1579,8 @@ const bookEvent = async (req, res) => {
         const relationPriceMapping = {
             "Primary": "primaryMemberPrice",
             "Spouse": "spouseMemberPrice",
+            "Dependent Spouse": "spouseMemberPrice",
+            "Senior Dependent Spouse": "spouseMemberPrice",
             "Child": "kidsMemberPrice",
             // "Son": "kidsMemberPrice",
             // "Daughter": "kidsMemberPrice",
@@ -2016,6 +2020,8 @@ const bookingDetails = async (req, res) => {
         const relationMapping = {
             "Primary": "Primary",
             "Spouse": "Spouse",
+            "Dependent Spouse": "Spouse",
+            "Senior Dependent Spouse": "Spouse",
             "Child": "Child",
             // "Son": "Son",
             // "Daughter": "Daughter",
@@ -2039,6 +2045,8 @@ const bookingDetails = async (req, res) => {
         const relationPriceMapping = {
             "Primary": "primaryMemberPrice",
             "Spouse": "spouseMemberPrice",
+            "Dependent Spouse": "spouseMemberPrice",
+            "Senior Dependent Spouse": "spouseMemberPrice",
             "Child": "kidsMemberPrice",
             // "Son": "kidsMemberPrice",
             // "Daughter": "kidsMemberPrice",
