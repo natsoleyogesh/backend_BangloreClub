@@ -64,7 +64,7 @@ const generatePrimaryMemberId = async () => {
 // Helper function to generate a unique member ID for family members based on primary member ID
 const generateFamilyMemberId = async (primaryMemberId, relationCount) => {
   const suffix = String.fromCharCode(65 + relationCount); // A, B, C, etc.
-  return `${primaryMemberId}-${suffix}`; // Example output: BC1234567890-A
+  return `${primaryMemberId}${suffix}`; // Example output: BC1234567890-A
 }
 
 // Generate OTP (a 6-digit random number)

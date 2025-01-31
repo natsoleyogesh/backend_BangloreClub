@@ -136,9 +136,9 @@ const updateUserDetailsByAdmin = async (req, res) => {
         const adminId = req.user.userId; // Extract adminId from the token's decoded data
 
         // Check if the requesting user is an admin
-        if (req.user.role !== "admin") {
-            return res.status(403).json({ message: "Access denied. Admins only." });
-        }
+        // if (req.user.role !== "admin") {
+        //     return res.status(403).json({ message: "Access denied. Admins only." });
+        // }
 
         // Determine the `requestId` from `req.body` or `req.params`
         const requestId = req.body.requestId || req.params.requestId;
@@ -186,14 +186,14 @@ const updateUserDetailsByAdmin = async (req, res) => {
             // Common logic to check if email or mobile number already exists
             if (email || mobileNumber) {
                 const existingUser = await User.findOne({
-                    $or: [{ email: email }, { mobileNumber: mobileNumber }],
+                    $or: [{ email: email }, { mobileNumber: mobileNumber }, { relation: "Primary" }],
                     _id: { $ne: targetUserId }, // Exclude the current user being updated
                 });
-                if (existingUser) {
-                    return res.status(400).json({
-                        message: "This mobile number or e-mail is already linked to another account.",
-                    });
-                }
+                // if (existingUser) {
+                //     return res.status(400).json({
+                //         message: "This mobile number or e-mail is already linked to another primary member account.",
+                //     });
+                // }
             }
 
             user = await User.findById(targetUserId);
@@ -246,14 +246,14 @@ const updateUserDetailsByAdmin = async (req, res) => {
             // Common logic to check if email or mobile number already exists
             if (email || mobileNumber) {
                 const existingUser = await User.findOne({
-                    $or: [{ email: email }, { mobileNumber: mobileNumber }],
+                    $or: [{ email: email }, { mobileNumber: mobileNumber }, { relation: "Primary" }],
                     _id: { $ne: userId }, // Exclude the current user being updated
                 });
-                if (existingUser) {
-                    return res.status(400).json({
-                        message: "This mobile number or e-mail is already linked to another account.",
-                    });
-                }
+                // if (existingUser) {
+                //     return res.status(400).json({
+                //         message: "This mobile number or e-mail is already linked to another primary member account.",
+                //     });
+                // }
             }
             user = await User.findById(userId);
             if (!user) {
@@ -298,13 +298,13 @@ const updateUserDetailsByAdmin = async (req, res) => {
         }
 
         // Response with updated user details
-        res.status(200).json({
+        return res.status(200).json({
             message: "User details updated successfully by admin",
             user,
         });
     } catch (error) {
         console.error("Error updating user details by admin:", error);
-        res.status(500).json({ message: "Error updating user details", error: error.message });
+        return res.status(500).json({ message: "Error updating user details", error: error.message });
     }
 };
 

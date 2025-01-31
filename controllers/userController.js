@@ -7,6 +7,9 @@ const QRCodeHelper = require('../utils/helper');
 const { logAction } = require("./commonController");
 
 const xlsx = require('xlsx');
+const sendEmail = require("../utils/sendMail");
+const { otpRenderTemplate } = require("../utils/templateRenderer");
+const emailTemplates = require("../utils/emailTemplates");
 
 
 require("dotenv").config();
@@ -60,20 +63,23 @@ const createUser = async (req, res) => {
             return res.status(400).json({ message: "You can upload a maximum of 3 proof files." });
         }
 
-        // Check if email or mobile number is already linked to another account
-        const existingUser = await User.findOne({
-            $or: [{ email: email }, { mobileNumber: mobileNumber }],
-        });
-        if (existingUser) {
-            return res.status(400).json({
-                message: "This mobile number or e-mail is already linked to another account.",
-            });
-        }
 
         // Determine if this user is a primary user or a family member
         if (!parentUserId) {
             // Generate a unique member ID for the primary user
             // const memberId = await generatePrimaryMemberId();
+
+            // Check if email or mobile number is already linked to another account
+            const existingUser = await User.findOne({
+                $or: [{ email: email }, { mobileNumber: mobileNumber }, { relation: "Primary" }],
+            });
+            if (existingUser) {
+                return res.status(400).json({
+                    message: "This mobile number or e-mail is already linked to another primary member account.",
+                });
+            }
+
+
             const memberId = req.body.memberId;
 
 
@@ -157,13 +163,13 @@ const createUser = async (req, res) => {
 
         // Save the family member to the database
         const savedFamilyMember = await familyMember.save();
-        res.status(201).json({
+        return res.status(201).json({
             message: "Family member added successfully",
             user: savedFamilyMember,
         });
     } catch (error) {
         console.error("Error in creating user or adding family member:", error);
-        res.status(400).json({
+        return res.status(400).json({
             message: "Error in creating user or adding family member",
             error: error.message,
         });
@@ -183,8 +189,11 @@ const loginRequest = async (req, res) => {
                 { mobileNumber: identifier },
                 { email: identifier },
                 { memberId: identifier },
+                { relation: "Primary" } // Ensuring the relation is "Primary"
             ],
-        });
+        },
+
+        );
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
@@ -207,6 +216,16 @@ const loginRequest = async (req, res) => {
         // Save hashed OTP in the user document
         user.otp = crypto.createHash("sha256").update(otp).digest("hex");
         await user.save();
+        const templateData = {
+            otp: otp
+        }
+
+        const emailTemplate = emailTemplates.otpTemplate;
+        const htmlBody = otpRenderTemplate(emailTemplate.body, templateData);
+        const subject = otpRenderTemplate(emailTemplate.subject, templateData);
+
+        // Send OTP via Email
+        await sendEmail(user.email, subject, htmlBody);
 
         // Send OTP via Twilio (commented for testing)
         /*
@@ -227,13 +246,13 @@ const loginRequest = async (req, res) => {
             userAgent: req.headers["user-agent"],
         });
 
-        res.status(200).json({
+        return res.status(200).json({
             message: process.env.USE_STATIC_OTP === "true" ? "Static OTP set for testing" : "OTP sent to registered mobile number",
             userId: user._id,
         });
     } catch (error) {
         console.error("Error in login request:", error);
-        res.status(500).json({ message: "Error setting OTP", error: error.message });
+        return res.status(500).json({ message: "Error setting OTP", error: error.message });
     }
 }
 
@@ -874,8 +893,6 @@ module.exports = {
     uploadProofs,
     deleteProofs,
     updateProfilePictureByUser,
-
-
 
     // upload apis
     uploadMemberData,

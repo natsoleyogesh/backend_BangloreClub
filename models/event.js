@@ -101,11 +101,15 @@ const eventSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
-        bookingPermissionSon: {
-            type: Boolean,
-            default: false,
-        },
-        bookingPermissionDaughter: {
+        // bookingPermissionSon: {
+        //     type: Boolean,
+        //     default: false,
+        // },
+        // bookingPermissionDaughter: {
+        //     type: Boolean,
+        //     default: false,
+        // },
+        bookingPermissionChild: {
             type: Boolean,
             default: false,
         },

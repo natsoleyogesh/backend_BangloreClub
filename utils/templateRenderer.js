@@ -108,4 +108,10 @@ const roomrenderTemplate = (template, data) => {
     return template.replace(/{{(.*?)}}/g, (_, key) => data[key] || "");
 };
 
-module.exports = { eventrenderTemplate, banquetrenderTemplate, roomrenderTemplate, eventrenderDependentTemplate };
+
+const otpRenderTemplate = (template, data) => {
+    // Replace other placeholders
+    return template.replace(/{{(.*?)}}/g, (_, key) => data[key] || "");
+};
+
+module.exports = { eventrenderTemplate, banquetrenderTemplate, roomrenderTemplate, eventrenderDependentTemplate, otpRenderTemplate };

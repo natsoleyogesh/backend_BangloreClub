@@ -41,8 +41,9 @@ const createEvent = async (req, res) => {
             showBanner,
             bookingPermissionPrimary,
             bookingPermissionSpouse,
-            bookingPermissionSon,
-            bookingPermissionDaughter,
+            // bookingPermissionSon,
+            // bookingPermissionDaughter,
+            bookingPermissionChild,
             bookingPermissionDependent,
             bookingPermissionSeniorDependent,
             guideline
@@ -139,8 +140,9 @@ const createEvent = async (req, res) => {
             showBanner: showBanner || false,
             bookingPermissionPrimary: bookingPermissionPrimary || true,
             bookingPermissionSpouse: bookingPermissionSpouse || false,
-            bookingPermissionSon: bookingPermissionSon || false,
-            bookingPermissionDaughter: bookingPermissionDaughter || false,
+            // bookingPermissionSon: bookingPermissionSon || false,
+            // bookingPermissionDaughter: bookingPermissionDaughter || false,
+            bookingPermissionChild: bookingPermissionChild || false,
             bookingPermissionDependent: bookingPermissionDependent || false,
             bookingPermissionSeniorDependent: bookingPermissionSeniorDependent || false,
             guideline
@@ -481,8 +483,9 @@ const updateEvent = async (req, res) => {
             showBanner,
             bookingPermissionPrimary,
             bookingPermissionSpouse,
-            bookingPermissionSon,
-            bookingPermissionDaughter,
+            bookingPermissionChild,
+            // bookingPermissionSon,
+            // bookingPermissionDaughter,
             bookingPermissionDependent,
             bookingPermissionSeniorDependent,
             guideline
@@ -623,10 +626,12 @@ const updateEvent = async (req, res) => {
                 bookingPermissionPrimary !== undefined ? bookingPermissionPrimary : existingEvent.bookingPermissionPrimary,
             bookingPermissionSpouse:
                 bookingPermissionSpouse !== undefined ? bookingPermissionSpouse : existingEvent.bookingPermissionSpouse,
-            bookingPermissionSon:
-                bookingPermissionSon !== undefined ? bookingPermissionSon : existingEvent.bookingPermissionSon,
-            bookingPermissionDaughter:
-                bookingPermissionDaughter !== undefined ? bookingPermissionDaughter : existingEvent.bookingPermissionDaughter,
+            bookingPermissionChild:
+                bookingPermissionChild !== undefined ? bookingPermissionChild : existingEvent.bookingPermissionChild,
+            // bookingPermissionSon:
+            //     bookingPermissionSon !== undefined ? bookingPermissionSon : existingEvent.bookingPermissionSon,
+            // bookingPermissionDaughter:
+            //     bookingPermissionDaughter !== undefined ? bookingPermissionDaughter : existingEvent.bookingPermissionDaughter,
             bookingPermissionSeniorDependent:
                 bookingPermissionSeniorDependent !== undefined
                     ? bookingPermissionSeniorDependent
@@ -1551,8 +1556,9 @@ const bookEvent = async (req, res) => {
         const relationMapping = {
             "Primary": "Primary",
             "Spouse": "Spouse",
-            "Son": "Son",
-            "Daughter": "Daughter",
+            "Child": "Child",
+            // "Son": "Son",
+            // "Daughter": "Daughter",
             "Dependent": "Dependent",
             "Senior Dependent": "SeniorDependent",
         };
@@ -1571,8 +1577,9 @@ const bookEvent = async (req, res) => {
         const relationPriceMapping = {
             "Primary": "primaryMemberPrice",
             "Spouse": "spouseMemberPrice",
-            "Son": "kidsMemberPrice",
-            "Daughter": "kidsMemberPrice",
+            "Child": "kidsMemberPrice",
+            // "Son": "kidsMemberPrice",
+            // "Daughter": "kidsMemberPrice",
             "Dependent": "dependentMemberPrice",
             "Senior Dependent": "seniorDependentMemberPrice",
         };
@@ -1610,7 +1617,10 @@ const bookEvent = async (req, res) => {
                 const priceField = relationPriceMapping[dependentUser.relation] || "dependentMemberPrice";
                 ticketDetails[priceField] += event[priceField];
                 // counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
-                if (dependentUser.relation === "Son" || dependentUser.relation === "Daughter") {
+                // if (dependentUser.relation === "Son" || dependentUser.relation === "Daughter") {
+                //     counts.kidsMemberCount++;
+                // } 
+                if (dependentUser.relation === "Child") {
                     counts.kidsMemberCount++;
                 } else if (dependentUser.relation === "Senior Dependent") {
                     counts.seniorDependentMemberCount++;
@@ -2006,8 +2016,9 @@ const bookingDetails = async (req, res) => {
         const relationMapping = {
             "Primary": "Primary",
             "Spouse": "Spouse",
-            "Son": "Son",
-            "Daughter": "Daughter",
+            "Child": "Child",
+            // "Son": "Son",
+            // "Daughter": "Daughter",
             "Dependent": "Dependent",
             "Senior Dependent": "SeniorDependent",
         };
@@ -2028,8 +2039,9 @@ const bookingDetails = async (req, res) => {
         const relationPriceMapping = {
             "Primary": "primaryMemberPrice",
             "Spouse": "spouseMemberPrice",
-            "Son": "kidsMemberPrice",
-            "Daughter": "kidsMemberPrice",
+            "Child": "kidsMemberPrice",
+            // "Son": "kidsMemberPrice",
+            // "Daughter": "kidsMemberPrice",
             "Dependent": "dependentMemberPrice",
             "Senior Dependent": "seniorDependentMemberPrice",
         };
@@ -2067,7 +2079,10 @@ const bookingDetails = async (req, res) => {
                 const priceField = relationPriceMapping[dependentUser.relation] || "dependentMemberPrice";
                 ticketDetails[priceField] += event[priceField];
                 // counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
-                if (dependentUser.relation === "Son" || dependentUser.relation === "Daughter") {
+                // if (dependentUser.relation === "Son" || dependentUser.relation === "Daughter") {
+                //     counts.kidsMemberCount++;
+                // } 
+                if (dependentUser.relation === "Child") {
                     counts.kidsMemberCount++;
                 } else if (dependentUser.relation === "Senior Dependent") {
                     counts.seniorDependentMemberCount++;

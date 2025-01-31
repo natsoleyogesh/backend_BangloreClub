@@ -11,6 +11,9 @@ const eventBookingDependentTemplate = require("./template/eventBookingDependentT
 const roomBookingTemplate = require("./template/roomBookingTemplate");
 const eventBookingGuestTemplate = require("./template/eventBookingGuestTemplate");
 
+// otp
+const otpTemplate = require("./template/otpTemplate");
+
 module.exports = {
     // roomBooking: roomBookingTemplate,
     // banquetBooking: banquetBookingTemplate,
@@ -23,5 +26,8 @@ module.exports = {
     eventBookingDependentTemplate: eventBookingDependentTemplate,
     eventBookingGuestTemplate: eventBookingGuestTemplate,
 
-    roomBooking: roomBookingTemplate
+    roomBooking: roomBookingTemplate,
+
+
+    otpTemplate: otpTemplate
 };
