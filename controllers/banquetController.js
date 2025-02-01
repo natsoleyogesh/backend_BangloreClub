@@ -18,6 +18,7 @@ const { toTitleCase } = require("../utils/common");
 const Admin = require("../models/Admin");
 const Department = require("../models/department");
 const User = require("../models/user");
+const { sendSMSViaPOST } = require("../utils/sendOtp");
 
 // Banquet Category APIs Functions
 
@@ -1334,6 +1335,10 @@ const createBanquetBooking = async (req, res) => {
             }
 
         }
+
+        const message = `Dear ${templateData.primaryName}, Your banquet booking for ${templateData.banquetName} on ${templateData.bookingDate} at ${templateData.from} to ${templateData.to} for ${templateData.duration} hours has been sent Request. Booking Details:- Banquet Type: ${templateData.primaryName} - Number of Guests: ${templateData.attendingGuests} - Total Amount: ${templateData.final_totalAmount} BCLUB`
+
+        await sendSMSViaPOST(7440308229, message)
 
         await sendEmail(primaryMemberEmail, subject, htmlBody,
             //     [

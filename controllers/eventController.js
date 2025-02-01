@@ -14,6 +14,7 @@ const { createAttendanceRecords } = require('./eventAttendanceController');
 const moment = require('moment');
 const Department = require('../models/department');
 const { createNotification } = require('../utils/pushNotification');
+const { sendSMSViaPOST } = require('../utils/sendOtp');
 
 const createEvent = async (req, res) => {
     try {
@@ -1628,7 +1629,10 @@ const bookEvent = async (req, res) => {
                     counts.kidsMemberCount++;
                 } else if (dependentUser.relation === "Senior Dependent") {
                     counts.seniorDependentMemberCount++;
-                } else {
+                } else if (dependentUser.relation === "Spouse" || dependentUser.relation === "Dependent Spouse" || dependentUser.relation === "Senior Dependent Spouse") {
+                    counts.spouseMemberCount++;
+                }
+                else {
                     counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
                 }
                 subtotal += event[priceField];
@@ -1856,6 +1860,10 @@ const bookEvent = async (req, res) => {
             htmlBody,
             emailAttachments
         );
+
+        // const message = `Dear ${primaryName}, Your event booking for ${event.eventTitle} on ${templateData.eventDate} at ${QRCodeHelper.formatTimeTo12Hour(event.startTime)} to ${QRCodeHelper.formatTimeTo12Hour(event.endTime)} has been successfully confirmed. Event Details:- Event Name: ${event.eventTitle} - Number of Guests: ${totalMemberCount} - Total Amount: ${templateData.totalAmount} BCLUB`
+        const message = `Dear ${primaryName}, Your event booking for ${event.eventTitle} on ${templateData.eventDate} at ${QRCodeHelper.formatTimeTo12Hour(event.startTime)} to ${QRCodeHelper.formatTimeTo12Hour(event.endTime)} has been successfully confirmed. Event Details: - Event Name: ${event.eventTitle} - Number of Guests: ${totalMemberCount} - Total Amount: ${templateData.totalAmount} BCLUB`
+        await sendSMSViaPOST(7440308229, message)
 
 
         // const admins = await Admin.find({ role: 'admin', isDeleted: false });
@@ -2094,6 +2102,9 @@ const bookingDetails = async (req, res) => {
                     counts.kidsMemberCount++;
                 } else if (dependentUser.relation === "Senior Dependent") {
                     counts.seniorDependentMemberCount++;
+                }
+                else if (dependentUser.relation === "Spouse" || dependentUser.relation === "Dependent Spouse" || dependentUser.relation === "Senior Dependent Spouse") {
+                    counts.spouseMemberCount++;
                 } else {
                     counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
                 }
