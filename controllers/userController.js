@@ -10,6 +10,7 @@ const xlsx = require('xlsx');
 const sendEmail = require("../utils/sendMail");
 const { otpRenderTemplate } = require("../utils/templateRenderer");
 const emailTemplates = require("../utils/emailTemplates");
+const { sendOTPViaPOST } = require("../utils/sendOtp");
 
 
 require("dotenv").config();
@@ -244,6 +245,10 @@ const loginRequest = async (req, res) => {
         const htmlBody = otpRenderTemplate(emailTemplate.body, templateData);
         const subject = otpRenderTemplate(emailTemplate.subject, templateData);
 
+        // send OTP vie Mobile Number
+        const message = `Dear Member, your OTP for verification code is ${otp} Please do not share this OTP with anyone. BCLUB`
+        await sendOTPViaPOST(user.mobileNumber, message);
+
         // Send OTP via Email
         await sendEmail(user.email, subject, htmlBody);
 
@@ -267,7 +272,7 @@ const loginRequest = async (req, res) => {
         });
 
         return res.status(200).json({
-            message: process.env.USE_STATIC_OTP === "true" ? "Static OTP set for testing" : "OTP sent to registered mobile number",
+            message: process.env.USE_STATIC_OTP === "true" ? "Static OTP set for testing" : "OTP sent to registered mobile number or registered email",
             userId: user._id,
         });
     } catch (error) {
