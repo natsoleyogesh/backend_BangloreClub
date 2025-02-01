@@ -69,10 +69,17 @@ const createUser = async (req, res) => {
             // Generate a unique member ID for the primary user
             // const memberId = await generatePrimaryMemberId();
 
-            // Check if email or mobile number is already linked to another account
+            // // Check if email or mobile number is already linked to another account
+            // const existingUser = await User.findOne({
+            //     $or: [{ email: email }, { mobileNumber: mobileNumber }, { relation: "Primary" }],
+            // });
             const existingUser = await User.findOne({
-                $or: [{ email: email }, { mobileNumber: mobileNumber }, { relation: "Primary" }],
+                $and: [
+                    { relation: "Primary" },
+                    { $or: [{ email: email }, { mobileNumber: mobileNumber }] }
+                ]
             });
+
             if (existingUser) {
                 return res.status(400).json({
                     message: "This mobile number or e-mail is already linked to another primary member account.",
@@ -183,17 +190,30 @@ const loginRequest = async (req, res) => {
     try {
         const { identifier } = req.body;
 
-        // Find user by mobile number, email, or member ID
-        const user = await User.findOne({
-            $or: [
-                { mobileNumber: identifier },
-                { email: identifier },
-                { memberId: identifier },
-                { relation: "Primary" } // Ensuring the relation is "Primary"
-            ],
-        },
+        // // Find user by mobile number, email, or member ID
+        // const user = await User.findOne({
+        //     $or: [
+        //         { mobileNumber: identifier },
+        //         { email: identifier },
+        //         { memberId: identifier },
+        //         { relation: "Primary" } // Ensuring the relation is "Primary"
+        //     ],
+        // },
 
-        );
+        // );
+        const user = await User.findOne({
+            $and: [
+                { relation: "Primary" },
+                {
+                    $or: [
+                        { mobileNumber: identifier },
+                        { email: identifier },
+                        { memberId: identifier }
+                    ]
+                }
+            ]
+        });
+
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
