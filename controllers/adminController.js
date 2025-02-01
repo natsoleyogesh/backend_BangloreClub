@@ -192,6 +192,10 @@ const fetchFamilyTree = async (userId) => {
       vehicleModel: member.vehicleModel,
       drivingLicenceNumber: member.drivingLicenceNumber,
       uploadProofs: member.uploadProofs,
+      qrCodeId: member.qrCodeId,
+      cardId: member.cardId,
+      qrGenratedDate: member.qrGenratedDate,
+      qrCode: member.qrCode,
       familyMembers: await fetchFamilyTree(member._id), // Recursively fetch sub-family members
     }))
   );
@@ -244,6 +248,10 @@ const getUserDetailsById = async (req, res) => {
         creditLimit: user.creditLimit,
         creditStop: user.creditStop,
         uploadProofs: user.uploadProofs,
+        qrCodeId: user.qrCodeId,
+        cardId: user.cardId,
+        qrGenratedDate: user.qrGenratedDate,
+        qrCode: user.qrCode,
         familyMembers, // Nested family members
       },
     });
@@ -386,6 +394,21 @@ const getAllActiveUsers = async (req, res) => {
   }
 };
 
+
+const getUsers = async (req, res) => {
+  try {
+    const users = (await User.find()).reverse();
+    // Send the response including the user and their full family tree
+    res.status(200).json({
+      message: "User details retrieved successfully",
+      users
+    });
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    res.status(500).json({ message: "Error fetching user details", error: error.message });
+  }
+};
+
 module.exports = {
   createAdmin,
   adminLogin,
@@ -397,5 +420,6 @@ module.exports = {
   qrScanDetails,
   getAllActiveUsers,
 
-  getAdminDetails
+  getAdminDetails,
+  getUsers
 };

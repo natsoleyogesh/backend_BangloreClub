@@ -2132,9 +2132,10 @@ const bookingDetails = async (req, res) => {
         const totalTaxAmount = taxDetails.reduce((acc, tax) => acc + tax.taxAmount, 0);
         totalAmount = subtotal + totalTaxAmount;
 
-        if (primaryMemberDetails.creditLimit < totalAmount) {
+        if (primaryMemberDetails.creditLimit > 0 && primaryMemberDetails.creditLimit < totalAmount) {
             return res.status(400).json({ message: "Your credit limit is less than the purchase amount. Please contact the club." });
         }
+
 
         // Prepare the response data
         const bookingDetails = {

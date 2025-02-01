@@ -1,4 +1,4 @@
-const { createUser, loginRequest, verifyOtp, getUserDetails, updateProfilePicture, userLogout, uploadProofs, deleteProofs, updateProfilePictureByUser, uploadMemberData, uploadMemberAddress } = require("../controllers/userController");
+const { createUser, loginRequest, verifyOtp, getUserDetails, updateProfilePicture, userLogout, uploadProofs, deleteProofs, updateProfilePictureByUser, uploadMemberData, uploadMemberAddress, uploadQrCodeData, getUserDetailById, updateQrDetails } = require("../controllers/userController");
 const { verifyToken } = require("../utils/common");
 const { upload, handleMulterError, xslUpload } = require("../utils/upload");
 
@@ -32,6 +32,11 @@ module.exports = (router) => {
 
     router.post("/upload-members", xslUpload.single('file'), uploadMemberData);
     router.post("/upload-members-address", xslUpload.single('file'), uploadMemberAddress);
+
+    router.post("/upload-members-qrcode", xslUpload.single('file'), uploadQrCodeData);
+
+    router.get("/member-details/:userId", getUserDetailById);
+    router.put("/update-qrCode/:userId", verifyToken, updateQrDetails);
 
 
 }

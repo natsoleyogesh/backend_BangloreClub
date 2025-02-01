@@ -9,6 +9,7 @@ const {
   qrScanDetails,
   getAllActiveUsers,
   getAdminDetails,
+  getUsers,
 } = require("../controllers/adminController");
 const { verifyToken } = require("../utils/common");
 
@@ -18,6 +19,8 @@ module.exports = (router) => {
   router.post("/admin/login", adminLogin); // Public route for admin login
   router.get("/admin/member/:userId", getUserDetailsById);
   router.get("/admin/all-users", getAllUsers);
+  router.get("/admin/get-users", getUsers);
+
   router.delete("/admin/delete-member/:userId", deleteMember);
   router.post("/admin/logout", verifyToken, adminLogout);
   router.post("/getkeeper/scanqr", verifyToken, qrScanDetails);

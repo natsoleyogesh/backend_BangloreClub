@@ -4,7 +4,7 @@ const { generatePrimaryMemberId, generateFamilyMemberId, generateOtp, generateTo
 const fs = require("fs");
 const path = require("path");
 const QRCodeHelper = require('../utils/helper');
-const { logAction } = require("./commonController");
+const { logAction, logUpdateQrCode } = require("./commonController");
 
 const xlsx = require('xlsx');
 const sendEmail = require("../utils/sendMail");
@@ -24,6 +24,182 @@ const STATIC_OTP = "123456";
 // const accountSid = process.env.TWILIO_ACCOUNT_SID;
 // const authToken = process.env.TWILIO_AUTH_TOKEN;
 // const client = twilio(accountSid, authToken);
+
+// const createUser = async (req, res) => {
+//     try {
+//         const {
+//             name,
+//             email,
+//             mobileNumber,
+//             relation,
+//             parentUserId,
+//             address,
+//             address1,
+//             address2,
+//             city,
+//             state,
+//             country,
+//             pin,
+//             dateOfBirth,
+//             maritalStatus,
+//             marriageDate,
+//             title,
+//             vehicleNumber,
+//             vehicleModel,
+//             drivingLicenceNumber,
+//             creditLimit,
+//             creditStop,
+//             qrCodeId,
+//             cardId
+//         } = req.body;
+
+//         // Handle profile picture
+//         const profilePicturePath = req.files?.profilePicture
+//             ? `/uploads/profilePictures/${req.files.profilePicture[0].filename}`
+//             : "";
+
+//         // Handle proof files
+//         const uploadProofs = req.files?.proofs
+//             ? req.files.proofs.map((file) => `/uploads/proofs/${file.filename}`)
+//             : [];
+
+//         // Ensure no more than 3 proofs are uploaded
+//         if (uploadProofs.length > 3) {
+//             return res.status(400).json({ message: "You can upload a maximum of 3 proof files." });
+//         }
+
+
+//         // Determine if this user is a primary user or a family member
+//         if (!parentUserId) {
+//             // Generate a unique member ID for the primary user
+//             // const memberId = await generatePrimaryMemberId();
+
+//             // // Check if email or mobile number is already linked to another account
+//             // const existingUser = await User.findOne({
+//             //     $or: [{ email: email }, { mobileNumber: mobileNumber }, { relation: "Primary" }],
+//             // });
+//             const existingUser = await User.findOne({
+//                 $and: [
+//                     { relation: "Primary" },
+//                     { $or: [{ email: email }, { mobileNumber: mobileNumber }] }
+//                 ]
+//             });
+
+//             if (existingUser) {
+//                 return res.status(400).json({
+//                     message: "This mobile number or e-mail is already linked to another primary member account.",
+//                 });
+//             }
+
+
+//             const memberId = req.body.memberId;
+
+
+//             // Create a new primary user
+//             const newUser = new User({
+//                 name,
+//                 email,
+//                 mobileNumber,
+//                 memberId,
+//                 relation: "Primary",
+//                 address,
+//                 address1,
+//                 address2,
+//                 city,
+//                 state,
+//                 country,
+//                 pin,
+//                 dateOfBirth,
+//                 maritalStatus,
+//                 marriageDate,
+//                 title,
+//                 profilePicture: profilePicturePath,
+//                 vehicleNumber,
+//                 vehicleModel,
+//                 drivingLicenceNumber,
+//                 uploadProofs,
+//                 isDeleted: false,
+//                 lastLogin: Date.now(),
+//                 creditLimit,
+//                 creditStop,
+//                 qrCodeId,
+//                 cardId
+//             });
+
+//             // Save the primary user to the database
+//             let savedUser = await newUser.save();
+//             // Generate and update the QR Code
+//             const userQRCode = await QRCodeHelper.generateQRCode(savedUser);
+//             savedUser.qrCode = userQRCode;
+//             const finalSavedUser = await savedUser.save();
+
+//             return res.status(201).json({
+//                 message: "Primary user created successfully",
+//                 user: finalSavedUser,
+//             });
+//         }
+
+//         // If parentUserId is provided, it means this is a family member addition
+//         const parentUser = await User.findById(parentUserId);
+//         if (!parentUser) {
+//             return res.status(404).json({ message: "Parent user not found." });
+//         }
+
+//         // Validate relationship rules
+//         const existingRelations = await User.find({ parentUserId });
+//         if (relation === "Spouse" && existingRelations.some((member) => member.relation === "Spouse")) {
+//             return res.status(400).json({ message: "Only one spouse can be added per user." });
+//         }
+
+//         // Generate a unique member ID for the family member
+//         const memberId = await generateFamilyMemberId(parentUser.memberId, existingRelations.length);
+
+//         // Create a new family member
+//         const familyMember = new User({
+//             name,
+//             email,
+//             mobileNumber,
+//             memberId,
+//             relation,
+//             address,
+//             address1,
+//             address2,
+//             city,
+//             state,
+//             country,
+//             pin,
+//             dateOfBirth,
+//             maritalStatus,
+//             marriageDate,
+//             title,
+//             parentUserId: parentUser._id,
+//             profilePicture: profilePicturePath,
+//             vehicleNumber,
+//             vehicleModel,
+//             drivingLicenceNumber,
+//             uploadProofs,
+//             qrCodeId,
+//             cardId
+//         });
+
+//         // Save the family member to the database
+//         let savedFamilyMember = await familyMember.save();
+//         const familyUserQRCode = await QRCodeHelper.generateQRCode(savedFamilyMember);
+//         savedFamilyMember.qrCode = familyUserQRCode;
+
+//         const finalSavedFamilyMember = await savedFamilyMember.save();
+//         return res.status(201).json({
+//             message: "Family member added successfully",
+//             user: finalSavedFamilyMember,
+//         });
+//     } catch (error) {
+//         console.error("Error in creating user or adding family member:", error);
+//         return res.status(400).json({
+//             message: "Error in creating user or adding family member",
+//             error: error.message,
+//         });
+//     }
+// };
 
 const createUser = async (req, res) => {
     try {
@@ -48,38 +224,32 @@ const createUser = async (req, res) => {
             vehicleModel,
             drivingLicenceNumber,
             creditLimit,
-            creditStop
+            creditStop,
+            qrCodeId,
+            cardId
         } = req.body;
 
-        // Handle profile picture
+        // Handle profile picture (if uploaded)
         const profilePicturePath = req.files?.profilePicture
             ? `/uploads/profilePictures/${req.files.profilePicture[0].filename}`
             : "";
 
-        // Handle proof files
+        // Handle proof files (limit to 3 proofs)
         const uploadProofs = req.files?.proofs
             ? req.files.proofs.map((file) => `/uploads/proofs/${file.filename}`)
             : [];
 
-        // Ensure no more than 3 proofs are uploaded
         if (uploadProofs.length > 3) {
             return res.status(400).json({ message: "You can upload a maximum of 3 proof files." });
         }
 
-
-        // Determine if this user is a primary user or a family member
+        // Handle primary user creation
         if (!parentUserId) {
-            // Generate a unique member ID for the primary user
-            // const memberId = await generatePrimaryMemberId();
-
-            // // Check if email or mobile number is already linked to another account
-            // const existingUser = await User.findOne({
-            //     $or: [{ email: email }, { mobileNumber: mobileNumber }, { relation: "Primary" }],
-            // });
+            // Check if primary user already exists with same email or mobile
             const existingUser = await User.findOne({
                 $and: [
                     { relation: "Primary" },
-                    { $or: [{ email: email }, { mobileNumber: mobileNumber }] }
+                    { $or: [{ email }, { mobileNumber }] }
                 ]
             });
 
@@ -89,9 +259,7 @@ const createUser = async (req, res) => {
                 });
             }
 
-
             const memberId = req.body.memberId;
-
 
             // Create a new primary user
             const newUser = new User({
@@ -120,32 +288,40 @@ const createUser = async (req, res) => {
                 lastLogin: Date.now(),
                 creditLimit,
                 creditStop,
+                qrCodeId,
+                cardId
             });
 
-            // Save the primary user to the database
+            // Save and generate QR code
             const savedUser = await newUser.save();
+            const userQRCode = await QRCodeHelper.generateQRCode(savedUser);
+            savedUser.qrCode = userQRCode;
+
+            // Save final user with QR code
+            const finalSavedUser = await savedUser.save();
+
             return res.status(201).json({
                 message: "Primary user created successfully",
-                user: savedUser,
+                user: finalSavedUser,
             });
         }
 
-        // If parentUserId is provided, it means this is a family member addition
+        // Handle family member addition
         const parentUser = await User.findById(parentUserId);
         if (!parentUser) {
             return res.status(404).json({ message: "Parent user not found." });
         }
 
-        // Validate relationship rules
+        // Validate relationship rules for family members (e.g., only one spouse per user)
         const existingRelations = await User.find({ parentUserId });
         if (relation === "Spouse" && existingRelations.some((member) => member.relation === "Spouse")) {
             return res.status(400).json({ message: "Only one spouse can be added per user." });
         }
 
-        // Generate a unique member ID for the family member
+        // Generate unique member ID for family member
         const memberId = await generateFamilyMemberId(parentUser.memberId, existingRelations.length);
 
-        // Create a new family member
+        // Create the family member
         const familyMember = new User({
             name,
             email,
@@ -169,14 +345,23 @@ const createUser = async (req, res) => {
             vehicleModel,
             drivingLicenceNumber,
             uploadProofs,
+            qrCodeId,
+            cardId
         });
 
-        // Save the family member to the database
+        // Save the family member and generate QR code
         const savedFamilyMember = await familyMember.save();
+        const familyUserQRCode = await QRCodeHelper.generateQRCode(savedFamilyMember);
+        savedFamilyMember.qrCode = familyUserQRCode;
+
+        // Final save with QR code for family member
+        const finalSavedFamilyMember = await savedFamilyMember.save();
+
         return res.status(201).json({
             message: "Family member added successfully",
-            user: savedFamilyMember,
+            user: finalSavedFamilyMember,
         });
+
     } catch (error) {
         console.error("Error in creating user or adding family member:", error);
         return res.status(400).json({
@@ -371,7 +556,8 @@ const fetchFamilyTree = async (userId) => {
                 vehicleModel: member.vehicleModel,
                 drivingLicenceNumber: member.drivingLicenceNumber,
             };
-            const qrCode = await QRCodeHelper.generateQRCode(qrData);
+            // const qrCode = await QRCodeHelper.generateQRCode(qrData);
+            const qrCode = member.qrCode;
 
             return {
                 _id: member._id,
@@ -394,11 +580,14 @@ const fetchFamilyTree = async (userId) => {
                 status: member.status,
                 activatedDate: member.activatedDate,
                 profilePicture: member.profilePicture,
-                qrCode, // Include the generated QR code
-                familyMembers: await fetchFamilyTree(member._id), // Recursively fetch sub-family members
                 vehicleNumber: member.vehicleNumber,
                 vehicleModel: member.vehicleModel,
                 drivingLicenceNumber: member.drivingLicenceNumber,
+                qrCodeId: member.qrCodeId,
+                cardId: member.cardId,
+                qrGenratedDate: member.qrGenratedDate,
+                qrCode, // Include the generated QR code
+                familyMembers: await fetchFamilyTree(member._id), // Recursively fetch sub-family members
             };
         })
     );
@@ -448,7 +637,8 @@ const getUserDetails = async (req, res) => {
             vehicleModel: user.vehicleModel,
             drivingLicenceNumber: user.drivingLicenceNumber,
         };
-        const primaryUserQRCode = await QRCodeHelper.generateQRCode(primaryUserQRData);
+        // const primaryUserQRCode = await QRCodeHelper.generateQRCode(primaryUserQRData);
+        const primaryUserQRCode = user.qrCode;
 
         // Fetch the full family tree for this user
         const familyMembers = await fetchFamilyTree(userId);
@@ -483,6 +673,9 @@ const getUserDetails = async (req, res) => {
                 drivingLicenceNumber: user.drivingLicenceNumber,
                 creditLimit: user.creditLimit,
                 creditStop: user.creditStop,
+                qrCodeId: user.qrCodeId,
+                cardId: user.cardId,
+                qrGenratedDate: user.qrGenratedDate,
                 familyMembers, // Nested family members with QR codes
                 qrCode: primaryUserQRCode, // Include the primary user's QR code
             },
@@ -1067,51 +1260,180 @@ const uploadMemberAddress = async (req, res) => {
     }
 }
 
+const uploadQrCodeData = async (req, res) => {
+    const updatedMembers = [];
+    let filePath;
+
+    try {
+        // Ensure the file exists before proceeding
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded" });
+        }
+
+        filePath = req.file.path;
+        const workbook = xlsx.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+        // Process each row of data
+        for (const qrcodeData of data) {
+            try {
+                const member = await User.findOne({ memberId: qrcodeData.USERID });
+
+                // Handle if member is not found
+                if (!member) {
+                    console.log(`Member with memberId: ${qrcodeData.USERID} not found, skipping.`);
+                    continue;
+                }
+
+                // Update the member's details
+                const updatedMember = await updateMemberDetails(member, qrcodeData);
+
+                // Generate and update the QR Code
+                const userQRCode = await QRCodeHelper.generateQRCode(updatedMember);
+                updatedMember.qrCode = userQRCode;
+
+                // Save the final updated member data
+                const finalUpdatedMember = await updatedMember.save();
+                updatedMembers.push(finalUpdatedMember);
+
+            } catch (error) {
+                console.error(`Error processing memberId: ${qrcodeData.USERID}`, error.message);
+                continue;
+            }
+        }
+
+        return res.status(200).json({ message: "Member QR code data and contact details updated successfully", data: updatedMembers });
+
+    } catch (error) {
+        console.error("Error processing file", error);
+        return res.status(500).json({ message: "Error updating member QR code data", error: error.message });
+
+    } finally {
+        // Clean up the uploaded file after processing
+        if (filePath) {
+            fs.unlinkSync(filePath);
+        }
+    }
+};
+
+// // Helper function to update the member's details
+// const updateMemberDetails = async (member, qrcodeData) => {
+//     // Update the member's qrCodeId, cardId, and qrGeneratedDate if available
+//     member.qrCodeId = qrcodeData.QRID || member.qrCodeId;
+//     member.cardId = qrcodeData.CARDID || member.cardId;
+//     member.qrGenratedDate = qrcodeData.CREATEDDATE ? new Date(qrcodeData.CREATEDDATE) : member.qrGenratedDate;
+
+//     return await member.save();
+// };
+
+const updateMemberDetails = async (member, qrcodeData) => {
+    // Check if CREATEDDATE exists and is a number (Excel timestamp)
+    if (qrcodeData.CREATEDDATE && typeof qrcodeData.CREATEDDATE === 'number') {
+        // Convert the Excel serial date to a JavaScript Date object
+        const excelDate = qrcodeData.CREATEDDATE;
+        const jsDate = new Date((excelDate - 25569) * 86400 * 1000); // Subtract 25569 to adjust from the Excel date system
+        member.qrGenratedDate = jsDate;
+    } else {
+        // Handle case where CREATEDDATE is not a number or is missing
+        console.error("Invalid CREATEDDATE format:", qrcodeData.CREATEDDATE);
+        member.qrGenratedDate = new Date(); // Fallback to current date
+    }
+
+    // Update other fields if available
+    member.qrCodeId = qrcodeData.QRID || member.qrCodeId;
+    member.cardId = qrcodeData.CARDID || member.cardId;
+    member.qrCode = ""
+
+    return await member.save();
+};
 
 
-// try {
-//     const filePath = req.file.path;
-//     const workbook = xlsx.readFile(filePath);
-//     const sheetName = workbook.SheetNames[0];
-//     const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-//     const updatedMembers = [];
+// Get User Details by userId (MongoDB _id)
+const getUserDetailById = async (req, res) => {
+    try {
+        // Get the userId from request params (admin selects the userId)
+        const { userId } = req.params;
 
-//     for (const address of data) {
-//         const member = await User.findOne({ memberId: address.ACCNO });
-//         if (!member) {
-//             console.log(`Member with memberId: ${address.ACCNO} not found, skipping.`);
-//             continue;
-//         }
+        // Find the user by _id (userId is passed as MongoDB _id)
+        const user = await User.findById(userId);
 
-//         // Update the member's address and additional contact details
-//         member.address = address.ADDR1 || member.address;
-//         member.address1 = address.ADDR2 || member.address1;
-//         member.address2 = address.ADDR3 || member.address2;
-//         member.city = address.CITY || member.city;
-//         member.state = address.STATEDESCRIPTION || member.state;
-//         member.country = address.COUNTRYDESCRIPTION || member.country;
-//         member.pin = address.PIN || member.pin;
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
 
-//         // Update additional fields if available
-//         if (address.PH1) {
-//             member.mobileNumber = address.PH1 || member.mobileNumber;
-//         }
-//         if (address.EMAIL1) {
-//             member.email = address.EMAIL1 || member.email;
-//         }
+        // Return the user details as a response
+        return res.status(200).json({
+            message: "User details fetched successfully",
+            user
+        });
+    } catch (error) {
+        console.error("Error fetching user details:", error);
+        return res.status(500).json({
+            message: "Error fetching user details",
+            error: error.message
+        });
+    }
+};
 
-//         const updatedMember = await member.save();
-//         updatedMembers.push(updatedMember);
-//     }
-//     // Delete the uploaded file
-//     fs.unlinkSync(filePath);
+// Update QR Code Details (admin updates qrCodeId and generates new QR code)
+const updateQrDetails = async (req, res) => {
+    try {
+        const { userId } = req.params; // userId passed in the request params
+        const { qrCodeId } = req.body; // New qrCodeId passed in the request body
+        const adminDetails = req.user;
 
-//     return res.status(200).json({ message: "Member addresses and contact details updated successfully", data: updatedMembers });
-// } catch (error) {
-//     console.error(error);
-//     return res.status(500).json({ message: "Error updating member addresses", error: error.message });
-// }
+        // Find the user by userId (_id)
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // Check if qrCodeId is blank (empty string, null, or undefined)
+        if (!qrCodeId || qrCodeId === "") {
+            return res.status(400).json({ message: "Please Provide the QR Code" });
+        }
+
+        user.qrCodeId = qrCodeId;
+        user.qrCode = "";
+
+
+        // Generate the new QR Code based on the updated user details
+        const newQrCode = await QRCodeHelper.generateQRCode(user);
+
+        // Update the qrCode field with the generated QR code
+        user.qrCode = newQrCode;
+
+        // Save the updated user document
+        const updatedUser = await user.save();
+
+        // Log activity
+        const ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+        await logUpdateQrCode({
+            memberId: updatedUser._id,
+            adminId: adminDetails.userId,
+            activity: "qrUpdate",
+            details: "QR code Update and member details update.",
+            ipAddress: ip,
+            userAgent: req.headers["user-agent"],
+        })
+
+        return res.status(200).json({
+            message: "QR Code details updated successfully",
+            user: updatedUser,
+        });
+    } catch (error) {
+        console.error("Error updating QR Code details:", error);
+        return res.status(500).json({
+            message: "Error updating QR Code details",
+            error: error.message
+        });
+    }
+};
+
 
 module.exports = {
     createUser,
@@ -1126,5 +1448,8 @@ module.exports = {
 
     // upload apis
     uploadMemberData,
-    uploadMemberAddress
+    uploadMemberAddress,
+    uploadQrCodeData,
+    getUserDetailById,
+    updateQrDetails
 };

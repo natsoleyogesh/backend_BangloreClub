@@ -1,6 +1,7 @@
 const { default: mongoose } = require("mongoose");
 const ActionLog = require("../models/actionLog");
 const ActivityLog = require("../models/activityLog");
+const UpdateQrLog = require("../models/updateQRLog");
 const logAction = async ({ userId, userType, action, ipAddress, userAgent, role }) => {
     try {
         await ActionLog.create({
@@ -33,6 +34,21 @@ const logActivity = async ({ memberId, gatekeeperId, activity, ipAddress, detail
     }
 }
 
+const logUpdateQrCode = async ({ memberId, adminId, activity, ipAddress, details, userAgent }) => {
+    try {
+        await UpdateQrLog.create({
+            memberId,
+            adminId,
+            activity,
+            details,
+            ipAddress,
+            userAgent,
+        });
+        console.log(`Activity logged: - ${activity}`);
+    } catch (error) {
+        console.error("Error logging action:", error);
+    }
+}
 
 // const getActions = async (req, res) => {
 //     try {
@@ -306,10 +322,42 @@ const deleteActionLog = async (req, res) => {
     }
 };
 
+// Function to get QR code update logs
+const getQrCodeUpdateLogs = async (req, res) => {
+    try {
+        const { userId } = req.user; // Get the userId from the request (authenticated user)
+
+        // Query to find all update logs for the user, populate member and admin fields
+        const logs = await UpdateQrLog.find({ adminId: userId })
+            .populate("memberId", "name email mobileNumber") // Populate member data (choose fields to include)
+            .populate("adminId", "name email") // Populate admin data (choose fields to include)
+            .sort({ timestamp: -1 }); // Sort by timestamp in descending order (most recent first)
+
+        // If no logs found
+        if (!logs || logs.length === 0) {
+            return res.status(404).json({ message: "No QR code update logs found." });
+        }
+
+        // Return the logs with populated member and admin data
+        return res.status(200).json({
+            message: "QR Code update logs fetched successfully",
+            logs,
+        });
+    } catch (error) {
+        console.error("Error fetching QR code update logs:", error);
+        return res.status(500).json({
+            message: "Error fetching QR code update logs",
+            error: error.message,
+        });
+    }
+};
+
 
 module.exports = {
     logAction,
     logActivity,
     getActions,
-    deleteActionLog
+    deleteActionLog,
+    logUpdateQrCode,
+    getQrCodeUpdateLogs
 }

@@ -167,7 +167,28 @@ const userSchema = new mongoose.Schema({
     creditLimit: {
         type: Number,
         default: 0
-    }
+    },
+    qrCodeId: {
+        type: String, // QR code containing all booking details
+        required: false,
+        default: ""
+    },
+    qrCode: {
+        type: String,
+        required: false,
+        default: "",
+        // unique: true,
+    },
+    cardId: {
+        type: String,
+        default: ""
+    },
+    qrGenratedDate: {
+        type: Date,
+        // default: null, // Null when user is not active
+        default: Date.now,
+    },
+
 }, { timestamps: true });
 
 const User = mongoose.model("User", userSchema);

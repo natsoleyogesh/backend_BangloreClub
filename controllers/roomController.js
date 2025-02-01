@@ -761,12 +761,12 @@ const createRoomBookingDetails = async (req, res) => {
 
         const finalTotalAmount = totalAmount + totalTaxAmount + specialDayExtraCharge;
 
-        // // Check credit limit
-        // if (primaryMemberDetails.creditLimit < finalTotalAmount) {
-        //     return res.status(400).json({
-        //         message: "Your credit limit is less than the purchase amount. Please contact the club.",
-        //     });
-        // }
+        // Check credit limit
+        if (primaryMemberDetails.creditLimit > 0 && primaryMemberDetails.creditLimit < finalTotalAmount) {
+            return res.status(400).json({
+                message: "Your credit limit is less than the purchase amount. Please contact the club.",
+            });
+        }
 
         if (isNaN(finalTotalAmount) || finalTotalAmount <= 0) {
             return res.status(400).json({ message: 'Invalid total amount' });
