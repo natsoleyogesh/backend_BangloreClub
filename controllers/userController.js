@@ -10,7 +10,9 @@ const xlsx = require('xlsx');
 const sendEmail = require("../utils/sendMail");
 const { otpRenderTemplate } = require("../utils/templateRenderer");
 const emailTemplates = require("../utils/emailTemplates");
-const { sendOTPViaPOST } = require("../utils/sendOtp");
+const { sendSMSViaPOST } = require("../utils/sendOtp");
+
+
 
 
 require("dotenv").config();
@@ -247,7 +249,7 @@ const loginRequest = async (req, res) => {
 
         // send OTP vie Mobile Number
         const message = `Dear Member, your OTP for verification code is ${otp} Please do not share this OTP with anyone. BCLUB`
-        await sendOTPViaPOST(user.mobileNumber, message);
+        await sendSMSViaPOST(user.mobileNumber, message);
 
         // Send OTP via Email
         await sendEmail(user.email, subject, htmlBody);

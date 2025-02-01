@@ -1,7 +1,7 @@
 
 const axios = require("axios");
 
-export const sendOTPViaPOST = async (mobileNumber, message) => {
+const sendSMSViaPOST = async (mobileNumber, message) => {
 
     console.log(mobileNumber, message, "otptp")
     const apiURL = process.env.WAY2MINT_API_URL;
@@ -28,4 +28,8 @@ export const sendOTPViaPOST = async (mobileNumber, message) => {
     }
 };
 
-// sendOTPViaPOST(7440308229, 123456);
+module.exports = {
+    sendSMSViaPOST
+}
+
+// sendSMSViaPOST(7440308229, 123456);
