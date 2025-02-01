@@ -1863,7 +1863,7 @@ const bookEvent = async (req, res) => {
 
         // const message = `Dear ${primaryName}, Your event booking for ${event.eventTitle} on ${templateData.eventDate} at ${QRCodeHelper.formatTimeTo12Hour(event.startTime)} to ${QRCodeHelper.formatTimeTo12Hour(event.endTime)} has been successfully confirmed. Event Details:- Event Name: ${event.eventTitle} - Number of Guests: ${totalMemberCount} - Total Amount: ${templateData.totalAmount} BCLUB`
         const message = `Dear ${primaryName}, Your event booking for ${event.eventTitle} on ${templateData.eventDate} at ${QRCodeHelper.formatTimeTo12Hour(event.startTime)} to ${QRCodeHelper.formatTimeTo12Hour(event.endTime)} has been successfully confirmed. Event Details: - Event Name: ${event.eventTitle} - Number of Guests: ${totalMemberCount} - Total Amount: ${templateData.totalAmount} BCLUB`
-        await sendSMSViaPOST(7440308229, message)
+        await sendSMSViaPOST(primaryContact, message)
 
 
         // const admins = await Admin.find({ role: 'admin', isDeleted: false });
