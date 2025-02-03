@@ -1395,7 +1395,7 @@ const uploadMemberAddress = async (req, res) => {
 //     }
 // };
 
-const BATCH_SIZE = 1000; // Process in batches
+const BATCH_SIZE = 1000; // Process in smaller batches
 
 const uploadQrCodeData = async (req, res) => {
     let filePath;
@@ -1413,59 +1413,14 @@ const uploadQrCodeData = async (req, res) => {
 
         console.log(`Total Records in File: ${data.length}`);
 
-        // Function to process batch
-        const processBatch = async (batch) => {
-            const bulkOperations = [];
-
-            for (const qrcodeData of batch) {
-                try {
-                    const member = await User.findOne({ memberId: qrcodeData.USERID });
-                    if (!member) {
-                        console.log(`Skipping member with ID: ${qrcodeData.USERID}, not found.`);
-                        continue;
-                    }
-
-                    // Update the member details
-                    const updatedMember = await updateMemberDetails(member, qrcodeData);
-
-                    // Generate QR Code
-                    const userQRCode = await QRCodeHelper.generateQRCode(updatedMember);
-                    updatedMember.qrCode = userQRCode;
-
-                    // Prepare bulk update operation
-                    bulkOperations.push({
-                        updateOne: {
-                            filter: { _id: updatedMember._id },
-                            update: { $set: { qrCode: userQRCode } },
-                        },
-                    });
-
-                } catch (error) {
-                    console.error(`Error processing memberId: ${qrcodeData.USERID}`, error.message);
-                }
-            }
-
-            // Execute bulk update
-            if (bulkOperations.length > 0) {
-                await User.bulkWrite(bulkOperations);
-                totalProcessed += bulkOperations.length;
-                console.log(`Batch Processed: ${totalProcessed}`);
-            }
-        };
-
-        // Process data in batches
-        for (let i = 0; i < data.length; i += BATCH_SIZE) {
-            const batch = data.slice(i, i + BATCH_SIZE);
-            await processBatch(batch);
-        }
-
-        // Clean up the uploaded file
-        fs.unlinkSync(filePath);
-
-        return res.status(200).json({
-            message: "QR Code data successfully uploaded and processed",
-            totalProcessed,
+        // Send immediate response to prevent timeout
+        res.status(202).json({
+            message: "File uploaded successfully. Processing started in background.",
+            totalRows: data.length,
         });
+
+        // Process data in the background
+        processFileInBatches(data, filePath);
 
     } catch (error) {
         console.error("Error processing file:", error);
@@ -1474,10 +1429,59 @@ const uploadQrCodeData = async (req, res) => {
             error: error.message,
         });
 
-    } finally {
-        if (filePath && fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+    }
+};
+
+// Process data in the background to prevent request timeout
+const processFileInBatches = async (data, filePath) => {
+    let batchStart = 0;
+
+    while (batchStart < data.length) {
+        const batch = data.slice(batchStart, batchStart + BATCH_SIZE);
+        await processBatch(batch);
+        batchStart += BATCH_SIZE;
+        console.log(`Processed batch ${batchStart}/${data.length}`);
+    }
+
+    fs.unlinkSync(filePath); // Remove file after processing
+};
+
+// Process a single batch of users
+const processBatch = async (batch) => {
+    const bulkOperations = [];
+
+    for (const qrcodeData of batch) {
+        try {
+            const member = await User.findOne({ memberId: qrcodeData.USERID });
+            if (!member) {
+                console.log(`Skipping member with ID: ${qrcodeData.USERID}, not found.`);
+                continue;
+            }
+
+            // Update the member details
+            const updatedMember = await updateMemberDetails(member, qrcodeData);
+
+            // Generate QR Code
+            const userQRCode = await QRCodeHelper.generateQRCode(updatedMember);
+            updatedMember.qrCode = userQRCode;
+
+            // Prepare bulk update operation
+            bulkOperations.push({
+                updateOne: {
+                    filter: { _id: updatedMember._id },
+                    update: { $set: { qrCode: userQRCode } },
+                },
+            });
+
+        } catch (error) {
+            console.error(`Error processing memberId: ${qrcodeData.USERID}`, error.message);
         }
+    }
+
+    // Execute bulk update
+    if (bulkOperations.length > 0) {
+        await User.bulkWrite(bulkOperations);
+        console.log(`Batch Processed: ${bulkOperations.length}`);
     }
 };
 
