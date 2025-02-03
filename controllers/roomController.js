@@ -14,6 +14,7 @@ const { roomrenderTemplate } = require("../utils/templateRenderer");
 const emailTemplates = require("../utils/emailTemplates");
 const sendEmail = require("../utils/sendMail");
 const Admin = require("../models/Admin");
+const User = require("../models/user");
 
 // Add Room Function
 const addRoom = async (req, res) => {
@@ -538,69 +539,79 @@ const createRoomBooking = async (req, res) => {
             status: roomBooking.bookingStatus,
             description: "This is a Room Booking Request."
         });
-        const admins = await Admin.find({ role: 'admin', isDeleted: false });
+
+
+        // Fetch the primary member's details
+        const member = await User.findById(roomBooking.primaryMemberId).populate("parentUserId");
+        if (!member) {
+            return res.status(404).json({ message: "Primary member not found." });
+        }
+
+        let departmentName = "Rooms (chambers)" || "Rooms"
+        const admins = await Department.find({ departmentName: departmentName, isDeleted: false });
+
+
+        const populatedBooking = await RoomBooking.findById(roomBooking._id)
+            .populate({
+                path: 'roomCategoryCounts.roomType',
+                populate: {
+                    path: 'categoryName', // Assuming roomType has a categoryName field
+                    model: 'Category',
+                },
+            })
+            .populate('primaryMemberId');
+        // Extract room details
+        const roomDetails = populatedBooking.roomCategoryCounts.map((room, index) => ({
+            roomIndex: index + 1,
+            roomName: room.roomType?.categoryName?.name || 'N/A',
+            numberOfOccupants: `${room.memberCounts.adults} Adults + ${room.memberCounts.children} Kids + ${room.memberCounts.infants} Infants`,
+            numberOfRooms: room.roomCount,
+            numberOfNights: populatedBooking.bookingDates.dayStay,
+            checkInDate: populatedBooking.bookingDates.checkIn.toDateString(),
+            checkOutDate: populatedBooking.bookingDates.checkOut.toDateString(),
+            roomFees: `₹ ${room.roomPrice} x ${room.roomCount} rooms x ${populatedBooking.bookingDates.dayStay} nights = ₹ ${(room.totalAmount - room.extraBedTotalCharges)}`,
+            extraBedCharge: `₹ ${room.extraBedTotalCharges}`,
+            taxDetails: room.taxTypes.map(tax => ({
+                taxType: tax.taxType || 'N/A',
+                taxRate: `${tax.taxRate}%`,
+                taxAmount: `₹ ${tax.taxAmount}`,
+            })),
+            totalRoomAmount: `₹ ${room.final_amount}`,
+            prRoomAmount: `₹ ${room.totalAmount}`,
+        }));
+
+        // Total amounts section
+        const totalRoomAmounts = roomDetails.reduce((total, room) => total + parseFloat(room.prRoomAmount.replace('₹ ', '')), 0);
+        // Prepare template data
+        const templateData = {
+            // Member and booking details
+            memberName: populatedBooking.primaryMemberId.name,
+            membershipId: populatedBooking.primaryMemberId.memberId,
+            contactNumber: populatedBooking.primaryMemberId.mobileNumber,
+            email: populatedBooking.primaryMemberId.email,
+            bookingDate: populatedBooking.bookingDates.checkIn.toDateString(),
+            bookingStatus: roomBooking.bookingStatus,
+            uniqueQRCode: roomBooking.uniqueQRCode,
+            bookingReferenceId: roomBooking._id,
+            qrCode: roomBooking.allDetailsQRCode, // Base64 string for QR Code
+
+            // Room details
+            roomDetails, // Array of room details for rendering multiple sections
+
+            // Totals
+            totalRoomAmounts: `₹ ${totalRoomAmounts.toFixed(2)} (Without Tax)`,
+            totalTaxAmount: `₹ ${populatedBooking.pricingDetails.final_totalTaxAmount.toFixed(2)}`,
+            finalTotalAmount: `₹ ${populatedBooking.pricingDetails.final_totalAmount.toFixed(2)} (Including Tax)`,
+
+        };
+        console.log(templateData, "templaedate")
+        const template = emailTemplates.roomBooking;
+
+        // Render template
+        const htmlBody = roomrenderTemplate(template.body, templateData);
+        const subject = `Room Booking Request`;
+
         if (admins.length > 0) {
-
-
-            const populatedBooking = await RoomBooking.findById(roomBooking._id)
-                .populate({
-                    path: 'roomCategoryCounts.roomType',
-                    populate: {
-                        path: 'categoryName', // Assuming roomType has a categoryName field
-                        model: 'Category',
-                    },
-                })
-                .populate('primaryMemberId');
-            // Extract room details
-            const roomDetails = populatedBooking.roomCategoryCounts.map((room, index) => ({
-                roomIndex: index + 1,
-                roomName: room.roomType?.categoryName?.name || 'N/A',
-                numberOfOccupants: `${room.memberCounts.adults} Adults + ${room.memberCounts.children} Kids + ${room.memberCounts.infants} Infants`,
-                numberOfRooms: room.roomCount,
-                numberOfNights: populatedBooking.bookingDates.dayStay,
-                checkInDate: populatedBooking.bookingDates.checkIn.toDateString(),
-                checkOutDate: populatedBooking.bookingDates.checkOut.toDateString(),
-                roomFees: `₹ ${room.roomPrice} x ${room.roomCount} rooms x ${populatedBooking.bookingDates.dayStay} nights = ₹ ${(room.totalAmount - room.extraBedTotalCharges)}`,
-                extraBedCharge: `₹ ${room.extraBedTotalCharges}`,
-                taxDetails: room.taxTypes.map(tax => ({
-                    taxType: tax.taxType || 'N/A',
-                    taxRate: `${tax.taxRate}%`,
-                    taxAmount: `₹ ${tax.taxAmount}`,
-                })),
-                totalRoomAmount: `₹ ${room.final_amount}`,
-                prRoomAmount: `₹ ${room.totalAmount}`,
-            }));
-
-            // Total amounts section
-            const totalRoomAmounts = roomDetails.reduce((total, room) => total + parseFloat(room.prRoomAmount.replace('₹ ', '')), 0);
-            // Prepare template data
-            const templateData = {
-                // Member and booking details
-                memberName: populatedBooking.primaryMemberId.name,
-                membershipId: populatedBooking.primaryMemberId.memberId,
-                contactNumber: populatedBooking.primaryMemberId.mobileNumber,
-                email: populatedBooking.primaryMemberId.email,
-                bookingDate: populatedBooking.bookingDates.checkIn.toDateString(),
-                bookingStatus: roomBooking.bookingStatus,
-                uniqueQRCode: roomBooking.uniqueQRCode,
-                qrCode: roomBooking.allDetailsQRCode, // Base64 string for QR Code
-
-                // Room details
-                roomDetails, // Array of room details for rendering multiple sections
-
-                // Totals
-                totalRoomAmounts: `₹ ${totalRoomAmounts.toFixed(2)} (Without Tax)`,
-                totalTaxAmount: `₹ ${populatedBooking.pricingDetails.final_totalTaxAmount.toFixed(2)}`,
-                finalTotalAmount: `₹ ${populatedBooking.pricingDetails.final_totalAmount.toFixed(2)} (Including Tax)`,
-
-            };
-            console.log(templateData, "templaedate")
-            const template = emailTemplates.roomBooking;
-
-            // Render template
-            const htmlBody = roomrenderTemplate(template.body, templateData);
-            const subject = `Room Booking Request`;
-
             for (const admin of admins) {
                 await sendEmail(admin.email, subject, htmlBody, [
                     {
@@ -613,6 +624,32 @@ const createRoomBooking = async (req, res) => {
             }
 
         }
+
+        // Send email to primary member
+        let primaryMemberEmail;
+        if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
+            primaryMemberEmail = memberData.primaryMemberId.email;
+        } else {
+            primaryMemberEmail = member.parentUserId.email;
+        }
+
+        await sendEmail(primaryMemberEmail, subject, htmlBody, [
+            {
+                filename: "qrcode.png",
+                content: allDetailsQRCode.split(",")[1],
+                encoding: "base64",
+                cid: "qrCodeImage",
+            },
+        ]);
+
+        // Create a notification for the user
+        await createNotification({
+            title: `Your Room Booking Request Is Generated`,
+            send_to: "User",
+            push_message: "Your Room Booking Requested Is Generated And Request Send For Club To Verification",
+            department: "RoomBooking",
+            departmentId: booking._id,
+        });
 
         return res.status(201).json({
             message: 'Room booking created successfully',
@@ -1300,6 +1337,7 @@ const updateRoomAllocation = async (req, res) => {
                 bookingDate: populatedBooking.bookingDates.checkIn.toDateString(),
                 bookingStatus: booking.bookingStatus,
                 uniqueQRCode: booking.uniqueQRCode,
+                bookingReferenceId: booking._id,
                 qrCode: booking.allDetailsQRCode, // Base64 string for QR Code
 
                 // Room details
