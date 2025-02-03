@@ -15,6 +15,7 @@ const moment = require('moment');
 const Department = require('../models/department');
 const { createNotification } = require('../utils/pushNotification');
 const { sendSMSViaPOST } = require('../utils/sendOtp');
+const EventAttendance = require('../models/eventAttendanceSchema ');
 
 const createEvent = async (req, res) => {
     try {
@@ -1534,7 +1535,7 @@ const bookEvent = async (req, res) => {
         // Check if the user has already booked this event
         const existingBooking = await EventBooking.findOne({ eventId, primaryMemberId, bookingStatus: "Confirmed" });
         // if (existingBooking) {
-        //     return res.status(400).json({ message: 'You have already booked this event.' });
+        //     return res.status(400).json({ message: 'you have already booked this event.' });
         // }
 
         // Fetch the event details
@@ -2005,6 +2006,50 @@ const bookingDetails = async (req, res) => {
         }
 
 
+        // // Check if the user has already booked this event
+        // const existingBooking = await EventBooking.findOne({ eventId, primaryMemberId, bookingStatus: "Confirmed" });
+        // if (existingBooking) {
+        //     return res.status(400).json({ message: 'you have already booked this event.' });
+        // }
+
+        // Fetch previous confirmed bookings for this member
+        const existingBookings = await EventBooking.find({
+            eventId,
+            primaryMemberId,
+            bookingStatus: "Confirmed",
+        });
+
+        let totalPreviousGuests = 0;
+        let alreadyBookedMembers = false;
+
+        if (existingBookings.length > 0) {
+            existingBookings.forEach((booking) => {
+                totalPreviousGuests += booking.counts.guestMemberCount; // Summing previous guests
+                if (booking.counts.primaryMemberCount > 0 || booking.counts.spouseMemberCount > 0 || booking.counts.kidsMemberCount > 0 || booking.counts.dependentMemberCount > 0 || booking.counts.seniorDependentMemberCount > 0) {
+                    alreadyBookedMembers = true;
+                }
+            });
+
+            // If user is trying to book members again, prevent it
+            if (alreadyBookedMembers && (primaryMemberChecked || (dependents && dependents.length > 0))) {
+                return res.status(400).json({
+                    message: "You have already booked this event for members. You can only book for guests.",
+                });
+            }
+        }
+
+        // Calculate the remaining guests that can be booked
+        const maxGuestLimit = 6;
+        const newGuestCount = guests ? guests.length : 0;
+        const remainingGuestsAllowed = maxGuestLimit - totalPreviousGuests;
+
+        if (newGuestCount > remainingGuestsAllowed) {
+            return res.status(400).json({
+                message: `You have already booked ${totalPreviousGuests} guests. You can only add ${remainingGuestsAllowed} more guests.`,
+            });
+        }
+
+
         // Fetch the primary member's details
         const member = await User.findById(primaryMemberId);
         if (!member) {
@@ -2412,9 +2457,99 @@ const updateBookingStatusAndPaymentStatus = async (req, res) => {
 };
 
 
+// const getBookingDetails = async (req, res) => {
+//     try {
+//         const { userId } = req.user;
+//         // Find all bookings for the member, ensuring they are not deleted, and sorted by createdAt in descending order
+//         const bookings = await EventBooking.find({ primaryMemberId: userId, isDeleted: false, deletedAt: null })
+//             .populate("eventId")
+//             .populate("primaryMemberId")
+//             .populate("dependents.userId") // Populate dependents
+//             .sort({ createdAt: -1 }); // Sort by createdAt in descending order
+
+//         if (bookings.length === 0) {
+//             return res.status(404).json({ message: 'No bookings found or all bookings have been deleted' });
+//         }
+
+//         // Format the booking details for each booking
+//         const formattedBookings = bookings.map(booking => {
+//             const formattedBooking = {
+//                 _id: booking._id,
+//                 eventImage: booking.eventId ? booking.eventId.eventImage : "",
+//                 ticketDetails: booking.ticketDetails,
+//                 memberDetails: [], // Array to hold all members (primary, dependents, and guests)
+//                 allDetailsUniqueQRCode: booking.allDetailsUniqueQRCode, // QR code for all details
+//                 allDetailsQRCode: booking.allDetailsQRCode, // QR code for all details
+//                 paymentStatus: booking.paymentStatus,
+//                 bookingStatus: booking.bookingStatus,
+//                 isDeleted: booking.isDeleted,
+//                 createdAt: booking.createdAt,
+//                 updatedAt: booking.updatedAt,
+//             };
+
+//             // Add primary member to memberDetails array
+//             formattedBooking.memberDetails.push({
+//                 _id: booking.primaryMemberId._id,
+//                 name: booking.primaryMemberId.name,
+//                 email: booking.primaryMemberId.email,
+//                 mobileNumber: booking.primaryMemberId.mobileNumber,
+//                 memberId: booking.primaryMemberId.memberId,
+//                 relation: booking.primaryMemberId.relation,
+//                 profilePicture: booking.primaryMemberId.profilePicture,
+//                 type: booking.primaryMemberId.relation,
+//                 uniqueQRCode: booking.uniqueQRCode, // Primary member QR code
+//                 qrCode: booking.primaryMemberQRCode, // Primary member QR code
+//             });
+
+//             // Add dependents to memberDetails array
+//             booking.dependents.forEach(dep => {
+//                 formattedBooking.memberDetails.push({
+//                     _id: dep.userId._id,
+//                     name: dep.userId.name,
+//                     email: dep.userId.email,
+//                     mobileNumber: dep.userId.mobileNumber,
+//                     memberId: dep.userId.memberId,
+//                     relation: dep.userId.relation,
+//                     profilePicture: dep.userId.profilePicture,
+//                     type: dep.type,
+//                     uniqueQRCode: dep.uniqueQRCode, // Dependent QR code
+//                     qrCode: dep.qrCode, // Dependent QR code
+//                 });
+//             });
+
+//             // Add guests to memberDetails array
+//             booking.guests.forEach(guest => {
+//                 formattedBooking.memberDetails.push({
+//                     _id: guest._id,
+//                     name: guest.name,
+//                     email: guest.email,
+//                     phone: guest.phone,
+//                     type: guest.type,
+//                     uniqueQRCode: guest.uniqueQRCode, // Guest QR code
+//                     qrCode: guest.qrCode, // Guest QR code
+//                 });
+//             });
+
+//             return formattedBooking;
+//         });
+
+//         // Return the response with formatted bookings
+//         return res.status(200).json({
+//             message: 'Bookings fetched successfully',
+//             bookings: formattedBookings,
+//         });
+
+//     } catch (error) {
+//         console.error('Error Getting bookings:', error);
+//         return res.status(500).json({ message: 'An error occurred while getting the bookings.', error });
+//     }
+// };
+
+
 const getBookingDetails = async (req, res) => {
     try {
         const { userId } = req.user;
+
         // Find all bookings for the member, ensuring they are not deleted, and sorted by createdAt in descending order
         const bookings = await EventBooking.find({ primaryMemberId: userId, isDeleted: false, deletedAt: null })
             .populate("eventId")
@@ -2427,65 +2562,82 @@ const getBookingDetails = async (req, res) => {
         }
 
         // Format the booking details for each booking
-        const formattedBookings = bookings.map(booking => {
-            const formattedBooking = {
-                _id: booking._id,
-                ticketDetails: booking.ticketDetails,
-                memberDetails: [], // Array to hold all members (primary, dependents, and guests)
-                allDetailsUniqueQRCode: booking.allDetailsUniqueQRCode, // QR code for all details
-                allDetailsQRCode: booking.allDetailsQRCode, // QR code for all details
-                paymentStatus: booking.paymentStatus,
-                bookingStatus: booking.bookingStatus,
-                isDeleted: booking.isDeleted,
-                createdAt: booking.createdAt,
-                updatedAt: booking.updatedAt,
-            };
+        const formattedBookings = await Promise.all(
+            bookings.map(async (booking) => {
+                const formattedBooking = {
+                    _id: booking._id,
+                    eventName: booking.eventId ? booking.eventId.eventTitle : "",
+                    eventImage: booking.eventId ? booking.eventId.eventImage : "",
+                    eventDate: booking.eventId ? booking.eventId.eventStartDate : "",
+                    bookedBy: booking.primaryMemberId ? booking.primaryMemberId.name : "",
+                    ticketDetails: booking.ticketDetails,
+                    memberDetails: [], // Array to hold all members (primary, dependents, and guests)
+                    allDetailsUniqueQRCode: booking.allDetailsUniqueQRCode,
+                    allDetailsQRCode: booking.allDetailsQRCode,
+                    paymentStatus: booking.paymentStatus,
+                    bookingStatus: booking.bookingStatus,
+                    isDeleted: booking.isDeleted,
+                    createdAt: booking.createdAt,
+                    updatedAt: booking.updatedAt,
+                };
 
-            // Add primary member to memberDetails array
-            formattedBooking.memberDetails.push({
-                _id: booking.primaryMemberId._id,
-                name: booking.primaryMemberId.name,
-                email: booking.primaryMemberId.email,
-                mobileNumber: booking.primaryMemberId.mobileNumber,
-                memberId: booking.primaryMemberId.memberId,
-                relation: booking.primaryMemberId.relation,
-                profilePicture: booking.primaryMemberId.profilePicture,
-                type: booking.primaryMemberId.relation,
-                uniqueQRCode: booking.uniqueQRCode, // Primary member QR code
-                qrCode: booking.primaryMemberQRCode, // Primary member QR code
-            });
+                // Function to check attendance status based on QR Code
+                const checkAttendanceStatus = async (eventId, qrCode) => {
+                    const attendanceRecord = await EventAttendance.findOne({ eventId, qrCode });
+                    return attendanceRecord && attendanceRecord.attendanceStatus === "Present"
+                        ? "Authenticate"
+                        : "Not Authenticate";
+                };
 
-            // Add dependents to memberDetails array
-            booking.dependents.forEach(dep => {
+                // Add primary member to memberDetails array
                 formattedBooking.memberDetails.push({
-                    _id: dep.userId._id,
-                    name: dep.userId.name,
-                    email: dep.userId.email,
-                    mobileNumber: dep.userId.mobileNumber,
-                    memberId: dep.userId.memberId,
-                    relation: dep.userId.relation,
-                    profilePicture: dep.userId.profilePicture,
-                    type: dep.type,
-                    uniqueQRCode: dep.uniqueQRCode, // Dependent QR code
-                    qrCode: dep.qrCode, // Dependent QR code
+                    _id: booking.primaryMemberId._id,
+                    name: booking.primaryMemberId.name,
+                    email: booking.primaryMemberId.email,
+                    mobileNumber: booking.primaryMemberId.mobileNumber,
+                    memberId: booking.primaryMemberId.memberId,
+                    relation: booking.primaryMemberId.relation,
+                    profilePicture: booking.primaryMemberId.profilePicture,
+                    type: booking.primaryMemberId.relation,
+                    uniqueQRCode: booking.uniqueQRCode,
+                    attendanceStatus: await checkAttendanceStatus(booking.eventId._id, booking.uniqueQRCode),
+                    qrCode: booking.primaryMemberQRCode,
                 });
-            });
 
-            // Add guests to memberDetails array
-            booking.guests.forEach(guest => {
-                formattedBooking.memberDetails.push({
-                    _id: guest._id,
-                    name: guest.name,
-                    email: guest.email,
-                    phone: guest.phone,
-                    type: guest.type,
-                    uniqueQRCode: guest.uniqueQRCode, // Guest QR code
-                    qrCode: guest.qrCode, // Guest QR code
-                });
-            });
+                // Add dependents to memberDetails array
+                for (const dep of booking.dependents) {
+                    formattedBooking.memberDetails.push({
+                        _id: dep.userId._id,
+                        name: dep.userId.name,
+                        email: dep.userId.email,
+                        mobileNumber: dep.userId.mobileNumber,
+                        memberId: dep.userId.memberId,
+                        relation: dep.userId.relation,
+                        profilePicture: dep.userId.profilePicture,
+                        type: dep.type,
+                        uniqueQRCode: dep.uniqueQRCode,
+                        attendanceStatus: await checkAttendanceStatus(booking.eventId._id, dep.uniqueQRCode),
+                        qrCode: dep.qrCode,
+                    });
+                }
 
-            return formattedBooking;
-        });
+                // Add guests to memberDetails array
+                for (const guest of booking.guests) {
+                    formattedBooking.memberDetails.push({
+                        _id: guest._id,
+                        name: guest.name,
+                        email: guest.email,
+                        phone: guest.phone,
+                        type: guest.type,
+                        uniqueQRCode: guest.uniqueQRCode,
+                        attendanceStatus: await checkAttendanceStatus(booking.eventId._id, guest.uniqueQRCode),
+                        qrCode: guest.qrCode,
+                    });
+                }
+
+                return formattedBooking;
+            })
+        );
 
         // Return the response with formatted bookings
         return res.status(200).json({
