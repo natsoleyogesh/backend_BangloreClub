@@ -15,6 +15,7 @@ const emailTemplates = require("../utils/emailTemplates");
 const sendEmail = require("../utils/sendMail");
 const Admin = require("../models/Admin");
 const User = require("../models/user");
+const Department = require("../models/department")
 
 // Add Room Function
 const addRoom = async (req, res) => {
