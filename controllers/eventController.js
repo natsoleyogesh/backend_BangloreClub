@@ -2570,6 +2570,7 @@ const getBookingDetails = async (req, res) => {
                     eventImage: booking.eventId ? booking.eventId.eventImage : "",
                     eventDate: booking.eventId ? booking.eventId.eventStartDate : "",
                     bookedBy: booking.primaryMemberId ? booking.primaryMemberId.name : "",
+                    rsvpStatus: booking.eventId ? booking.eventId.rsvpStatus : "N/A",
                     ticketDetails: booking.ticketDetails,
                     memberDetails: [], // Array to hold all members (primary, dependents, and guests)
                     allDetailsUniqueQRCode: booking.allDetailsUniqueQRCode,
