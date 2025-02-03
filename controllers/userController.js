@@ -1260,9 +1260,69 @@ const uploadMemberAddress = async (req, res) => {
     }
 }
 
+// const uploadQrCodeData = async (req, res) => {
+//     const updatedMembers = [];
+//     let filePath;
+
+//     try {
+//         // Ensure the file exists before proceeding
+//         if (!req.file) {
+//             return res.status(400).json({ message: "No file uploaded" });
+//         }
+
+//         filePath = req.file.path;
+//         const workbook = xlsx.readFile(filePath);
+//         const sheetName = workbook.SheetNames[0];
+//         const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+//         // Process each row of data
+//         for (const qrcodeData of data) {
+//             try {
+//                 const member = await User.findOne({ memberId: qrcodeData.USERID });
+
+//                 // Handle if member is not found
+//                 if (!member) {
+//                     console.log(`Member with memberId: ${qrcodeData.USERID} not found, skipping.`);
+//                     continue;
+//                 }
+
+//                 // Update the member's details
+//                 const updatedMember = await updateMemberDetails(member, qrcodeData);
+
+//                 // Generate and update the QR Code
+//                 const userQRCode = await QRCodeHelper.generateQRCode(updatedMember);
+//                 updatedMember.qrCode = userQRCode;
+
+//                 // Save the final updated member data
+//                 const finalUpdatedMember = await updatedMember.save();
+//                 updatedMembers.push(finalUpdatedMember);
+
+//             } catch (error) {
+//                 console.error(`Error processing memberId: ${qrcodeData.USERID}`, error.message);
+//                 continue;
+//             }
+//         }
+
+//         return res.status(200).json({ message: "Member QR code data and contact details updated successfully", data: updatedMembers });
+
+//     } catch (error) {
+//         console.error("Error processing file", error);
+//         return res.status(500).json({ message: "Error updating member QR code data", error: error.message });
+
+//     } finally {
+//         // Clean up the uploaded file after processing
+//         if (filePath) {
+//             fs.unlinkSync(filePath);
+//         }
+//     }
+// };
+
+const BATCH_SIZE = 1000; // Define the batch size (you can adjust this based on performance)
+
 const uploadQrCodeData = async (req, res) => {
     const updatedMembers = [];
     let filePath;
+    let batchStart = 0;
 
     try {
         // Ensure the file exists before proceeding
@@ -1275,39 +1335,55 @@ const uploadQrCodeData = async (req, res) => {
         const sheetName = workbook.SheetNames[0];
         const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-        // Process each row of data
-        for (const qrcodeData of data) {
-            try {
-                const member = await User.findOne({ memberId: qrcodeData.USERID });
+        // Process data in batches
+        const processBatch = async (batchData) => {
+            for (const qrcodeData of batchData) {
+                try {
+                    const member = await User.findOne({ memberId: qrcodeData.USERID });
+                    if (!member) {
+                        console.log(`Member with memberId: ${qrcodeData.USERID} not found, skipping.`);
+                        continue;
+                    }
 
-                // Handle if member is not found
-                if (!member) {
-                    console.log(`Member with memberId: ${qrcodeData.USERID} not found, skipping.`);
+                    // Update the member's details
+                    const updatedMember = await updateMemberDetails(member, qrcodeData);
+
+                    // Generate and update the QR Code
+                    const userQRCode = await QRCodeHelper.generateQRCode(updatedMember);
+                    updatedMember.qrCode = userQRCode;
+
+                    // Save the final updated member data
+                    const finalUpdatedMember = await updatedMember.save();
+                    updatedMembers.push(finalUpdatedMember);
+
+                } catch (error) {
+                    console.error(`Error processing memberId: ${qrcodeData.USERID}`, error.message);
                     continue;
                 }
-
-                // Update the member's details
-                const updatedMember = await updateMemberDetails(member, qrcodeData);
-
-                // Generate and update the QR Code
-                const userQRCode = await QRCodeHelper.generateQRCode(updatedMember);
-                updatedMember.qrCode = userQRCode;
-
-                // Save the final updated member data
-                const finalUpdatedMember = await updatedMember.save();
-                updatedMembers.push(finalUpdatedMember);
-
-            } catch (error) {
-                console.error(`Error processing memberId: ${qrcodeData.USERID}`, error.message);
-                continue;
             }
+        };
+
+        // Process the file in batches
+        const totalRows = data.length;
+        while (batchStart < totalRows) {
+            const batchData = data.slice(batchStart, batchStart + BATCH_SIZE); // Get the next batch of data
+            await processBatch(batchData);
+            batchStart += BATCH_SIZE; // Move the batch pointer
+
+            console.log(`Processed batch from row ${batchStart - BATCH_SIZE + 1} to ${batchStart}`);
         }
 
-        return res.status(200).json({ message: "Member QR code data and contact details updated successfully", data: updatedMembers });
+        return res.status(200).json({
+            message: "Member QR code data and contact details updated successfully",
+            data: updatedMembers,
+        });
 
     } catch (error) {
         console.error("Error processing file", error);
-        return res.status(500).json({ message: "Error updating member QR code data", error: error.message });
+        return res.status(500).json({
+            message: "Error updating member QR code data",
+            error: error.message,
+        });
 
     } finally {
         // Clean up the uploaded file after processing
@@ -1317,15 +1393,6 @@ const uploadQrCodeData = async (req, res) => {
     }
 };
 
-// // Helper function to update the member's details
-// const updateMemberDetails = async (member, qrcodeData) => {
-//     // Update the member's qrCodeId, cardId, and qrGeneratedDate if available
-//     member.qrCodeId = qrcodeData.QRID || member.qrCodeId;
-//     member.cardId = qrcodeData.CARDID || member.cardId;
-//     member.qrGenratedDate = qrcodeData.CREATEDDATE ? new Date(qrcodeData.CREATEDDATE) : member.qrGenratedDate;
-
-//     return await member.save();
-// };
 
 const updateMemberDetails = async (member, qrcodeData) => {
     // Check if CREATEDDATE exists and is a number (Excel timestamp)
