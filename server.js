@@ -8,6 +8,7 @@ const { initWebSocket } = require("./utils/websocket");
 const http = require("http"); // Import http to create server
 const cron = require("./utils/cronJobs"); // Import the cron job
 
+const compression = require("compression");
 
 require("dotenv").config();
 
@@ -31,6 +32,8 @@ app.use(
     extended: true,
   })
 );
+
+app.use(compression());
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
