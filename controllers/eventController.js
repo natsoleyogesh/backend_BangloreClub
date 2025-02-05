@@ -2591,19 +2591,22 @@ const getBookingDetails = async (req, res) => {
                 };
 
                 // Add primary member to memberDetails array
-                formattedBooking.memberDetails.push({
-                    _id: booking.primaryMemberId._id,
-                    name: booking.primaryMemberId.name,
-                    email: booking.primaryMemberId.email,
-                    mobileNumber: booking.primaryMemberId.mobileNumber,
-                    memberId: booking.primaryMemberId.memberId,
-                    relation: booking.primaryMemberId.relation,
-                    profilePicture: booking.primaryMemberId.profilePicture,
-                    type: booking.primaryMemberId.relation,
-                    uniqueQRCode: booking.uniqueQRCode,
-                    attendanceStatus: await checkAttendanceStatus(booking.eventId._id, booking.uniqueQRCode),
-                    qrCode: booking.primaryMemberQRCode,
-                });
+                if (booking.counts.primaryMemberCount > 0) {
+
+                    formattedBooking.memberDetails.push({
+                        _id: booking.primaryMemberId._id,
+                        name: booking.primaryMemberId.name,
+                        email: booking.primaryMemberId.email,
+                        mobileNumber: booking.primaryMemberId.mobileNumber,
+                        memberId: booking.primaryMemberId.memberId,
+                        relation: booking.primaryMemberId.relation,
+                        profilePicture: booking.primaryMemberId.profilePicture,
+                        type: booking.primaryMemberId.relation,
+                        uniqueQRCode: booking.uniqueQRCode,
+                        attendanceStatus: await checkAttendanceStatus(booking.eventId._id, booking.uniqueQRCode),
+                        qrCode: booking.primaryMemberQRCode,
+                    });
+                }
 
                 // Add dependents to memberDetails array
                 for (const dep of booking.dependents) {
