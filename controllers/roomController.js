@@ -1019,33 +1019,121 @@ const getBookingById = async (req, res) => {
     }
 };
 
+// const getMyBookings = async (req, res) => {
+//     try {
+//         const primaryMemberId = req.user.userId; // Assuming the user is authenticated, and their ID is stored in req.user._id
+//         const { page = 1, limit = 10 } = req.query; // Default to page 1 and limit 10 if no query params are provided
+
+//         const skip = (page - 1) * limit; // Skip the results for pagination
+
+//         // Step 1: Fetch bookings (without the populated roomCategoryCounts)
+//         const bookings = await RoomBooking.find({ primaryMemberId, isDeleted: false })
+//             .populate('roomCategoryCounts.roomType', '-roomDetails') // Populate RoomWithCategory fields
+//             .populate('primaryMemberId') // Populate User fields
+//             .sort({ createdAt: -1 }) // Sort by 'createdAt' in descending order
+//             .skip(skip) // Skip results for pagination
+//             .limit(Number(limit)); // Limit the number of results per page
+
+//         if (!bookings || bookings.length === 0) {
+//             return res.status(404).json({ message: 'No bookings found for this user' });
+//         }
+
+//         // Step 2: Manually populate the roomCategoryCounts and their related room details
+//         const populatedBookings = await Promise.all(
+//             bookings.map(async (booking) => {
+//                 // Step 3: Populate the roomCategoryCounts (as shown in your previous code)
+//                 const populatedRoomCategoryCounts = await Promise.all(
+//                     booking.roomCategoryCounts.map(async (category) => {
+//                         // Fetch the RoomWithCategory document for the current roomType
+//                         const roomCategory = await RoomWithCategory.findById(category.roomType).populate('categoryName');
+
+//                         if (!roomCategory) {
+//                             return {
+//                                 ...category.toObject(),
+//                                 roomDetails: [],
+//                             };
+//                         }
+
+//                         // Map roomNumbers to their corresponding details from roomDetails
+//                         const detailedRoomNumbers = category.roomNumbers.map((roomId) => {
+//                             const roomDetail = roomCategory.roomDetails.find((room) => room._id.equals(roomId));
+//                             return roomDetail || null; // Add room detail if found, or null if not
+//                         });
+
+//                         return {
+//                             ...category.toObject(),
+//                             roomNumbers: detailedRoomNumbers.filter((room) => room !== null), // Filter out nulls
+//                         };
+//                     })
+//                 );
+
+//                 // Step 4: Attach populated roomCategoryCounts to the booking object
+//                 return {
+//                     ...booking.toObject(),
+//                     roomCategoryCounts: populatedRoomCategoryCounts,
+//                 };
+//             })
+//         );
+
+//         // Step 5: Get the total number of bookings for pagination info
+//         const totalBookings = await RoomBooking.countDocuments({ primaryMemberId, isDeleted: false });
+
+//         // Calculate total pages
+//         const totalPages = Math.ceil(totalBookings / limit);
+
+//         return res.status(200).json({
+//             message: "All bookings fetched successfully",
+//             bookings: populatedBookings,
+//             pagination: {
+//                 totalBookings,
+//                 totalPages,
+//                 currentPage: page,
+//                 perPage: limit,
+//             },
+//         });
+//     } catch (err) {
+//         console.error(err);
+//         return res.status(500).json({ message: 'Error retrieving your bookings', error: err.message });
+//     }
+// };
+
+
 const getMyBookings = async (req, res) => {
     try {
-        const primaryMemberId = req.user.userId; // Assuming the user is authenticated, and their ID is stored in req.user._id
-        const { page = 1, limit = 10 } = req.query; // Default to page 1 and limit 10 if no query params are provided
+        const primaryMemberId = req.user.userId; // Assuming authenticated user ID is available
+        const { page = 1, limit = 10 } = req.query; // Pagination params with default values
 
-        const skip = (page - 1) * limit; // Skip the results for pagination
+        const skip = (page - 1) * limit; // Calculate records to skip for pagination
 
-        // Step 1: Fetch bookings (without the populated roomCategoryCounts)
+        // Fetch bookings while populating necessary fields
         const bookings = await RoomBooking.find({ primaryMemberId, isDeleted: false })
-            .populate('roomCategoryCounts.roomType', '-roomDetails') // Populate RoomWithCategory fields
-            .populate('primaryMemberId') // Populate User fields
-            .sort({ createdAt: -1 }) // Sort by 'createdAt' in descending order
-            .skip(skip) // Skip results for pagination
-            .limit(Number(limit)); // Limit the number of results per page
+            .populate({
+                path: 'roomCategoryCounts.roomType',
+                select: '-roomDetails', // Exclude roomDetails initially
+                populate: {
+                    path: 'categoryName', // Ensure categoryName is populated
+                    select: 'name', // Specify the fields you need
+                }
+            })
+            .populate('primaryMemberId', '-qrCode') // Populate User fields
+            .sort({ createdAt: -1 }) // Sort by latest bookings
+            .skip(skip) // Pagination skip
+            .limit(Number(limit)); // Limit results per page
 
         if (!bookings || bookings.length === 0) {
             return res.status(404).json({ message: 'No bookings found for this user' });
         }
 
-        // Step 2: Manually populate the roomCategoryCounts and their related room details
+        // Populate roomCategoryCounts and related room details manually
         const populatedBookings = await Promise.all(
             bookings.map(async (booking) => {
-                // Step 3: Populate the roomCategoryCounts (as shown in your previous code)
                 const populatedRoomCategoryCounts = await Promise.all(
                     booking.roomCategoryCounts.map(async (category) => {
-                        // Fetch the RoomWithCategory document for the current roomType
-                        const roomCategory = await RoomWithCategory.findById(category.roomType);
+                        const roomCategory = await RoomWithCategory.findById(category.roomType)
+                            .populate({
+                                path: 'categoryName', // Ensure categoryName is populated again
+                                select: 'name',
+                            });
 
                         if (!roomCategory) {
                             return {
@@ -1057,17 +1145,19 @@ const getMyBookings = async (req, res) => {
                         // Map roomNumbers to their corresponding details from roomDetails
                         const detailedRoomNumbers = category.roomNumbers.map((roomId) => {
                             const roomDetail = roomCategory.roomDetails.find((room) => room._id.equals(roomId));
-                            return roomDetail || null; // Add room detail if found, or null if not
+                            return roomDetail || null;
                         });
 
                         return {
                             ...category.toObject(),
-                            roomNumbers: detailedRoomNumbers.filter((room) => room !== null), // Filter out nulls
+                            // Extract categoryName directly from populated roomType
+                            // categoryName: category.roomType?.categoryName?.name || "Unknown Category",
+                            roomType: roomCategory, // Ensuring roomType has full populated data
+                            roomNumbers: detailedRoomNumbers.filter((room) => room !== null), // Remove null values
                         };
                     })
                 );
 
-                // Step 4: Attach populated roomCategoryCounts to the booking object
                 return {
                     ...booking.toObject(),
                     roomCategoryCounts: populatedRoomCategoryCounts,
@@ -1075,18 +1165,15 @@ const getMyBookings = async (req, res) => {
             })
         );
 
-        // Step 5: Get the total number of bookings for pagination info
+        // Get total count for pagination
         const totalBookings = await RoomBooking.countDocuments({ primaryMemberId, isDeleted: false });
-
-        // Calculate total pages
-        const totalPages = Math.ceil(totalBookings / limit);
 
         return res.status(200).json({
             message: "All bookings fetched successfully",
             bookings: populatedBookings,
             pagination: {
                 totalBookings,
-                totalPages,
+                totalPages: Math.ceil(totalBookings / limit),
                 currentPage: page,
                 perPage: limit,
             },
@@ -1096,6 +1183,7 @@ const getMyBookings = async (req, res) => {
         return res.status(500).json({ message: 'Error retrieving your bookings', error: err.message });
     }
 };
+
 
 const deleteBooking = async (req, res) => {
     try {

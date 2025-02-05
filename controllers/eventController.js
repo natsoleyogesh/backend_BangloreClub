@@ -2586,8 +2586,8 @@ const getBookingDetails = async (req, res) => {
                 const checkAttendanceStatus = async (eventId, qrCode) => {
                     const attendanceRecord = await EventAttendance.findOne({ eventId, qrCode });
                     return attendanceRecord && attendanceRecord.attendanceStatus === "Present"
-                        ? "Authenticate"
-                        : "Not Authenticate";
+                        ? "Authenticated"
+                        : "Not Authenticated";
                 };
 
                 // Add primary member to memberDetails array
