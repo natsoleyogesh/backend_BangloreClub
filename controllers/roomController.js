@@ -628,8 +628,8 @@ const createRoomBooking = async (req, res) => {
 
         // Send email to primary member
         let primaryMemberEmail;
-        if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
-            primaryMemberEmail = memberData.primaryMemberId.email;
+        if (populatedBooking.primaryMemberId.parentUserId === null && populatedBooking.primaryMemberId.relation === "Primary") {
+            primaryMemberEmail = populatedBooking.primaryMemberId.email;
         } else {
             primaryMemberEmail = member.parentUserId.email;
         }
