@@ -649,7 +649,7 @@ const createRoomBooking = async (req, res) => {
             send_to: "User",
             push_message: "Your Room Booking Requested Is Generated And Request Send For Club To Verification",
             department: "RoomBooking",
-            departmentId: booking._id,
+            departmentId: roomBooking._id,
         });
 
         return res.status(201).json({
