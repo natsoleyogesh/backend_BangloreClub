@@ -2217,6 +2217,36 @@ const bookingDetails = async (req, res) => {
     try {
         const { eventId, primaryMemberId, dependents, guests, primaryMemberChecked } = req.body;
 
+        // Validate guests array
+        if (guests && guests.length > 0) {
+            for (let i = 0; i < guests.length; i++) {
+                const guest = guests[i];
+
+                // Check if each guest has name, email, and phone
+                if (!guest.name || !guest.email || !guest.phone) {
+                    return res.status(400).json({
+                        message: `Guest-${i + 1} is missing required fields (name, email, or phone).`
+                    });
+                }
+
+                // Validate email format (simple email regex check)
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(guest.email)) {
+                    return res.status(400).json({
+                        message: `Guest-${i + 1} has an invalid email format.`
+                    });
+                }
+
+                // Validate phone number (simple numeric check for 10 digits)
+                const phoneRegex = /^[0-9]{10}$/;
+                if (!phoneRegex.test(guest.phone)) {
+                    return res.status(400).json({
+                        message: `Guest-${i + 1} has an invalid phone number format.`
+                    });
+                }
+            }
+        }
+
         // Validate request data
         if (!eventId || !primaryMemberId) {
             return res.status(400).json({ message: "Event ID and Primary Member ID are required." });
