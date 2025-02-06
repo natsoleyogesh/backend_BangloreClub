@@ -606,7 +606,7 @@ const createRoomBooking = async (req, res) => {
 
         };
         console.log(templateData, "templaedate")
-        const template = emailTemplates.roomBooking;
+        const template = emailTemplates.roomBookingRequest;
 
         // Render template
         const htmlBody = roomrenderTemplate(template.body, templateData);
@@ -614,14 +614,16 @@ const createRoomBooking = async (req, res) => {
 
         if (admins.length > 0) {
             for (const admin of admins) {
-                await sendEmail(admin.email, subject, htmlBody, [
-                    {
-                        filename: "qrcode.png",
-                        content: allDetailsQRCode.split(",")[1],
-                        encoding: "base64",
-                        cid: "qrCodeImage",
-                    },
-                ]);
+                await sendEmail(admin.email, subject, htmlBody,
+                    //      [
+                    //     {
+                    //         filename: "qrcode.png",
+                    //         content: allDetailsQRCode.split(",")[1],
+                    //         encoding: "base64",
+                    //         cid: "qrCodeImage",
+                    //     },
+                    // ]
+                );
             }
 
         }
@@ -634,14 +636,16 @@ const createRoomBooking = async (req, res) => {
             primaryMemberEmail = member.parentUserId.email;
         }
 
-        await sendEmail(primaryMemberEmail, subject, htmlBody, [
-            {
-                filename: "qrcode.png",
-                content: allDetailsQRCode.split(",")[1],
-                encoding: "base64",
-                cid: "qrCodeImage",
-            },
-        ]);
+        await sendEmail(primaryMemberEmail, subject, htmlBody,
+            //      [
+            //     {
+            //         filename: "qrcode.png",
+            //         content: allDetailsQRCode.split(",")[1],
+            //         encoding: "base64",
+            //         cid: "qrCodeImage",
+            //     },
+            // ]
+        );
 
         // Create a notification for the user
         await createNotification({

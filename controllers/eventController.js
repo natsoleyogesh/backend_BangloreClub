@@ -1986,6 +1986,233 @@ const bookEvent = async (req, res) => {
     }
 };
 
+// --------------------current code
+// const bookingDetails = async (req, res) => {
+//     try {
+//         const { eventId, primaryMemberId, dependents, guests, primaryMemberChecked } = req.body;
+
+//         // Validate request data
+//         if (!eventId || !primaryMemberId) {
+//             return res.status(400).json({ message: "Event ID and Primary Member ID are required." });
+//         }
+
+//         // Fetch the event details
+//         const event = await Event.findById(eventId).populate("taxTypes");
+//         if (!event) {
+//             return res.status(404).json({ message: "Event not found." });
+//         }
+
+//         if (event.status !== "Active") {
+//             return res.status(400).json({ message: "Event is not active or available for booking." });
+//         }
+
+
+//         // // Check if the user has already booked this event
+//         // const existingBooking = await EventBooking.findOne({ eventId, primaryMemberId, bookingStatus: "Confirmed" });
+//         // if (existingBooking) {
+//         //     return res.status(400).json({ message: 'you have already booked this event.' });
+//         // }
+
+//         // Fetch previous confirmed bookings for this member
+//         const existingBookings = await EventBooking.find({
+//             eventId,
+//             primaryMemberId,
+//             bookingStatus: "Confirmed",
+//         });
+
+// let totalPreviousGuests = 0;
+// let alreadyBookedMembers = false;
+
+// if (existingBookings.length > 0) {
+//     existingBookings.forEach((booking) => {
+//         totalPreviousGuests += booking.counts.guestMemberCount; // Summing previous guests
+//         if (booking.counts.primaryMemberCount > 0 || booking.counts.spouseMemberCount > 0 || booking.counts.kidsMemberCount > 0 || booking.counts.dependentMemberCount > 0 || booking.counts.seniorDependentMemberCount > 0) {
+//             alreadyBookedMembers = true;
+//         }
+//     });
+
+//     // If user is trying to book members again, prevent it
+//     if (alreadyBookedMembers && (primaryMemberChecked || (dependents && dependents.length > 0))) {
+//         return res.status(400).json({
+//             message: "You have already booked this event for members. You can only book for guests.",
+//         });
+//     }
+// }
+
+//         // Calculate the remaining guests that can be booked
+//         const maxGuestLimit = 6;
+//         const newGuestCount = guests ? guests.length : 0;
+//         const remainingGuestsAllowed = maxGuestLimit - totalPreviousGuests;
+
+//         if (newGuestCount > remainingGuestsAllowed) {
+//             return res.status(400).json({
+//                 message: `You have already booked ${totalPreviousGuests} guests. You can only add ${remainingGuestsAllowed} more guests.`,
+//             });
+//         }
+
+
+//         // Fetch the primary member's details
+//         const member = await User.findById(primaryMemberId);
+//         if (!member) {
+//             return res.status(404).json({ message: "Primary member not found." });
+//         }
+
+// // Fetch the primary member's details
+// let primaryMemberDetails = await User.findById(primaryMemberId);
+// if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {
+//     primaryMemberDetails = await User.findById(primaryMemberDetails.parentUserId);
+//     if (!primaryMemberDetails) {
+//         return res.status(404).json({ message: "Primary member not found for the provided member." });
+//     }
+// }
+
+// if (primaryMemberDetails.creditStop) {
+//     return res.status(400).json({ message: "You are currently not eligible for booking. Please contact the club." });
+// }
+
+// // Define a mapping for relation types
+// const relationMapping = {
+//     "Primary": "Primary",
+//     "Spouse": "Spouse",
+//     "Dependent Spouse": "Spouse",
+//     "Senior Dependent Spouse": "Spouse",
+//     "Child": "Child",
+//     // "Son": "Son",
+//     // "Daughter": "Daughter",
+//     "Dependent": "Dependent",
+//     "Senior Dependent": "SeniorDependent",
+// };
+
+// // Get the primary member's relation and map it
+// // const { relation } = member;
+// const permissionKey = relationMapping[member.relation];
+
+// // Validate the booking permission for the relation
+// if (!permissionKey || !event[`bookingPermission${permissionKey}`]) {
+//     return res.status(400).json({
+//         message: `Members with the relationship type '${member.relation}' are not eligible for booking this event.`,
+//     });
+// }
+
+
+//         // Mapping for relations to price fields
+//         const relationPriceMapping = {
+//             "Primary": "primaryMemberPrice",
+//             "Spouse": "spouseMemberPrice",
+//             "Dependent Spouse": "spouseMemberPrice",
+//             "Senior Dependent Spouse": "spouseMemberPrice",
+//             "Child": "kidsMemberPrice",
+//             // "Son": "kidsMemberPrice",
+//             // "Daughter": "kidsMemberPrice",
+//             "Dependent": "dependentMemberPrice",
+//             "Senior Dependent": "seniorDependentMemberPrice",
+//         };
+
+//         let totalAmount = 0;
+//         let subtotal = 0;
+//         let counts = {
+//             primaryMemberCount: primaryMemberChecked ? 1 : 0,
+//             spouseMemberCount: 0,
+//             kidsMemberCount: 0,
+//             dependentMemberCount: 0,
+//             seniorDependentMemberCount: 0,
+//             guestMemberCount: guests ? guests.length : 0,
+//         };
+
+//         let ticketDetails = {
+//             primaryMemberPrice: primaryMemberChecked ? event.primaryMemberPrice : 0,
+//             spouseMemberPrice: 0,
+//             kidsMemberPrice: 0,
+//             dependentMemberPrice: 0,
+//             seniorDependentMemberPrice: 0,
+//             guestPrice: counts.guestMemberCount * event.guestMemberPrice,
+//         };
+
+//         // Calculate primary member price
+//         subtotal += ticketDetails.primaryMemberPrice;
+
+//         // Calculate dependents' price
+// if (dependents && dependents.length) {
+//     for (const dependent of dependents) {
+//         const dependentUser = await User.findById(dependent.userId);
+//         if (!dependentUser) {
+//             return res.status(404).json({ message: `Dependent with ID ${dependent.userId} not found.` });
+//         }
+//         const priceField = relationPriceMapping[dependentUser.relation] || "dependentMemberPrice";
+//         ticketDetails[priceField] += event[priceField];
+//         // counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
+//         // if (dependentUser.relation === "Son" || dependentUser.relation === "Daughter") {
+//         //     counts.kidsMemberCount++;
+//         // } 
+//         if (dependentUser.relation === "Child") {
+//             counts.kidsMemberCount++;
+//         } else if (dependentUser.relation === "Senior Dependent") {
+//             counts.seniorDependentMemberCount++;
+//         }
+//         else if (dependentUser.relation === "Spouse" || dependentUser.relation === "Dependent Spouse" || dependentUser.relation === "Senior Dependent Spouse") {
+//             counts.spouseMemberCount++;
+//         } else {
+//             counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
+//         }
+//         subtotal += event[priceField];
+//     }
+// }
+
+//         subtotal += ticketDetails.guestPrice;
+//         let totalMemberCount = Object.values(counts).reduce((acc, val) => acc + val, 0);
+
+//         if (event.totalAvailableTickets < totalMemberCount) {
+//             return res.status(400).json({ message: "Not enough tickets available for this event." });
+//         }
+
+//         // Calculate tax amounts
+//         const taxDetails = event.taxTypes.map(taxType => {
+//             const taxAmount = (subtotal * taxType.percentage) / 100;
+//             return {
+//                 taxType: taxType.name,
+//                 taxRate: taxType.percentage,
+//                 taxAmount: Math.round(taxAmount * 100) / 100,
+//             };
+//         });
+
+//         const totalTaxAmount = taxDetails.reduce((acc, tax) => acc + tax.taxAmount, 0);
+//         totalAmount = subtotal + totalTaxAmount;
+
+// if (primaryMemberDetails.creditLimit > 0 && primaryMemberDetails.creditLimit < totalAmount) {
+//     return res.status(400).json({ message: "Your credit limit is less than the purchase amount. Please contact the club." });
+// }
+
+
+//         // Prepare the response data
+//         const bookingDetails = {
+//             eventId,
+//             primaryMemberId,
+//             dependents: dependents || [],
+//             guests: guests || [],
+//             counts,
+//             ticketDetails: {
+//                 ...ticketDetails,
+//                 taxTypes: taxDetails,
+//                 subtotal,
+//                 taxAmount: totalTaxAmount,
+//                 totalAmount,
+//             },
+//             paymentStatus: "Pending",
+//             bookingStatus: "Pending",
+//         };
+
+//         return res.status(200).json({
+//             message: "Booking details calculated successfully.",
+//             bookingDetails,
+//         });
+//     } catch (error) {
+//         console.error("Error calculating booking details:", error);
+//         return res.status(500).json({ message: "An error occurred while calculating the event booking details.", error: error.message });
+//     }
+// };
+
+// working current code
+
 const bookingDetails = async (req, res) => {
     try {
         const { eventId, primaryMemberId, dependents, guests, primaryMemberChecked } = req.body;
@@ -2006,56 +2233,6 @@ const bookingDetails = async (req, res) => {
         }
 
 
-        // // Check if the user has already booked this event
-        // const existingBooking = await EventBooking.findOne({ eventId, primaryMemberId, bookingStatus: "Confirmed" });
-        // if (existingBooking) {
-        //     return res.status(400).json({ message: 'you have already booked this event.' });
-        // }
-
-        // Fetch previous confirmed bookings for this member
-        const existingBookings = await EventBooking.find({
-            eventId,
-            primaryMemberId,
-            bookingStatus: "Confirmed",
-        });
-
-        let totalPreviousGuests = 0;
-        let alreadyBookedMembers = false;
-
-        if (existingBookings.length > 0) {
-            existingBookings.forEach((booking) => {
-                totalPreviousGuests += booking.counts.guestMemberCount; // Summing previous guests
-                if (booking.counts.primaryMemberCount > 0 || booking.counts.spouseMemberCount > 0 || booking.counts.kidsMemberCount > 0 || booking.counts.dependentMemberCount > 0 || booking.counts.seniorDependentMemberCount > 0) {
-                    alreadyBookedMembers = true;
-                }
-            });
-
-            // If user is trying to book members again, prevent it
-            if (alreadyBookedMembers && (primaryMemberChecked || (dependents && dependents.length > 0))) {
-                return res.status(400).json({
-                    message: "You have already booked this event for members. You can only book for guests.",
-                });
-            }
-        }
-
-        // Calculate the remaining guests that can be booked
-        const maxGuestLimit = 6;
-        const newGuestCount = guests ? guests.length : 0;
-        const remainingGuestsAllowed = maxGuestLimit - totalPreviousGuests;
-
-        if (newGuestCount > remainingGuestsAllowed) {
-            return res.status(400).json({
-                message: `You have already booked ${totalPreviousGuests} guests. You can only add ${remainingGuestsAllowed} more guests.`,
-            });
-        }
-
-
-        // Fetch the primary member's details
-        const member = await User.findById(primaryMemberId);
-        if (!member) {
-            return res.status(404).json({ message: "Primary member not found." });
-        }
-
         // Fetch the primary member's details
         let primaryMemberDetails = await User.findById(primaryMemberId);
         if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {
@@ -2069,6 +2246,7 @@ const bookingDetails = async (req, res) => {
             return res.status(400).json({ message: "You are currently not eligible for booking. Please contact the club." });
         }
 
+
         // Define a mapping for relation types
         const relationMapping = {
             "Primary": "Primary",
@@ -2076,38 +2254,101 @@ const bookingDetails = async (req, res) => {
             "Dependent Spouse": "Spouse",
             "Senior Dependent Spouse": "Spouse",
             "Child": "Child",
-            // "Son": "Son",
-            // "Daughter": "Daughter",
             "Dependent": "Dependent",
             "Senior Dependent": "SeniorDependent",
         };
 
         // Get the primary member's relation and map it
         // const { relation } = member;
-        const permissionKey = relationMapping[member.relation];
+        const permissionKey = relationMapping[primaryMemberDetails.relation];
 
         // Validate the booking permission for the relation
         if (!permissionKey || !event[`bookingPermission${permissionKey}`]) {
             return res.status(400).json({
-                message: `Members with the relationship type '${member.relation}' are not eligible for booking this event.`,
+                message: `Members with the relationship type '${primaryMemberDetails.relation}' are not eligible for booking this event.`,
             });
         }
 
+        // Fetch existing confirmed bookings for this member
+        const existingBookings = await EventBooking.find({
+            eventId,
+            primaryMemberId,
+            bookingStatus: "Confirmed",
+        });
 
-        // Mapping for relations to price fields
+        let totalPreviousGuests = 0;
+        let alreadyBookedMembers = false;
+        let alreadyBookedDependentUserIds = new Set(); // Track userIds of already booked dependents
+        let alreadyBookedPrimaryMember = false;
+
+        // Check if the primary member or any dependents are already booked
+        if (existingBookings.length > 0) {
+            existingBookings.forEach((booking) => {
+                totalPreviousGuests += booking.counts.guestMemberCount; // Summing previous guests
+                if (booking.counts.primaryMemberCount > 0) {
+                    alreadyBookedPrimaryMember = true; // Primary member is already booked
+                }
+
+                // Track booked dependents' userId
+                booking.dependents.forEach((dep) => {
+                    alreadyBookedDependentUserIds.add(dep.userId.toString()); // Add userId of booked dependents
+                });
+            });
+
+            // If primary member is already booked, prevent them from booking again
+            if (alreadyBookedPrimaryMember && primaryMemberChecked) {
+                return res.status(400).json({
+                    message: "You have already booked this event for the Primary Member. You can book for other members and guests.",
+                });
+            }
+        }
+
+        // If primary member is already booked, they can't be booked again
+        if (primaryMemberChecked && alreadyBookedPrimaryMember) {
+            return res.status(400).json({
+                message: "You have already booked this event for Primary Member. You can only book for other members and guests.",
+            });
+        }
+
+        // Check if any dependents are already booked for this event
+        if (dependents && dependents.length > 0) {
+            for (const dependent of dependents) {
+                const dependentUserId = dependent.userId;
+
+                // Check if the dependent has already been booked for this event
+                if (alreadyBookedDependentUserIds.has(dependentUserId.toString())) {
+                    const dependentUser = await User.findById(dependentUserId);
+                    if (dependentUser) {
+                        return res.status(400).json({
+                            message: `You have already booked the ticket for this dependent member (${dependentUser.relation})`,
+                        });
+                    }
+                }
+            }
+        }
+
+        let guestCount = guests ? guests.length : 0;
+        const maxGuestLimit = 6;
+        const remainingGuestsAllowed = maxGuestLimit - totalPreviousGuests;
+
+        // Check if the remaining guest count exceeds the available limit
+        if (guestCount > remainingGuestsAllowed) {
+            return res.status(400).json({
+                message: `You have already booked ${totalPreviousGuests} guests. You can only add ${remainingGuestsAllowed} more guests.`,
+            });
+        }
+
+        // Calculate ticket prices and subtotals
         const relationPriceMapping = {
             "Primary": "primaryMemberPrice",
             "Spouse": "spouseMemberPrice",
             "Dependent Spouse": "spouseMemberPrice",
             "Senior Dependent Spouse": "spouseMemberPrice",
             "Child": "kidsMemberPrice",
-            // "Son": "kidsMemberPrice",
-            // "Daughter": "kidsMemberPrice",
             "Dependent": "dependentMemberPrice",
             "Senior Dependent": "seniorDependentMemberPrice",
         };
 
-        let totalAmount = 0;
         let subtotal = 0;
         let counts = {
             primaryMemberCount: primaryMemberChecked ? 1 : 0,
@@ -2115,7 +2356,7 @@ const bookingDetails = async (req, res) => {
             kidsMemberCount: 0,
             dependentMemberCount: 0,
             seniorDependentMemberCount: 0,
-            guestMemberCount: guests ? guests.length : 0,
+            guestMemberCount: guestCount,
         };
 
         let ticketDetails = {
@@ -2127,39 +2368,39 @@ const bookingDetails = async (req, res) => {
             guestPrice: counts.guestMemberCount * event.guestMemberPrice,
         };
 
-        // Calculate primary member price
         subtotal += ticketDetails.primaryMemberPrice;
 
-        // Calculate dependents' price
+        // Process dependents and calculate their price
         if (dependents && dependents.length) {
             for (const dependent of dependents) {
                 const dependentUser = await User.findById(dependent.userId);
                 if (!dependentUser) {
                     return res.status(404).json({ message: `Dependent with ID ${dependent.userId} not found.` });
                 }
+
                 const priceField = relationPriceMapping[dependentUser.relation] || "dependentMemberPrice";
                 ticketDetails[priceField] += event[priceField];
-                // counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
-                // if (dependentUser.relation === "Son" || dependentUser.relation === "Daughter") {
-                //     counts.kidsMemberCount++;
-                // } 
+
+                // Update counts based on relation type
                 if (dependentUser.relation === "Child") {
                     counts.kidsMemberCount++;
                 } else if (dependentUser.relation === "Senior Dependent") {
                     counts.seniorDependentMemberCount++;
-                }
-                else if (dependentUser.relation === "Spouse" || dependentUser.relation === "Dependent Spouse" || dependentUser.relation === "Senior Dependent Spouse") {
+                } else if (["Spouse", "Dependent Spouse", "Senior Dependent Spouse"].includes(dependentUser.relation)) {
                     counts.spouseMemberCount++;
                 } else {
-                    counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`]++;
+                    counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`] = (counts[`${dependentUser.relation.replace(" ", "").toLowerCase()}MemberCount`] || 0) + 1;
                 }
+
                 subtotal += event[priceField];
             }
         }
 
+        // Calculate the total amount
         subtotal += ticketDetails.guestPrice;
         let totalMemberCount = Object.values(counts).reduce((acc, val) => acc + val, 0);
 
+        // Ensure there are enough tickets for the event
         if (event.totalAvailableTickets < totalMemberCount) {
             return res.status(400).json({ message: "Not enough tickets available for this event." });
         }
@@ -2175,12 +2416,21 @@ const bookingDetails = async (req, res) => {
         });
 
         const totalTaxAmount = taxDetails.reduce((acc, tax) => acc + tax.taxAmount, 0);
-        totalAmount = subtotal + totalTaxAmount;
+        const totalAmount = subtotal + totalTaxAmount;
+
 
         if (primaryMemberDetails.creditLimit > 0 && primaryMemberDetails.creditLimit < totalAmount) {
             return res.status(400).json({ message: "Your credit limit is less than the purchase amount. Please contact the club." });
         }
 
+        const eventMemberPrice = {
+            primaryMemberPrice: event ? event.primaryMemberPrice : 0,
+            dependentMemberPrice: event ? event.dependentMemberPrice : 0,
+            guestMemberPrice: event ? event.guestMemberPrice : 0,
+            kidsMemberPrice: event ? event.kidsMemberPrice : 0,
+            spouseMemberPrice: event ? event.spouseMemberPrice : 0,
+            seniorDependentMemberPrice: event ? event.seniorDependentMemberPrice : 0
+        }
 
         // Prepare the response data
         const bookingDetails = {
@@ -2189,6 +2439,7 @@ const bookingDetails = async (req, res) => {
             dependents: dependents || [],
             guests: guests || [],
             counts,
+            eventMemberPrice,
             ticketDetails: {
                 ...ticketDetails,
                 taxTypes: taxDetails,
@@ -2204,6 +2455,7 @@ const bookingDetails = async (req, res) => {
             message: "Booking details calculated successfully.",
             bookingDetails,
         });
+
     } catch (error) {
         console.error("Error calculating booking details:", error);
         return res.status(500).json({ message: "An error occurred while calculating the event booking details.", error: error.message });
