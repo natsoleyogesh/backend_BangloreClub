@@ -231,7 +231,7 @@ const addNotice = async (req, res) => {
             send_to: "All",
             // push_message: `${newNotice.description}`,
             push_message: `New Club Notice is available for you at the club notice section.`,
-            department: "Notice",
+            department: "clubNotice",
             image: bannerImage, // Assign the value directly
         });
 
