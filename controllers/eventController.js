@@ -2569,8 +2569,18 @@ const getBookingDetails = async (req, res) => {
                     eventName: booking.eventId ? booking.eventId.eventTitle : "",
                     eventImage: booking.eventId ? booking.eventId.eventImage : "",
                     eventDate: booking.eventId ? booking.eventId.eventStartDate : "",
+                    eventStartTime: booking.eventId ? booking.eventId.startTime : "",
+                    eventEndTime: booking.eventId ? booking.eventId.endTime : "",
                     bookedBy: booking.primaryMemberId ? booking.primaryMemberId.name : "",
                     rsvpStatus: booking.eventId ? booking.eventId.rsvpStatus : "N/A",
+                    eventMemberPrice: {
+                        primaryMemberPrice: booking.eventId ? booking.eventId.primaryMemberPrice : 0,
+                        dependentMemberPrice: booking.eventId ? booking.eventId.dependentMemberPrice : 0,
+                        guestMemberPrice: booking.eventId ? booking.eventId.guestMemberPrice : 0,
+                        kidsMemberPrice: booking.eventId ? booking.eventId.kidsMemberPrice : 0,
+                        spouseMemberPrice: booking.eventId ? booking.eventId.spouseMemberPrice : 0,
+                        seniorDependentMemberPrice: booking.eventId ? booking.eventId.seniorDependentMemberPrice : 0
+                    },
                     ticketDetails: booking.ticketDetails,
                     memberDetails: [], // Array to hold all members (primary, dependents, and guests)
                     allDetailsUniqueQRCode: booking.allDetailsUniqueQRCode,
