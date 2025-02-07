@@ -14,12 +14,15 @@ const eventBookingGuestTemplate = require("./template/eventBookingGuestTemplate"
 // otp
 const otpTemplate = require("./template/otpTemplate");
 const roomBookingReqTemplate = require("./template/roomBookingReqTemplate");
+const roomBookingReject = require("./template/roomBookingReject");
+const banquetBookingReject = require("./template/banquetBookingReject");
 
 module.exports = {
     eventBooking: eventBookingTemplate,
 
     banquetBooking: banquetBookingTemplate,
     banquetBookingReq: banquetBookingReqTemplate,
+    banquetBookingReject: banquetBookingReject,
 
     memberEditRequestTemplate: memberEditRequestTemplate,
     familymemberEditTemplate: familymemberEditTemplate,
@@ -28,6 +31,9 @@ module.exports = {
     eventBookingGuestTemplate: eventBookingGuestTemplate,
 
     roomBooking: roomBookingTemplate,
+
+    roomBookingReject: roomBookingReject,
+
 
     roomBookingRequest: roomBookingReqTemplate,
 

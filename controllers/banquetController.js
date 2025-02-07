@@ -1889,6 +1889,65 @@ const allocateBanquet = async (req, res) => {
             requestId = findRequest._id;
         }
 
+        // Fetch the primary member's details
+        const member = await User.findById(booking.primaryMemberId).populate("parentUserId");
+        if (!member) {
+            return res.status(404).json({ message: "Primary member not found." });
+        }
+
+
+        // Send a booking confirmation email
+        const memberData = await BanquetBooking.findById(booking._id)
+            .populate({
+                path: 'banquetType',
+                populate: {
+                    path: 'banquetName', // Assuming banquetName references BanquetCategory
+                    model: 'BanquetCategory',
+                },
+            })
+            .populate('primaryMemberId')
+
+        // Convert times
+        const formattedFrom = QRCodeHelper.formatTimeTo12Hour(booking.bookingTime.from);
+        const formattedTo = QRCodeHelper.formatTimeTo12Hour(booking.bookingTime.to);
+        // Prepare template data
+        const templateData = {
+            uniqueQRCode: booking.uniqueQRCode,
+            bookingReferenceId: booking._id,
+            // qrCode: allDetailsQRCode, // Base64 string for QR Code
+            banquetName: memberData.banquetType.banquetName.name,
+            // eventDate: event.eventDate.toDateString(),
+            primaryName: memberData.primaryMemberId.name,
+            memberId: memberData.primaryMemberId.memberId,
+            primaryEmail: memberData.primaryMemberId.email,
+            primaryContact: memberData.primaryMemberId.mobileNumber,
+            attendingGuests: booking.attendingGuests,
+            bookingDate: booking?.bookingDates?.checkIn ? booking.bookingDates.checkIn.toDateString() : "N/A",
+            from: formattedFrom,
+            to: formattedTo,
+            duration: booking.bookingTime.duration,
+            taxTypes: memberData?.pricingDetails?.taxTypes?.length > 0
+                ? memberData.pricingDetails.taxTypes.map(taxType => ({
+                    taxType: taxType.taxType || "N/A",
+                    taxRate: taxType.taxRate || 0,
+                    taxAmount: taxType.taxAmount || 0,
+                }))
+                : [],
+            totalAmount: booking.pricingDetails.totalAmount.toFixed(2),
+            totalTaxAmount: booking.pricingDetails.totalTaxAmount.toFixed(2),
+            final_totalAmount: booking.pricingDetails.final_totalAmount.toFixed(2),
+
+        };
+        console.log(templateData, "templaedate")
+
+        // Send email to primary member
+        let primaryMemberEmail;
+        if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
+            primaryMemberEmail = memberData.primaryMemberId.email;
+        } else {
+            primaryMemberEmail = member.parentUserId.email;
+        }
+
         if (bookingStatus === 'Pending' || bookingStatus === 'Cancelled') {
             // Update the booking status
             booking.bookingStatus = bookingStatus;
@@ -1910,6 +1969,19 @@ const allocateBanquet = async (req, res) => {
                 });
             }
 
+            const template = emailTemplates.banquetBookingReject;
+
+            // Render template
+            const htmlBody = banquetrenderTemplate(template.body, templateData);
+            const subject = banquetrenderTemplate(template.subject, templateData);
+
+            // Send email
+            await sendEmail(
+                primaryMemberEmail,
+                subject,
+                htmlBody,
+            );
+
 
             return res.status(200).json({
                 message: `Booking status updated successfully to '${bookingStatus}'.`,
@@ -1926,82 +1998,18 @@ const allocateBanquet = async (req, res) => {
         if (booking.bookingStatus === 'Confirmed') {
             await addBilling(booking.primaryMemberId, 'Banquet', { banquetBooking: booking._id }, booking.pricingDetails.totalAmount, 0, booking.pricingDetails.totalTaxAmount, booking.pricingDetails.final_totalAmount, userId)
 
-            // Fetch the primary member's details
-            const member = await User.findById(booking.primaryMemberId).populate("parentUserId");
-            if (!member) {
-                return res.status(404).json({ message: "Primary member not found." });
-            }
-            // Send a booking confirmation email
-            const memberData = await BanquetBooking.findById(booking._id)
-                .populate({
-                    path: 'banquetType',
-                    populate: {
-                        path: 'banquetName', // Assuming banquetName references BanquetCategory
-                        model: 'BanquetCategory',
-                    },
-                })
-                .populate('primaryMemberId')
 
-            // Convert times
-            const formattedFrom = QRCodeHelper.formatTimeTo12Hour(booking.bookingTime.from);
-            const formattedTo = QRCodeHelper.formatTimeTo12Hour(booking.bookingTime.to);
-            // Prepare template data
-            const templateData = {
-                uniqueQRCode: booking.uniqueQRCode,
-                bookingReferenceId: booking._id,
-                // qrCode: allDetailsQRCode, // Base64 string for QR Code
-                banquetName: memberData.banquetType.banquetName.name,
-                // eventDate: event.eventDate.toDateString(),
-                primaryName: memberData.primaryMemberId.name,
-                memberId: memberData.primaryMemberId.memberId,
-                primaryEmail: memberData.primaryMemberId.email,
-                primaryContact: memberData.primaryMemberId.mobileNumber,
-                attendingGuests: booking.attendingGuests,
-                bookingDate: booking?.bookingDates?.checkIn ? booking.bookingDates.checkIn.toDateString() : "N/A",
-                from: formattedFrom,
-                to: formattedTo,
-                duration: booking.bookingTime.duration,
-                taxTypes: memberData?.pricingDetails?.taxTypes?.length > 0
-                    ? memberData.pricingDetails.taxTypes.map(taxType => ({
-                        taxType: taxType.taxType || "N/A",
-                        taxRate: taxType.taxRate || 0,
-                        taxAmount: taxType.taxAmount || 0,
-                    }))
-                    : [],
-                totalAmount: booking.pricingDetails.totalAmount.toFixed(2),
-                totalTaxAmount: booking.pricingDetails.totalTaxAmount.toFixed(2),
-                final_totalAmount: booking.pricingDetails.final_totalAmount.toFixed(2),
-
-            };
-            console.log(templateData, "templaedate")
             const template = emailTemplates.banquetBooking;
 
             // Render template
             const htmlBody = banquetrenderTemplate(template.body, templateData);
             const subject = banquetrenderTemplate(template.subject, templateData);
 
-            // Send email to primary member
-            let primaryMemberEmail;
-            if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
-                primaryMemberEmail = memberData.primaryMemberId.email;
-            } else {
-                primaryMemberEmail = member.parentUserId.email;
-            }
-
             // Send email
             await sendEmail(
-                // memberData.primaryMemberId.email,
                 primaryMemberEmail,
                 subject,
                 htmlBody,
-                // [
-                //     {
-                //         filename: "qrcode.png",
-                //         content: allDetailsQRCode.split(",")[1],
-                //         encoding: "base64",
-                //         cid: "qrCodeImage",
-                //     },
-                // ]
             );
 
             // Call the createNotification function

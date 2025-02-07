@@ -1223,7 +1223,265 @@ const deleteBooking = async (req, res) => {
 };
 
 // // WORKING CODE BUT ROOM IS NOT STORE 
+//-----------------------------------------------------------------------------------------------------------------------------------------
+// const updateRoomAllocation = async (req, res) => {
+//     try {
+//         const bookingId = req.params.bookingId; // Booking ID from URL
+//         const { allocatedRooms, bookingStatus } = req.body; // Allocated rooms and booking status from the request body
+//         const { userId, role } = req.user; // User information from the request
 
+//         // Check if the user has admin privileges
+//         if (!userId || role !== 'admin') {
+//             return res.status(400).json({ message: 'Unauthorized: You do not have permission to update the booking.' });
+//         }
+
+//         // Validate the booking status
+//         const validStatuses = ['Pending', 'Confirmed', 'Cancelled'];
+//         if (!validStatuses.includes(bookingStatus)) {
+//             return res.status(400).json({ message: `Invalid booking status. Valid statuses are: ${validStatuses.join(', ')}.` });
+//         }
+
+//         // Find the booking by ID
+//         const booking = await RoomBooking.findById(bookingId);
+//         if (!booking) {
+//             return res.status(404).json({ message: 'Booking not found.' });
+//         }
+
+//         // Check if the booking is deleted
+//         if (booking.isDeleted) {
+//             return res.status(400).json({ message: 'Cannot update a deleted booking.' });
+//         }
+
+//         // Check if the booking is already confirmed
+//         if (booking.bookingStatus === 'Confirmed') {
+//             return res.status(400).json({ message: 'This booking is already confirmed.' });
+//         }
+
+//         const allDetailsQRCodeData = {
+//             uniqueQRCode: booking.uniqueQRCode,
+//             primaryMemberId: booking.primaryMemberId,
+//             memberType: booking.memberType,
+//             memberDetails: booking.memberDetails,
+//             guestContact: booking.guestContact ? booking.guestContact : '',
+//             roomCategoryCounts: booking.roomCategoryCounts,
+//             bookingDates: booking.bookingDates,
+//             paymentMode: booking.paymentMode,
+//             pricingDetails: booking.pricingDetails,
+//             paymentStatus: booking.paymentStatus,
+//             bookingStatus: bookingStatus,
+//         };
+//         const allDetailsQRCode = await QRCodeHelper.generateQRCode(allDetailsQRCodeData);
+
+
+//         let requestId = null;
+
+//         // Find the request by departmentId instead of using findById
+//         const findRequest = await AllRequest.findOne({ departmentId: bookingId }).exec();
+
+//         if (findRequest) {
+//             requestId = findRequest._id;
+//         }
+
+//         if (bookingStatus === 'Pending' || bookingStatus === 'Cancelled') {
+//             // Update the booking status
+//             booking.bookingStatus = bookingStatus;
+//             booking.allDetailsQRCode = allDetailsQRCode;
+//             await booking.save();
+//             // Create a cancellation notification for the user
+//             await createNotification({
+//                 title: `Your Room Booking Is Rejected`,
+//                 send_to: "User",
+//                 push_message: "Your Room Booking has been rejected due to invalid details.",
+//                 department: "RoomBooking",
+//                 departmentId: booking._id,
+//             });
+
+//             if (requestId !== null) {
+//                 await updateRequest(requestId, {
+//                     status: bookingStatus,
+//                     adminResponse: "The Booking Is Cancelled Due To Some Reason"
+//                 });
+//             }
+//         }
+
+//         // Process the allocated rooms
+//         for (const allocation of allocatedRooms) {
+//             const { roomType, allocatedRoomIds } = allocation;
+//             const { checkIn, checkOut } = booking.bookingDates;
+
+//             // Check if the room category exists in the booking
+//             const roomCategoryCount = booking.roomCategoryCounts.find(category => category.roomType.toString() === roomType);
+//             if (!roomCategoryCount) {
+//                 return res.status(404).json({ message: `Room type ${roomType} not found in this booking.` });
+//             }
+
+//             // Fetch the room category details
+//             const roomWithCategory = await RoomWithCategory.findById(roomType);
+//             if (!roomWithCategory) {
+//                 return res.status(404).json({ message: 'Room category not found in RoomWithCategory.' });
+//             }
+
+//             // Validate room availability for the given dates
+//             const checkRoomAvailability = async (roomId) => {
+//                 const overlappingBookings = await RoomBooking.find({
+//                     "roomCategoryCounts.roomNumbers": roomId,
+//                     "bookingDates.checkOut": { $gt: checkIn },
+//                     "bookingDates.checkIn": { $lt: checkOut },
+//                     "isDeleted": false, // Exclude deleted bookings
+//                 });
+
+//                 return overlappingBookings.length === 0;
+//             };
+
+//             const availableRooms = await Promise.all(
+//                 roomWithCategory.roomDetails
+//                     .filter(room => allocatedRoomIds.includes(room._id.toString()))
+//                     .map(async (room) => {
+//                         const isAvailable = await checkRoomAvailability(room._id);
+//                         return isAvailable ? room : null;
+//                     })
+//             );
+
+//             const validAvailableRooms = availableRooms.filter(room => room !== null);
+
+//             // Check if the required number of rooms is available
+//             if (validAvailableRooms.length < allocatedRoomIds.length) {
+//                 return res.status(400).json({
+//                     message: `Not enough rooms available for room type ${roomType} for the selected dates.`,
+//                 });
+//             }
+
+//             // Update the allocated rooms in the booking
+//             booking.roomCategoryCounts.forEach(category => {
+//                 if (category.roomType.toString() === roomType) {
+//                     category.roomNumbers = allocatedRoomIds;
+//                 }
+//             });
+//         }
+
+//         // Update the booking status
+//         booking.bookingStatus = bookingStatus;
+//         booking.allDetailsQRCode = allDetailsQRCode;
+
+//         // Save the updated booking
+//         await booking.save();
+
+//         if (bookingStatus === 'Confirmed') {
+//             // Add billing details if the booking is confirmed
+//             const subtotal = booking.pricingDetails.final_totalAmount - booking.pricingDetails.final_totalTaxAmount;
+//             await addBilling(
+//                 booking.primaryMemberId,
+//                 'Room',
+//                 { roomBooking: booking._id },
+//                 subtotal,
+//                 0,
+//                 booking.pricingDetails.final_totalTaxAmount,
+//                 booking.pricingDetails.final_totalAmount,
+//                 userId
+//             );
+
+//             // Create a notification for the user
+//             await createNotification({
+//                 title: `Your Room Booking Is Confirmed`,
+//                 send_to: "User",
+//                 push_message: "Your Room Booking is confirmed. Please proceed with the payment.",
+//                 department: "RoomBooking",
+//                 departmentId: booking._id,
+//             });
+
+//             const populatedBooking = await RoomBooking.findById(booking._id)
+//                 .populate({
+//                     path: 'roomCategoryCounts.roomType',
+//                     populate: {
+//                         path: 'categoryName', // Assuming roomType has a categoryName field
+//                         model: 'Category',
+//                     },
+//                 })
+//                 .populate('primaryMemberId');
+//             // Extract room details
+//             const roomDetails = populatedBooking.roomCategoryCounts.map((room, index) => ({
+//                 roomIndex: index + 1,
+//                 roomName: room.roomType?.categoryName?.name || 'N/A',
+//                 numberOfOccupants: `${room.memberCounts.adults} Adults + ${room.memberCounts.children} Kids + ${room.memberCounts.infants} Infants`,
+//                 numberOfRooms: room.roomCount,
+//                 numberOfNights: populatedBooking.bookingDates.dayStay,
+//                 checkInDate: populatedBooking.bookingDates.checkIn.toDateString(),
+//                 checkOutDate: populatedBooking.bookingDates.checkOut.toDateString(),
+//                 roomFees: `₹ ${room.roomPrice} x ${room.roomCount} rooms x ${populatedBooking.bookingDates.dayStay} nights = ₹ ${(room.totalAmount - room.extraBedTotalCharges)}`,
+//                 extraBedCharge: `₹ ${room.extraBedTotalCharges}`,
+//                 taxDetails: room.taxTypes.map(tax => ({
+//                     taxType: tax.taxType || 'N/A',
+//                     taxRate: `${tax.taxRate}%`,
+//                     taxAmount: `₹ ${tax.taxAmount}`,
+//                 })),
+//                 totalRoomAmount: `₹ ${room.final_amount}`,
+//                 prRoomAmount: `₹ ${room.totalAmount}`,
+//             }));
+
+//             // Total amounts section
+//             const totalRoomAmounts = roomDetails.reduce((total, room) => total + parseFloat(room.prRoomAmount.replace('₹ ', '')), 0);
+//             // Prepare template data
+//             const templateData = {
+//                 // Member and booking details
+//                 memberName: populatedBooking.primaryMemberId.name,
+//                 membershipId: populatedBooking.primaryMemberId.memberId,
+//                 contactNumber: populatedBooking.primaryMemberId.mobileNumber,
+//                 email: populatedBooking.primaryMemberId.email,
+//                 bookingDate: populatedBooking.bookingDates.checkIn.toDateString(),
+//                 bookingStatus: booking.bookingStatus,
+//                 uniqueQRCode: booking.uniqueQRCode,
+//                 bookingReferenceId: booking._id,
+//                 qrCode: booking.allDetailsQRCode, // Base64 string for QR Code
+
+//                 // Room details
+//                 roomDetails, // Array of room details for rendering multiple sections
+
+//                 // Totals
+//                 totalRoomAmounts: `₹ ${totalRoomAmounts.toFixed(2)} (Without Tax)`,
+//                 totalTaxAmount: `₹ ${populatedBooking.pricingDetails.final_totalTaxAmount.toFixed(2)}`,
+//                 finalTotalAmount: `₹ ${populatedBooking.pricingDetails.final_totalAmount.toFixed(2)} (Including Tax)`,
+
+//             };
+//             console.log(templateData, "templaedate")
+//             const template = emailTemplates.roomBooking;
+
+//             // Render template
+//             const htmlBody = roomrenderTemplate(template.body, templateData);
+//             const subject = roomrenderTemplate(template.subject, templateData);
+
+//             // Send email
+//             await sendEmail(
+//                 populatedBooking.primaryMemberId.email,
+//                 subject,
+//                 htmlBody,
+//                 [
+//                     {
+//                         filename: "qrcode.png",
+//                         content: allDetailsQRCode.split(",")[1],
+//                         encoding: "base64",
+//                         cid: "qrCodeImage",
+//                     },
+//                 ]
+//             );
+
+//             if (requestId !== null) {
+//                 updateRequest(requestId, { status: bookingStatus, adminResponse: "The Booking Is Confirmed !" })
+//             }
+//         }
+//         // else if (bookingStatus === 'Cancelled') {
+
+//         // }
+
+//         return res.status(200).json({ message: 'Room allocation updated successfully.', booking });
+//     } catch (error) {
+//         console.error('Error updating room allocation:', error);
+//         return res.status(500).json({
+//             message: 'An error occurred while updating room allocation.',
+//             error: error.message,
+//         });
+//     }
+// };
+// --------------------------------------------------------------------------------------------------------------------------------------------
 const updateRoomAllocation = async (req, res) => {
     try {
         const bookingId = req.params.bookingId; // Booking ID from URL
@@ -1282,6 +1540,62 @@ const updateRoomAllocation = async (req, res) => {
             requestId = findRequest._id;
         }
 
+        const populatedBooking = await RoomBooking.findById(booking._id)
+            .populate({
+                path: 'roomCategoryCounts.roomType',
+                populate: {
+                    path: 'categoryName', // Assuming roomType has a categoryName field
+                    model: 'Category',
+                },
+            })
+            .populate('primaryMemberId');
+        // Extract room details
+        const roomDetails = populatedBooking.roomCategoryCounts.map((room, index) => ({
+            roomIndex: index + 1,
+            roomName: room.roomType?.categoryName?.name || 'N/A',
+            numberOfOccupants: `${room.memberCounts.adults} Adults + ${room.memberCounts.children} Kids + ${room.memberCounts.infants} Infants`,
+            numberOfRooms: room.roomCount,
+            numberOfNights: populatedBooking.bookingDates.dayStay,
+            checkInDate: populatedBooking.bookingDates.checkIn.toDateString(),
+            checkOutDate: populatedBooking.bookingDates.checkOut.toDateString(),
+            roomFees: `₹ ${room.roomPrice} x ${room.roomCount} rooms x ${populatedBooking.bookingDates.dayStay} nights = ₹ ${(room.totalAmount - room.extraBedTotalCharges)}`,
+            extraBedCharge: `₹ ${room.extraBedTotalCharges}`,
+            taxDetails: room.taxTypes.map(tax => ({
+                taxType: tax.taxType || 'N/A',
+                taxRate: `${tax.taxRate}%`,
+                taxAmount: `₹ ${tax.taxAmount}`,
+            })),
+            totalRoomAmount: `₹ ${room.final_amount}`,
+            prRoomAmount: `₹ ${room.totalAmount}`,
+        }));
+
+        // Total amounts section
+        const totalRoomAmounts = roomDetails.reduce((total, room) => total + parseFloat(room.prRoomAmount.replace('₹ ', '')), 0);
+        // Prepare template data
+        const templateData = {
+            // Member and booking details
+            memberName: populatedBooking.primaryMemberId.name,
+            membershipId: populatedBooking.primaryMemberId.memberId,
+            contactNumber: populatedBooking.primaryMemberId.mobileNumber,
+            email: populatedBooking.primaryMemberId.email,
+            bookingDate: populatedBooking.bookingDates.checkIn.toDateString(),
+            bookingStatus: booking.bookingStatus,
+            uniqueQRCode: booking.uniqueQRCode,
+            bookingReferenceId: booking._id,
+            qrCode: booking.allDetailsQRCode, // Base64 string for QR Code
+
+            // Room details
+            roomDetails, // Array of room details for rendering multiple sections
+
+            // Totals
+            totalRoomAmounts: `₹ ${totalRoomAmounts.toFixed(2)} (Without Tax)`,
+            totalTaxAmount: `₹ ${populatedBooking.pricingDetails.final_totalTaxAmount.toFixed(2)}`,
+            finalTotalAmount: `₹ ${populatedBooking.pricingDetails.final_totalAmount.toFixed(2)} (Including Tax)`,
+
+        };
+        console.log(templateData, "templaedate")
+
+
         if (bookingStatus === 'Pending' || bookingStatus === 'Cancelled') {
             // Update the booking status
             booking.bookingStatus = bookingStatus;
@@ -1302,6 +1616,21 @@ const updateRoomAllocation = async (req, res) => {
                     adminResponse: "The Booking Is Cancelled Due To Some Reason"
                 });
             }
+
+
+            const template = emailTemplates.roomBookingReject;
+
+            // Render template
+            const htmlBody = roomrenderTemplate(template.body, templateData);
+            const subject = roomrenderTemplate(template.subject, templateData);
+
+            // Send email
+            await sendEmail(
+                populatedBooking.primaryMemberId.email,
+                subject,
+                htmlBody,
+            );
+
         }
 
         // Process the allocated rooms
@@ -1389,60 +1718,6 @@ const updateRoomAllocation = async (req, res) => {
                 departmentId: booking._id,
             });
 
-            const populatedBooking = await RoomBooking.findById(booking._id)
-                .populate({
-                    path: 'roomCategoryCounts.roomType',
-                    populate: {
-                        path: 'categoryName', // Assuming roomType has a categoryName field
-                        model: 'Category',
-                    },
-                })
-                .populate('primaryMemberId');
-            // Extract room details
-            const roomDetails = populatedBooking.roomCategoryCounts.map((room, index) => ({
-                roomIndex: index + 1,
-                roomName: room.roomType?.categoryName?.name || 'N/A',
-                numberOfOccupants: `${room.memberCounts.adults} Adults + ${room.memberCounts.children} Kids + ${room.memberCounts.infants} Infants`,
-                numberOfRooms: room.roomCount,
-                numberOfNights: populatedBooking.bookingDates.dayStay,
-                checkInDate: populatedBooking.bookingDates.checkIn.toDateString(),
-                checkOutDate: populatedBooking.bookingDates.checkOut.toDateString(),
-                roomFees: `₹ ${room.roomPrice} x ${room.roomCount} rooms x ${populatedBooking.bookingDates.dayStay} nights = ₹ ${(room.totalAmount - room.extraBedTotalCharges)}`,
-                extraBedCharge: `₹ ${room.extraBedTotalCharges}`,
-                taxDetails: room.taxTypes.map(tax => ({
-                    taxType: tax.taxType || 'N/A',
-                    taxRate: `${tax.taxRate}%`,
-                    taxAmount: `₹ ${tax.taxAmount}`,
-                })),
-                totalRoomAmount: `₹ ${room.final_amount}`,
-                prRoomAmount: `₹ ${room.totalAmount}`,
-            }));
-
-            // Total amounts section
-            const totalRoomAmounts = roomDetails.reduce((total, room) => total + parseFloat(room.prRoomAmount.replace('₹ ', '')), 0);
-            // Prepare template data
-            const templateData = {
-                // Member and booking details
-                memberName: populatedBooking.primaryMemberId.name,
-                membershipId: populatedBooking.primaryMemberId.memberId,
-                contactNumber: populatedBooking.primaryMemberId.mobileNumber,
-                email: populatedBooking.primaryMemberId.email,
-                bookingDate: populatedBooking.bookingDates.checkIn.toDateString(),
-                bookingStatus: booking.bookingStatus,
-                uniqueQRCode: booking.uniqueQRCode,
-                bookingReferenceId: booking._id,
-                qrCode: booking.allDetailsQRCode, // Base64 string for QR Code
-
-                // Room details
-                roomDetails, // Array of room details for rendering multiple sections
-
-                // Totals
-                totalRoomAmounts: `₹ ${totalRoomAmounts.toFixed(2)} (Without Tax)`,
-                totalTaxAmount: `₹ ${populatedBooking.pricingDetails.final_totalTaxAmount.toFixed(2)}`,
-                finalTotalAmount: `₹ ${populatedBooking.pricingDetails.final_totalAmount.toFixed(2)} (Including Tax)`,
-
-            };
-            console.log(templateData, "templaedate")
             const template = emailTemplates.roomBooking;
 
             // Render template
@@ -1454,14 +1729,6 @@ const updateRoomAllocation = async (req, res) => {
                 populatedBooking.primaryMemberId.email,
                 subject,
                 htmlBody,
-                [
-                    {
-                        filename: "qrcode.png",
-                        content: allDetailsQRCode.split(",")[1],
-                        encoding: "base64",
-                        cid: "qrCodeImage",
-                    },
-                ]
             );
 
             if (requestId !== null) {
@@ -1482,7 +1749,7 @@ const updateRoomAllocation = async (req, res) => {
     }
 };
 
-
+// Working Code---------------------------------------------------------------------------------
 const findRooms = async (req, res) => {
     const { bookingId } = req.params;
 
