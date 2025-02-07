@@ -171,6 +171,9 @@ const getMemberDetailsFromQR = async (req, res) => {
 
         const eventBooking = await EventBooking.findById(attendanceRecord.eventBookingId);
 
+        console.log(eventBooking, "yeeheddb", eventBooking.bookingStatus)
+
+
         if (!eventBooking && eventBooking.bookingStatus !== "Confirmed") {
             return res.status(400).json({ message: 'Invalid QR Code. The Event Booking Is Cancelled' });
         }
@@ -238,7 +241,7 @@ const getMemberDetailsFromQRCode = async (req, res) => {
         }
 
         const eventBooking = await EventBooking.findById(attendanceRecord.eventBookingId);
-
+        console.log(eventBooking, "yeeheddb", eventBooking.bookingStatus)
         if (!eventBooking && eventBooking.bookingStatus !== "Confirmed") {
             return res.status(400).json({ message: 'Invalid QR Code. The Event Booking Is Cancelled' });
         }
