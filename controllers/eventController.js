@@ -2983,6 +2983,7 @@ const updateBookingStatusAndPaymentStatus = async (req, res) => {
         event.allottedTicketsGuest += memberData.counts.guestMemberCount;
         event.totalAvailableTickets += totalMemberCount;
 
+        await event.save();
 
 
         return res.status(200).json({
