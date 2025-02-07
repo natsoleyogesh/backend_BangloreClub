@@ -11,7 +11,7 @@ const createAttendanceRecords = async (booking) => {
         const primaryDetails = await User.findById(booking.primaryMemberId);
         attendanceRecords.push({
             eventId: booking.eventId,
-            eventBooking: booking._id,
+            eventBookingId: booking._id,
             memberId: booking.primaryMemberId,
             name: primaryDetails.name,
             mobileNumber: primaryDetails.mobileNumber,
@@ -27,7 +27,7 @@ const createAttendanceRecords = async (booking) => {
         const DependentDetails = await User.findById(dependent.userId);
         attendanceRecords.push({
             eventId: booking.eventId,
-            eventBooking: booking._id,
+            eventBookingId: booking._id,
             memberId: dependent.userId,
             name: DependentDetails.name,
             mobileNumber: DependentDetails.mobileNumber,
@@ -41,7 +41,7 @@ const createAttendanceRecords = async (booking) => {
     booking.guests.forEach((guest) => {
         attendanceRecords.push({
             eventId: booking.eventId,
-            eventBooking: booking._id,
+            eventBookingId: booking._id,
             guestName: guest.name,
             name: guest.name,
             mobileNumber: guest.phone,
