@@ -604,6 +604,8 @@ const createRoomBooking = async (req, res) => {
             totalTaxAmount: `₹ ${populatedBooking.pricingDetails.final_totalTaxAmount.toFixed(2)}`,
             finalTotalAmount: `₹ ${populatedBooking.pricingDetails.final_totalAmount.toFixed(2)} (Including Tax)`,
 
+            memberType: roomBooking.memberType == "Member" ? "Self" : "Guest",
+
         };
         console.log(templateData, "templaedate")
         const template = emailTemplates.roomBookingRequest;
@@ -1591,6 +1593,8 @@ const updateRoomAllocation = async (req, res) => {
             totalRoomAmounts: `₹ ${totalRoomAmounts.toFixed(2)} (Without Tax)`,
             totalTaxAmount: `₹ ${populatedBooking.pricingDetails.final_totalTaxAmount.toFixed(2)}`,
             finalTotalAmount: `₹ ${populatedBooking.pricingDetails.final_totalAmount.toFixed(2)} (Including Tax)`,
+
+            memberType: booking.memberType == "Member" ? "Self" : "Guest",
 
         };
         console.log(templateData, "templaedate")

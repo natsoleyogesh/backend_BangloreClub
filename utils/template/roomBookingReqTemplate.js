@@ -153,7 +153,7 @@ module.exports = {
 <body>
     <div class="email-container">
         <div class="header">
-            <h1>Rooms Booking Request</h1>
+            <h1>Rooms Booking Request ({{memberType}})</h1>
         </div>
         <div class="content">
             <h2>Booking Details</h2>
