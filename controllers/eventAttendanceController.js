@@ -1,5 +1,6 @@
 const Event = require("../models/event");
 const EventAttendance = require("../models/eventAttendanceSchema ");
+const EventBooking = require("../models/eventBooking");
 const User = require("../models/user");
 
 const createAttendanceRecords = async (booking) => {
@@ -10,6 +11,7 @@ const createAttendanceRecords = async (booking) => {
         const primaryDetails = await User.findById(booking.primaryMemberId);
         attendanceRecords.push({
             eventId: booking.eventId,
+            eventBooking: booking._id,
             memberId: booking.primaryMemberId,
             name: primaryDetails.name,
             mobileNumber: primaryDetails.mobileNumber,
@@ -25,6 +27,7 @@ const createAttendanceRecords = async (booking) => {
         const DependentDetails = await User.findById(dependent.userId);
         attendanceRecords.push({
             eventId: booking.eventId,
+            eventBooking: booking._id,
             memberId: dependent.userId,
             name: DependentDetails.name,
             mobileNumber: DependentDetails.mobileNumber,
@@ -38,6 +41,7 @@ const createAttendanceRecords = async (booking) => {
     booking.guests.forEach((guest) => {
         attendanceRecords.push({
             eventId: booking.eventId,
+            eventBooking: booking._id,
             guestName: guest.name,
             name: guest.name,
             mobileNumber: guest.phone,
@@ -165,6 +169,12 @@ const getMemberDetailsFromQR = async (req, res) => {
             return res.status(404).json({ message: 'Invalid QR Code. No attendance record found.' });
         }
 
+        const eventBooking = await EventBooking.findById(attendanceRecord.eventBookingId);
+
+        if (!eventBooking && eventBooking.bookingStatus !== "Confirmed") {
+            return res.status(400).json({ message: 'Invalid QR Code. The Event Booking Is Cancelled' });
+        }
+
         if (type === "Guest") {
             // Add user details to response
             response.userDetails = {
@@ -225,6 +235,12 @@ const getMemberDetailsFromQRCode = async (req, res) => {
 
         if (!attendanceRecord) {
             return res.status(404).json({ message: 'Invalid QR Code. No attendance record found.' });
+        }
+
+        const eventBooking = await EventBooking.findById(attendanceRecord.eventBookingId);
+
+        if (!eventBooking && eventBooking.bookingStatus !== "Confirmed") {
+            return res.status(400).json({ message: 'Invalid QR Code. The Event Booking Is Cancelled' });
         }
 
         // Fetch event details

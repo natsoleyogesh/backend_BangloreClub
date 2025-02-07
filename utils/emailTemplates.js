@@ -16,27 +16,34 @@ const otpTemplate = require("./template/otpTemplate");
 const roomBookingReqTemplate = require("./template/roomBookingReqTemplate");
 const roomBookingReject = require("./template/roomBookingReject");
 const banquetBookingReject = require("./template/banquetBookingReject");
+const eventBookingCancel = require("./template/eventBookingCancelled/eventBookingCancel");
+const dependentBookingCanclled = require("./template/eventBookingCancelled/dependentBookingCanclled");
+const guestBookingCanclled = require("./template/eventBookingCancelled/guestBookingCanclled");
 
 module.exports = {
+    // event booking Confirmation Template
     eventBooking: eventBookingTemplate,
+    eventBookingDependentTemplate: eventBookingDependentTemplate,
+    eventBookingGuestTemplate: eventBookingGuestTemplate,
 
+    // Event Booking Rejetc / Canclled Template
+    eventBookingCanclled: eventBookingCancel,
+    eventDependentCanclled: dependentBookingCanclled,
+    eventGuestCanclled: guestBookingCanclled,
+
+    // Banqet Booking Template
     banquetBooking: banquetBookingTemplate,
     banquetBookingReq: banquetBookingReqTemplate,
     banquetBookingReject: banquetBookingReject,
 
-    memberEditRequestTemplate: memberEditRequestTemplate,
-    familymemberEditTemplate: familymemberEditTemplate,
-
-    eventBookingDependentTemplate: eventBookingDependentTemplate,
-    eventBookingGuestTemplate: eventBookingGuestTemplate,
-
+    // Room Booking Template
     roomBooking: roomBookingTemplate,
-
     roomBookingReject: roomBookingReject,
-
-
     roomBookingRequest: roomBookingReqTemplate,
 
+
+    memberEditRequestTemplate: memberEditRequestTemplate,
+    familymemberEditTemplate: familymemberEditTemplate,
 
     otpTemplate: otpTemplate
 };

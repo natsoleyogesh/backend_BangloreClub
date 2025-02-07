@@ -7,6 +7,11 @@ const eventAttendanceSchema = new mongoose.Schema(
             ref: 'Event', // Reference to the Event model
             required: true,
         },
+        eventBookingId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'eventBooking', // Reference to the Event model
+            required: true,
+        },
         memberId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User', // Reference to the User model (for primary member or dependents)

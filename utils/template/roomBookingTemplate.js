@@ -1,5 +1,5 @@
 module.exports = {
-    subject: "Room Booking Confirmation",
+    subject: "Room Booking Approved",
     body: `
     <!DOCTYPE html>
 <html lang="en">
@@ -7,7 +7,7 @@ module.exports = {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rooms Booking Confirmation - Bangalore Club</title>
+    <title>Rooms Booking Approved - Bangalore Club</title>
     <style>
         /* General styling for responsive and clean design */
         body {
@@ -153,7 +153,7 @@ module.exports = {
 <body>
     <div class="email-container">
         <div class="header">
-            <h1>Rooms Booking Confirmation</h1>
+            <h1>Rooms Booking Approved</h1>
         </div>
         <div class="content">
             <h2>Booking Details</h2>

@@ -76,7 +76,7 @@ const eventBookingSchema = new mongoose.Schema(
             primaryMemberCount: {
                 type: Number,
                 required: true,
-                default: 1,
+                default: 0,
             },
             dependentMemberCount: {
                 type: Number,

@@ -1,13 +1,13 @@
 module.exports = {
-    subject: "Booking Approved for {{banquetName}}",
+    subject: "Booking Cancelled for {{eventTitle}}",
     body: `
-<!DOCTYPE html>
+       <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banquet Booking Approved - Bangalore Club</title>
+    <title>Event Booking Cancelled - Bangalore Club</title>
     <style>
         /* General styling for responsive and clean design */
         body {
@@ -153,34 +153,42 @@ module.exports = {
 <body>
     <div class="email-container">
         <div class="header">
-            <h1>Banquet Booking Approved</h1>
+            <h1>Event Booking Cancelled</h1>
         </div>
         <div class="content">
             <h2>Booking Details</h2>
             <div class="details-section" style="text-align: center;">
-              <!-- <p><img src="cid:qrCodeImage" alt="QR Code" style="width: 250px; height: 250px;" /></p> -->
-                <p><strong>Booking Ref. ID:</strong> {{bookingReferenceId}}</p>
+                <p><img src="cid:qrCodeImage" alt="QR Code" style="width: 250px; height: 250px;" /></p>
+                <p><strong>QR Code ID:</strong> {{uniqueQRCode}}</p>
             </div>
+
             <div class="details-section">
-                <h3>Banquet Information</h3>
-                <p><strong>Banquet Name:</strong> {{banquetName}}</p>
-                <p><strong>Member Name:</strong> {{primaryName}}</p>
-                <p><strong>Membership ID:</strong> {{memberId}}</p>
-                <p><strong>Contact No.:</strong> {{primaryContact}}</p>
-                <p><strong>Email:</strong> {{primaryEmail}}</p>
-                <p><strong>Attending Guests:</strong> {{attendingGuests}}</p>
-                <p><strong>Date of Banquet:</strong> {{bookingDate}}</p>
-                <p><strong>Duration:</strong> {{from}} - {{to}} PM ({{duration}} Hours)</p>
+                <h3>Event Information</h3>
+                <p><strong>Event Name:</strong> {{eventTitle}}</p>
+                <p><strong>Event Date:</strong> {{eventDate}}</p>
             </div>
-            <div class="details-section2">
-                <h3>Payment Details</h3>
-                <p><strong>Banquet Fees:</strong> ₹{{totalAmount}}</p>
-                  {{taxTypes}}
-                <p><strong>Total Tax Amount:</strong> ₹{{totalTaxAmount}}</p>
-                <p><strong>Total Billed Amount:</strong> ₹{{final_totalAmount}}</p>
-                <p class="disclaimer"><strong>Important:</strong> The total billed amount will be directly charged to
-                    the member's account. For detailed tax information, please refer to the respective individual room
-                    sections above.</p>
+              <div class="details-section">
+               <h3>Booked By :- {{bookedBy}}</h3>
+                <p><strong>Member A/C No:</strong> {{memberShipId}}</p>
+                <p><strong>Contact Number:</strong> {{memberContact}}</p>
+            </div>
+
+            <div class="details-section">
+                <h3>Guest Member Details</h3>
+                <p><strong>Name:</strong> {{guestName}}</p>
+                <p><strong>Email:</strong> {{guestEmail}}</p>
+                <p><strong>Contact Number:</strong> {{guestContact}}</p>
+              
+            </div>
+           
+            <div class="icons">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M14 9V5a5 5 0 0 0-10 0v4H2v13h20V9h-8zM8 5a3 3 0 0 1 6 0v4H8zm10 15H4v-9h4v3h8v-3h4z" />
+                </svg>
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path
+                        d="M21 11.5a8.38 8.38 0 0 1-.09 1.23 8.5 8.5 0 1 1-9.74-9.74 8.38 8.38 0 0 1 1.23-.09h.5v2h-.5a6.5 6.5 0 1 0 6.5 6.5h-2v-2h4v4h-2z" />
+                </svg>
             </div>
         </div>
         <div class="footer">
@@ -198,5 +206,5 @@ module.exports = {
 </body>
 
 </html>
-    `
+    `,
 }

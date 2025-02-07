@@ -16,6 +16,7 @@ const Department = require('../models/department');
 const { createNotification } = require('../utils/pushNotification');
 const { sendSMSViaPOST } = require('../utils/sendOtp');
 const EventAttendance = require('../models/eventAttendanceSchema ');
+const Billing = require('../models/billings');
 
 const createEvent = async (req, res) => {
     try {
@@ -2711,14 +2712,19 @@ const updateBookingStatusAndPaymentStatus = async (req, res) => {
             return res.status(400).json({ message: 'Invalid bookingStatus value.' });
         }
 
-        if (updateData.paymentStatus && !validPaymentStatuses.includes(updateData.paymentStatus)) {
-            return res.status(400).json({ message: 'Invalid paymentStatus value.' });
-        }
+        // if (updateData.paymentStatus && !validPaymentStatuses.includes(updateData.paymentStatus)) {
+        //     return res.status(400).json({ message: 'Invalid paymentStatus value.' });
+        // }
 
         // Find the event booking by bookingId
         const booking = await EventBooking.findById(bookingId);
         if (!booking) {
             return res.status(404).json({ message: 'Booking not found.' });
+        }
+
+        const event = await Event.findById(booking.eventId).populate("taxTypes");
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found.' });
         }
 
         // Update the booking with only the fields provided in the request body
@@ -2727,6 +2733,257 @@ const updateBookingStatusAndPaymentStatus = async (req, res) => {
             { $set: updateData },  // Only update the fields present in updateData
             { new: true } // Return the updated document
         );
+
+        // Find the billing record by ID and update it to mark as deleted
+
+        // Find and update the associated Billing document for this event booking
+        await Billing.findOneAndUpdate(
+            { 'serviceDetails.eventBooking': bookingId }, // Find by eventBooking reference
+            {
+                deletedAt: updateData.bookingStatus === 'Cancelled' ? new Date() : null,
+                isDeleted: updateData.bookingStatus === 'Cancelled',
+                // paymentStatus: updateData.paymentStatus || 'Due', // Update payment status if provided
+                // status: updateData.bookingStatus === 'Cancelled' ? 'Cancelled' : 'Active'
+            },
+            { new: true } // Return the updated document
+        );
+
+        // Send confirmation email
+        const memberData = await EventBooking.findById(updatedBooking._id)
+            .populate("eventId")
+            .populate("primaryMemberId")
+            .populate("dependents.userId");
+
+
+        let primaryName;
+        let primaryEmail;
+        let primaryContact;
+
+        // Send email to primary member
+        if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
+            primaryName = memberData?.primaryMemberId?.name
+            primaryEmail = memberData?.primaryMemberId?.email
+            primaryContact = memberData?.primaryMemberId?.mobileNumber
+        } else {
+            primaryName = member.parentUserId.name
+            primaryEmail = member.parentUserId.email
+            primaryContact = member.parentUserId.mobileNumber
+        }
+
+
+        const templateData = {
+            uniqueQRCode: memberData.counts.primaryMemberCount > 0 ? memberData.uniqueQRCode : memberData.allDetailsUniqueQRCode,
+            qrCode: memberData.allDetailsQRCode, // Base64 string for QR Code
+            eventTitle: memberData.eventId ? memberData.eventId.eventTitle : "",
+            eventDate: memberData.eventId ? memberData.eventId.eventStartDate.toDateString() : "",
+            bookedBy: memberData?.primaryMemberId?.name,
+            memberShipId: memberData?.primaryMemberId?.memberId,
+            memberContact: memberData?.primaryMemberId?.mobileNumber,
+            primaryName: primaryName,
+            primaryEmail: primaryEmail,
+            primaryContact: primaryContact,
+            familyMembers: memberData.dependents.length > 0
+                ? memberData.dependents.map(dep => ({ name: dep.userId.name, email: dep.userId.email, contact: dep.userId.mobileNumber, relation: dep.userId.relation }))
+                : [],
+            guests: memberData.guests.length > 0
+                ? memberData.guests.map(guest => ({
+                    name: guest.name,
+                    email: guest.email,
+                    contact: guest.phone,
+                }))
+                : [],
+            taxTypes: booking.ticketDetails.taxTypes.length > 0
+                ? booking.ticketDetails.taxTypes.map(taxType => ({
+                    taxType: taxType.taxType || "N/A",
+                    taxRate: taxType.taxRate || 0,
+                    taxAmount: taxType.taxAmount || 0,
+                }))
+                : [],
+            subtotal: booking.ticketDetails.subtotal.toFixed(2),
+            taxAmount: booking.ticketDetails.taxAmount.toFixed(2),
+            totalAmount: booking.ticketDetails.totalAmount.toFixed(2),
+        };
+
+        const emailTemplate = emailTemplates.eventBookingCanclled;
+        const htmlBody = eventrenderTemplate(emailTemplate.body, templateData);
+        const subject = eventrenderTemplate(emailTemplate.subject, templateData);
+
+        const emailDependentTemplate = emailTemplates.eventDependentCanclled;
+        const emailGuestTemplate = emailTemplates.eventGuestCanclled;
+        const subjectDependent = eventrenderTemplate(emailDependentTemplate.subject, templateData);
+
+
+        // Send email to primary member
+        let primaryMemberEmail;
+        if (memberData.primaryMemberId.parentUserId === null && memberData.primaryMemberId.relation === "Primary") {
+            primaryMemberEmail = memberData.primaryMemberId.email;
+        } else {
+            const member = await User.findById(memberData.primaryMemberId).populate("parentUserId");
+            primaryMemberEmail = member.parentUserId.email;
+        }
+
+        // Prepare email content
+        const emailAttachments = memberData.counts.primaryMemberCount > 0
+            ? [
+                {
+                    filename: "qrCodeImage.png", // Corrected filename
+                    content: Buffer.from(
+                        memberData.primaryMemberQRCode.split(",")[1],
+                        "base64"
+                    ), // Convert primary member QR code to Buffer
+                    encoding: "base64",
+                    cid: "qrCodeImage", // Inline CID for embedding in email
+                },
+            ]
+            : [
+                {
+                    filename: "qrCodeImage.png", // Corrected filename
+                    content: Buffer.from(
+                        memberData.allDetailsQRCode.split(",")[1],
+                        "base64"
+                    ), // Convert all details QR code to Buffer
+                    encoding: "base64",
+                    cid: "qrCodeImage", // Inline CID for embedding in email
+                },
+            ];
+
+
+        await sendEmail(
+            primaryMemberEmail,
+            subject,
+            htmlBody,
+            emailAttachments
+        );
+
+
+        // Prepare dependents and guests with QR codes
+        const preparedDependents = memberData.dependents
+            ? memberData.dependents.map(dep => ({
+                userId: dep.userId,
+                qrCode: dep.qrCode,
+                uniqueQRCode: dep.uniqueQRCode,
+            }))
+            : [];
+        const preparedGuests = memberData.guests
+            ? memberData.guests.map(guest => ({
+                name: guest.name,
+                email: guest.email,
+                phone: guest.phone,
+                qrCode: guest.qrCode,
+                uniqueQRCode: guest.uniqueQRCode,
+            }))
+            : [];
+
+        // const admins = await Admin.find({ role: 'admin', isDeleted: false });
+        const admins = await Department.find({ departmentName: 'Events', isDeleted: false });
+        for (const admin of admins) {
+            await sendEmail(admin.email, subject, htmlBody, [
+                {
+                    filename: "qrCodeImage.png", // Corrected filename
+                    content: Buffer.from(
+                        booking.allDetailsQRCode.split(",")[1],
+                        "base64"
+                    ), // Convert all details QR code to Buffer
+                    encoding: "base64",
+                    cid: "qrCodeImage", // Inline CID for embedding in email
+                },
+            ]);
+        }
+
+        // Send emails to dependents
+        for (const dependent of preparedDependents || []) {
+            const user = await User.findById(dependent.userId);
+            if (user) {
+                // Generate a customized email body for the dependent
+                const dependentTemplateData = {
+                    ...templateData,
+                    uniqueQRCode: dependent.uniqueQRCode, // Dependent's unique QR Code
+                    dependentName: user.name,
+                    dependentMail: user.email,
+                    dependentContact: user.mobileNumber,
+                    dependentrelation: user.relation,
+                };
+                const htmlDependentBody = eventrenderDependentTemplate(emailDependentTemplate.body, dependentTemplateData);
+
+                // Send email
+                await sendEmail(
+                    user.email,
+                    subjectDependent,
+                    htmlDependentBody,
+                    [
+                        {
+                            filename: "qrcode.png",
+                            content: Buffer.from(dependent.qrCode.split(",")[1], "base64"), // Convert to Buffer
+                            encoding: "base64",
+                            cid: "qrCodeImage",
+                        },
+                    ]
+                );
+            }
+        }
+
+        // Send emails to guests
+        for (const guest of preparedGuests || []) {
+            if (guest.email) {
+                // Generate a customized email body for the guest
+                const guestTemplateData = {
+                    ...templateData,
+                    uniqueQRCode: guest.uniqueQRCode, // Guest's unique QR Code
+                    guestName: guest.name,
+                    guestEmail: guest.email,
+                    guestContact: guest.phone
+                };
+                const htmlGuestBody = eventrenderDependentTemplate(emailGuestTemplate.body, guestTemplateData);
+
+                // Send email
+                await sendEmail(
+                    guest.email,
+                    subjectDependent,
+                    htmlGuestBody,
+                    [
+                        {
+                            filename: "qrcode.png",
+                            content: Buffer.from(guest.qrCode.split(",")[1], "base64"), // Convert to Buffer
+                            encoding: "base64",
+                            cid: "qrCodeImage",
+                        },
+                    ]
+                );
+            }
+        }
+
+        // Call the createNotification function
+        await createNotification({
+            title: `${memberData.eventId.eventTitle} - Event Booking Is ${memberData.bookingStatus}`,
+            send_to: "User",
+            push_message: "Your Event Booking Is Cancelled.",
+            department: "eventBooking",
+            departmentId: memberData._id
+        });
+
+        let primaryMemberDetails = await User.findById(memberData.primaryMemberId);
+        // If the member is not primary, fetch the actual primary member
+        if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {
+            primaryMemberDetails = await User.findById(primaryMemberDetails.parentUserId);
+            if (!primaryMemberDetails) {
+                return res.status(404).json({ message: "Primary member not found for the provided member." });
+            }
+        }
+
+        if (primaryMemberDetails.creditLimit > 0) {
+            primaryMemberDetails.creditLimit = primaryMemberDetails.creditLimit + memberData.ticketDetails.totalAmount
+            await primaryMemberDetails.save();
+        }
+
+        let totalMemberCount = Object.values(memberData.counts).reduce((acc, val) => acc + val, 0);
+
+        // Update the available tickets in the Event schema
+        // Update available tickets in the database
+        event.allottedTicketsMember += memberData.counts.primaryMemberCount + memberData.counts.dependentMemberCount + memberData.counts.kidsMemberCount + memberData.counts.seniorDependentMemberCount + memberData.counts.spouseMemberCount;
+        event.allottedTicketsGuest += memberData.counts.guestMemberCount;
+        event.totalAvailableTickets += totalMemberCount;
+
+
 
         return res.status(200).json({
             message: 'Booking updated successfully.',
