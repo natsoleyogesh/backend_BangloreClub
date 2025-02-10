@@ -2601,6 +2601,18 @@ const getAllBookings = async (req, res) => {
                 case 'last1year':
                     filter.createdAt = { $gte: moment(today).subtract(1, 'year').toDate(), $lt: today.toDate() };
                     break;
+                // case 'currentMonth':  // ✅ New filter added for the current month
+                //     filter.createdAt = {
+                //         $gte: moment().startOf('month').toDate(),
+                //         $lt: moment().endOf('month').toDate()
+                //     };
+                //     break;
+                case 'currentMonth':  // ✅ Ensure strict time range
+                    filter.createdAt = {
+                        $gte: moment().startOf('month').hour(0).minute(1).second(0).toDate(),  // 1st day at 12:01 AM
+                        $lt: moment().endOf('month').hour(23).minute(59).second(59).toDate()  // Last day at 11:59 PM
+                    };
+                    break;
                 case 'custom':
                     if (!customStartDate || !customEndDate) {
                         return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
@@ -2618,8 +2630,9 @@ const getAllBookings = async (req, res) => {
         // Fetch paginated bookings
         const bookings = await EventBooking.find(filter)
             .select("-allDetailsQRCode -primaryMemberQRCode -dependents.qrCode -dependents.uniqueQRCode -guests.qrCode -guests.uniqueQRCode")
-            .populate("eventId", "eventTitle eventStartDate eventEndDate")
-            .populate("primaryMemberId", "memberId name")
+            .populate("eventId", "eventTitle eventStartDate eventEndDate primaryMemberPrice dependentMemberPrice guestMemberPrice kidsMemberPrice spouseMemberPrice seniorDependentMemberPrice ")
+            .populate("primaryMemberId", "memberId name relation")
+            .populate("dependents.userId", "memberId name relation")
             .sort({ createdAt: -1 })  // Sorting in MongoDB instead of using `.reverse()`
             .lean();  // 🚀 Converts the result into a plain JavaScript object
 
