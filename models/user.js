@@ -26,6 +26,18 @@ const userSchema = new mongoose.Schema({
             "Please provide a valid mobile number",
         ],
     },
+    email2: {
+        type: String,
+        // required: [true, "Email is required"],
+        // unique: true,
+        lowercase: true,
+        default: ""
+    },
+    mobileNumber2: {
+        type: String,
+        trim: true,
+        default: ""
+    },
     otp: {
         type: String,
         default: null,
