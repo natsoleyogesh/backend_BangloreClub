@@ -1328,8 +1328,8 @@ const uploadMemberData = async (req, res) => {
                 const userId = member.USERID;
                 let existingUser = await User.findOne({ memberId: userId });
 
+                const userRelation = member.USERCATEGORY || "Dependent";
                 if (!existingUser) {
-                    const userRelation = member.USERCATEGORY || "Dependent";
                     const userMember = new User({
                         memberId: userId,
                         title: member.USERTITLE || "Mr.",
