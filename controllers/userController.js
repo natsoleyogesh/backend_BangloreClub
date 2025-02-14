@@ -1017,6 +1017,217 @@ const deleteProofs = async (req, res) => {
 //     }
 // }
 
+
+// const uploadMemberData = async (req, res) => {
+//     try {
+//         const filePath = req.file.path;
+//         const workbook = xlsx.readFile(filePath);
+//         const sheetName = workbook.SheetNames[0];
+//         const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+//         const savedMembers = new Map();
+
+//         for (const member of data) {
+//             if (member.MEMBERCATEGORY) {
+//                 // Primary Member
+//                 const primaryMemberId = member.MEMBERACCNO;
+//                 const existingMember = await User.findOne({ memberId: primaryMemberId });
+//                 if (existingMember) {
+//                     console.log(`Skipping duplicate entry for memberId: ${primaryMemberId}`);
+//                     continue;
+//                 }
+//                 const primaryMember = new User({
+//                     memberId: primaryMemberId,
+//                     title: member.MEMBERTITLE || "Mr.",
+//                     name: member.MEMBERNAME,
+//                     dateOfBirth: member.MEMBERDOB ? new Date(member.MEMBERDOB) : null,
+//                     relation: "Primary",
+//                     maritalStatus: member.MEMBERMARITALINFO || "Single",
+//                     // address: `${member.ADDR2 || ""}, ${member.ADDR3 || ""}`.trim(),
+//                     address: member.ADDR1 || "",
+//                     address1: member.ADDR2 || "",
+//                     address2: member.ADDR3 || "",
+//                     city: member.CITYDESCRIPTION || "",
+//                     state: member.STATEDESCRIPTION || "",
+//                     country: member.COUNTRYDESCRIPTION || "",
+//                     pin: member.PIN || "",
+//                     email: member.EMAIL1 || "",
+//                     mobileNumber: member.PH1 || "",
+//                     email2: member.EMAIL2 || "",
+//                     mobileNumber2: member.PH2 || "",
+//                     otp: null,
+//                     age: null,
+//                     marriageDate: null,
+//                     status: "Active",
+//                     activatedDate: Date.now(),
+//                     profilePicture: "",
+//                     isDeleted: false,
+//                     fcmToken: "",
+//                     lastLogin: Date.now(),
+//                     vehicleNumber: member.VEHICLENO || "",
+//                     vehicleModel: member.VEHICLEMAKE || "",
+//                     drivingLicenceNumber: "",
+//                     uploadProofs: [],
+//                     creditStop: false,
+//                     creditLimit: 0,
+//                 });
+//                 const savedPrimary = await primaryMember.save();
+//                 savedMembers.set(primaryMemberId, savedPrimary);
+//                 // await primaryMember.save();
+//             }
+
+//             // Spouse Member
+//             if (member.MEMBERSPOUSEID && member.MEMBERSPOUSENAME) {
+//                 const spouseId = member.MEMBERSPOUSEID;
+//                 const existingSpouse = await User.findOne({ memberId: spouseId });
+//                 if (existingSpouse) {
+//                     console.log(`Skipping duplicate entry for spouseId: ${spouseId}`);
+//                     continue;
+//                 }
+//                 const spouseMember = new User({
+//                     memberId: spouseId,
+//                     title: member.MEMBERSPOUSETITLE || "Mrs.",
+//                     name: member.MEMBERSPOUSENAME,
+//                     dateOfBirth: member.MEMBERSPOUSEDOB ? new Date(member.MEMBERSPOUSEDOB) : null,
+//                     relation: "Spouse",
+//                     maritalStatus: "Married",
+//                     parentUserId: savedMembers.get(member.MEMBERACCNO)?._id || null,
+//                     // address: `${member.ADDR2 || ""}, ${member.ADDR3 || ""}`.trim(),
+//                     address: member.ADDR1 || "",
+//                     address1: member.ADDR2 || "",
+//                     address2: member.ADDR3 || "",
+//                     city: member.CITYDESCRIPTION || "",
+//                     state: member.STATEDESCRIPTION || "",
+//                     country: member.COUNTRYDESCRIPTION || "",
+//                     pin: member.PIN || "",
+//                     email: member.EMAIL1 || "",
+//                     mobileNumber: member.PH1 || "",
+//                     email2: member.EMAIL2 || "",
+//                     mobileNumber2: member.PH2 || "",
+//                     otp: null,
+//                     age: null,
+//                     marriageDate: null,
+//                     status: "Active",
+//                     activatedDate: Date.now(),
+//                     profilePicture: "",
+//                     isDeleted: false,
+//                     fcmToken: "",
+//                     lastLogin: Date.now(),
+//                     vehicleNumber: member.VEHICLENO || "",
+//                     vehicleModel: member.VEHICLEMAKE || "",
+//                     drivingLicenceNumber: "",
+//                     uploadProofs: [],
+//                     creditStop: false,
+//                     creditLimit: 0,
+//                 });
+//                 // const savedSpouse = await spouseMember.save();
+//                 // savedMembers.set(spouseId, savedSpouse);
+//                 await spouseMember.save();
+//             }
+
+//             // Additional User Members and User Spouses
+//             if (member.USERID && member.USERNAME) {
+//                 const userId = member.USERID;
+//                 const existingUser = await User.findOne({ memberId: userId });
+//                 if (existingUser) {
+//                     console.log(`Skipping duplicate entry for userId: ${userId}`);
+//                     continue;
+//                 }
+//                 const userRelation = member.USERCATEGORY || "Dependent";
+//                 const userMember = new User({
+//                     memberId: userId,
+//                     title: member.USERTITLE || "Mr.",
+//                     name: member.USERNAME,
+//                     dateOfBirth: member.USERDOB ? new Date(member.USERDOB) : null,
+//                     relation: userRelation,
+//                     parentUserId: savedMembers.get(member.MEMBERACCNO)?._id || null,
+//                     maritalStatus: member.USERMARITALINFO || "Single",
+//                     // address: `${member.ADDR2 || ""}, ${member.ADDR3 || ""}`.trim(),
+//                     address: member.ADDR1 || "",
+//                     address1: member.ADDR2 || "",
+//                     address2: member.ADDR3 || "",
+//                     city: member.CITYDESCRIPTION || "",
+//                     state: member.STATEDESCRIPTION || "",
+//                     country: member.COUNTRYDESCRIPTION || "",
+//                     pin: member.PIN || "",
+//                     email: member.EMAIL1 || "",
+//                     mobileNumber: member.PH1 || "",
+//                     email2: member.EMAIL2 || "",
+//                     mobileNumber2: member.PH2 || "",
+//                     otp: null,
+//                     age: null,
+//                     marriageDate: null,
+//                     status: "Active",
+//                     activatedDate: Date.now(),
+//                     profilePicture: "",
+//                     isDeleted: false,
+//                     fcmToken: "",
+//                     lastLogin: Date.now(),
+//                     vehicleNumber: member.VEHICLENO || "",
+//                     vehicleModel: member.VEHICLEMAKE || "",
+//                     drivingLicenceNumber: "",
+//                     uploadProofs: [],
+//                     creditStop: false,
+//                     creditLimit: 0,
+//                 });
+//                 await userMember.save();
+//                 // savedMembers.set(userId, savedUser);
+
+//                 // User Spouse
+//                 if (member.USERSPOUSEID && member.USERSPOUSENAME) {
+//                     const userSpouseId = member.USERSPOUSEID;
+//                     const userSpouseRelation = `${userRelation} Spouse`;
+//                     const userSpouse = new User({
+//                         memberId: userSpouseId,
+//                         title: member.USERSPOUSETITLE || "Mr.",
+//                         name: member.USERSPOUSENAME,
+//                         dateOfBirth: member.USERSPOUSEDOB ? new Date(member.USERSPOUSEDOB) : null,
+//                         relation: userSpouseRelation,
+//                         maritalStatus: member.USERMARITALINFO || "Single",
+//                         parentUserId: savedMembers.get(member.MEMBERACCNO)?._id || null,
+//                         // address: `${member.ADDR2 || ""}, ${member.ADDR3 || ""}`.trim(),
+//                         address: member.ADDR1 || "",
+//                         address1: member.ADDR2 || "",
+//                         address2: member.ADDR3 || "",
+//                         city: member.CITYDESCRIPTION || "",
+//                         state: member.STATEDESCRIPTION || "",
+//                         country: member.COUNTRYDESCRIPTION || "",
+//                         pin: member.PIN || "",
+//                         email: member.EMAIL1 || "",
+//                         mobileNumber: member.PH1 || "",
+//                         email2: member.EMAIL2 || "",
+//                         mobileNumber2: member.PH2 || "",
+//                         otp: null,
+//                         age: null,
+//                         marriageDate: member.USERMARRIAGEDATE ? new Date(member.USERMARRIAGEDATE) : null,
+//                         status: "Active",
+//                         activatedDate: Date.now(),
+//                         profilePicture: "",
+//                         isDeleted: false,
+//                         fcmToken: "",
+//                         lastLogin: Date.now(),
+//                         vehicleNumber: member.VEHICLENO || "",
+//                         vehicleModel: member.VEHICLEMAKE || "",
+//                         drivingLicenceNumber: "",
+//                         uploadProofs: [],
+//                         creditStop: false,
+//                         creditLimit: 0,
+//                     });
+//                     await userSpouse.save();
+//                 }
+//             }
+//         }
+
+//         // Delete the uploaded file
+//         fs.unlinkSync(filePath);
+
+//         return res.status(200).json({ message: "Members, spouses, users, and user spouses uploaded successfully" });
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({ message: "Error uploading members", error: error.message });
+//     }
+// };
+
 const uploadMemberData = async (req, res) => {
     try {
         const filePath = req.file.path;
@@ -1027,22 +1238,18 @@ const uploadMemberData = async (req, res) => {
         const savedMembers = new Map();
 
         for (const member of data) {
-            if (member.MEMBERCATEGORY) {
-                // Primary Member
-                const primaryMemberId = member.MEMBERACCNO;
-                const existingMember = await User.findOne({ memberId: primaryMemberId });
-                if (existingMember) {
-                    console.log(`Skipping duplicate entry for memberId: ${primaryMemberId}`);
-                    continue;
-                }
-                const primaryMember = new User({
+            let primaryMemberId = member.MEMBERACCNO;
+            let primaryMember = await User.findOne({ memberId: primaryMemberId });
+
+            // Primary Member Handling
+            if (!primaryMember && member.MEMBERCATEGORY) {
+                primaryMember = new User({
                     memberId: primaryMemberId,
                     title: member.MEMBERTITLE || "Mr.",
                     name: member.MEMBERNAME,
                     dateOfBirth: member.MEMBERDOB ? new Date(member.MEMBERDOB) : null,
                     relation: "Primary",
                     maritalStatus: member.MEMBERMARITALINFO || "Single",
-                    // address: `${member.ADDR2 || ""}, ${member.ADDR3 || ""}`.trim(),
                     address: member.ADDR1 || "",
                     address1: member.ADDR2 || "",
                     address2: member.ADDR3 || "",
@@ -1054,137 +1261,40 @@ const uploadMemberData = async (req, res) => {
                     mobileNumber: member.PH1 || "",
                     email2: member.EMAIL2 || "",
                     mobileNumber2: member.PH2 || "",
-                    otp: null,
-                    age: null,
-                    marriageDate: null,
                     status: "Active",
                     activatedDate: Date.now(),
-                    profilePicture: "",
-                    isDeleted: false,
-                    fcmToken: "",
                     lastLogin: Date.now(),
                     vehicleNumber: member.VEHICLENO || "",
                     vehicleModel: member.VEHICLEMAKE || "",
-                    drivingLicenceNumber: "",
                     uploadProofs: [],
                     creditStop: false,
                     creditLimit: 0,
                 });
-                const savedPrimary = await primaryMember.save();
-                savedMembers.set(primaryMemberId, savedPrimary);
-                // await primaryMember.save();
+
+                primaryMember = await primaryMember.save();
+                console.log(`✅ Primary Member Added: ${primaryMemberId}`);
+            } else {
+                console.log(`⚠️ Skipping existing Primary Member: ${primaryMemberId}`);
             }
 
-            // Spouse Member
+            if (primaryMember) {
+                savedMembers.set(primaryMemberId, primaryMember);
+            }
+
+            // Process Spouse Member
             if (member.MEMBERSPOUSEID && member.MEMBERSPOUSENAME) {
                 const spouseId = member.MEMBERSPOUSEID;
-                const existingSpouse = await User.findOne({ memberId: spouseId });
-                if (existingSpouse) {
-                    console.log(`Skipping duplicate entry for spouseId: ${spouseId}`);
-                    continue;
-                }
-                const spouseMember = new User({
-                    memberId: spouseId,
-                    title: member.MEMBERSPOUSETITLE || "Mrs.",
-                    name: member.MEMBERSPOUSENAME,
-                    dateOfBirth: member.MEMBERSPOUSEDOB ? new Date(member.MEMBERSPOUSEDOB) : null,
-                    relation: "Spouse",
-                    maritalStatus: "Married",
-                    parentUserId: savedMembers.get(member.MEMBERACCNO)?._id || null,
-                    // address: `${member.ADDR2 || ""}, ${member.ADDR3 || ""}`.trim(),
-                    address: member.ADDR1 || "",
-                    address1: member.ADDR2 || "",
-                    address2: member.ADDR3 || "",
-                    city: member.CITYDESCRIPTION || "",
-                    state: member.STATEDESCRIPTION || "",
-                    country: member.COUNTRYDESCRIPTION || "",
-                    pin: member.PIN || "",
-                    email: member.EMAIL1 || "",
-                    mobileNumber: member.PH1 || "",
-                    email2: member.EMAIL2 || "",
-                    mobileNumber2: member.PH2 || "",
-                    otp: null,
-                    age: null,
-                    marriageDate: null,
-                    status: "Active",
-                    activatedDate: Date.now(),
-                    profilePicture: "",
-                    isDeleted: false,
-                    fcmToken: "",
-                    lastLogin: Date.now(),
-                    vehicleNumber: member.VEHICLENO || "",
-                    vehicleModel: member.VEHICLEMAKE || "",
-                    drivingLicenceNumber: "",
-                    uploadProofs: [],
-                    creditStop: false,
-                    creditLimit: 0,
-                });
-                // const savedSpouse = await spouseMember.save();
-                // savedMembers.set(spouseId, savedSpouse);
-                await spouseMember.save();
-            }
+                let existingSpouse = await User.findOne({ memberId: spouseId });
 
-            // Additional User Members and User Spouses
-            if (member.USERID && member.USERNAME) {
-                const userId = member.USERID;
-                const existingUser = await User.findOne({ memberId: userId });
-                if (existingUser) {
-                    console.log(`Skipping duplicate entry for userId: ${userId}`);
-                    continue;
-                }
-                const userRelation = member.USERCATEGORY || "Dependent";
-                const userMember = new User({
-                    memberId: userId,
-                    title: member.USERTITLE || "Mr.",
-                    name: member.USERNAME,
-                    dateOfBirth: member.USERDOB ? new Date(member.USERDOB) : null,
-                    relation: userRelation,
-                    parentUserId: savedMembers.get(member.MEMBERACCNO)?._id || null,
-                    maritalStatus: member.USERMARITALINFO || "Single",
-                    // address: `${member.ADDR2 || ""}, ${member.ADDR3 || ""}`.trim(),
-                    address: member.ADDR1 || "",
-                    address1: member.ADDR2 || "",
-                    address2: member.ADDR3 || "",
-                    city: member.CITYDESCRIPTION || "",
-                    state: member.STATEDESCRIPTION || "",
-                    country: member.COUNTRYDESCRIPTION || "",
-                    pin: member.PIN || "",
-                    email: member.EMAIL1 || "",
-                    mobileNumber: member.PH1 || "",
-                    email2: member.EMAIL2 || "",
-                    mobileNumber2: member.PH2 || "",
-                    otp: null,
-                    age: null,
-                    marriageDate: null,
-                    status: "Active",
-                    activatedDate: Date.now(),
-                    profilePicture: "",
-                    isDeleted: false,
-                    fcmToken: "",
-                    lastLogin: Date.now(),
-                    vehicleNumber: member.VEHICLENO || "",
-                    vehicleModel: member.VEHICLEMAKE || "",
-                    drivingLicenceNumber: "",
-                    uploadProofs: [],
-                    creditStop: false,
-                    creditLimit: 0,
-                });
-                await userMember.save();
-                // savedMembers.set(userId, savedUser);
-
-                // User Spouse
-                if (member.USERSPOUSEID && member.USERSPOUSENAME) {
-                    const userSpouseId = member.USERSPOUSEID;
-                    const userSpouseRelation = `${userRelation} Spouse`;
-                    const userSpouse = new User({
-                        memberId: userSpouseId,
-                        title: member.USERSPOUSETITLE || "Mr.",
-                        name: member.USERSPOUSENAME,
-                        dateOfBirth: member.USERSPOUSEDOB ? new Date(member.USERSPOUSEDOB) : null,
-                        relation: userSpouseRelation,
-                        maritalStatus: member.USERMARITALINFO || "Single",
-                        parentUserId: savedMembers.get(member.MEMBERACCNO)?._id || null,
-                        // address: `${member.ADDR2 || ""}, ${member.ADDR3 || ""}`.trim(),
+                if (!existingSpouse) {
+                    const spouseMember = new User({
+                        memberId: spouseId,
+                        title: member.MEMBERSPOUSETITLE || "Mrs.",
+                        name: member.MEMBERSPOUSENAME,
+                        dateOfBirth: member.MEMBERSPOUSEDOB ? new Date(member.MEMBERSPOUSEDOB) : null,
+                        relation: "Spouse",
+                        maritalStatus: "Married",
+                        parentUserId: primaryMember?._id || null,
                         address: member.ADDR1 || "",
                         address1: member.ADDR2 || "",
                         address2: member.ADDR3 || "",
@@ -1196,36 +1306,119 @@ const uploadMemberData = async (req, res) => {
                         mobileNumber: member.PH1 || "",
                         email2: member.EMAIL2 || "",
                         mobileNumber2: member.PH2 || "",
-                        otp: null,
-                        age: null,
-                        marriageDate: member.USERMARRIAGEDATE ? new Date(member.USERMARRIAGEDATE) : null,
                         status: "Active",
                         activatedDate: Date.now(),
-                        profilePicture: "",
-                        isDeleted: false,
-                        fcmToken: "",
                         lastLogin: Date.now(),
                         vehicleNumber: member.VEHICLENO || "",
                         vehicleModel: member.VEHICLEMAKE || "",
-                        drivingLicenceNumber: "",
                         uploadProofs: [],
                         creditStop: false,
                         creditLimit: 0,
                     });
-                    await userSpouse.save();
+
+                    await spouseMember.save();
+                    console.log(`✅ Spouse Added: ${spouseId}`);
+                } else {
+                    console.log(`⚠️ Skipping existing Spouse: ${spouseId}`);
+                }
+            }
+
+            // Process Additional User Members
+            if (member.USERID && member.USERNAME) {
+                const userId = member.USERID;
+                let existingUser = await User.findOne({ memberId: userId });
+
+                if (!existingUser) {
+                    const userRelation = member.USERCATEGORY || "Dependent";
+                    const userMember = new User({
+                        memberId: userId,
+                        title: member.USERTITLE || "Mr.",
+                        name: member.USERNAME,
+                        dateOfBirth: member.USERDOB ? new Date(member.USERDOB) : null,
+                        relation: userRelation,
+                        parentUserId: primaryMember?._id || null,
+                        maritalStatus: member.USERMARITALINFO || "Single",
+                        address: member.ADDR1 || "",
+                        address1: member.ADDR2 || "",
+                        address2: member.ADDR3 || "",
+                        city: member.CITYDESCRIPTION || "",
+                        state: member.STATEDESCRIPTION || "",
+                        country: member.COUNTRYDESCRIPTION || "",
+                        pin: member.PIN || "",
+                        email: member.EMAIL1 || "",
+                        mobileNumber: member.PH1 || "",
+                        email2: member.EMAIL2 || "",
+                        mobileNumber2: member.PH2 || "",
+                        status: "Active",
+                        activatedDate: Date.now(),
+                        lastLogin: Date.now(),
+                        vehicleNumber: member.VEHICLENO || "",
+                        vehicleModel: member.VEHICLEMAKE || "",
+                        uploadProofs: [],
+                        creditStop: false,
+                        creditLimit: 0,
+                    });
+
+                    await userMember.save();
+                    console.log(`✅ Dependent Added: ${userId}`);
+                } else {
+                    console.log(`⚠️ Skipping existing Dependent: ${userId}`);
+                }
+
+                // Process User Spouse
+                if (member.USERSPOUSEID && member.USERSPOUSENAME) {
+                    const userSpouseId = member.USERSPOUSEID;
+                    let existingUserSpouse = await User.findOne({ memberId: userSpouseId });
+
+                    if (!existingUserSpouse) {
+                        const userSpouse = new User({
+                            memberId: userSpouseId,
+                            title: member.USERSPOUSETITLE || "Mr.",
+                            name: member.USERSPOUSENAME,
+                            dateOfBirth: member.USERSPOUSEDOB ? new Date(member.USERSPOUSEDOB) : null,
+                            relation: `${userRelation} Spouse`,
+                            maritalStatus: member.USERMARITALINFO || "Single",
+                            parentUserId: primaryMember?._id || null,
+                            address: member.ADDR1 || "",
+                            address1: member.ADDR2 || "",
+                            address2: member.ADDR3 || "",
+                            city: member.CITYDESCRIPTION || "",
+                            state: member.STATEDESCRIPTION || "",
+                            country: member.COUNTRYDESCRIPTION || "",
+                            pin: member.PIN || "",
+                            email: member.EMAIL1 || "",
+                            mobileNumber: member.PH1 || "",
+                            email2: member.EMAIL2 || "",
+                            mobileNumber2: member.PH2 || "",
+                            marriageDate: member.USERMARRIAGEDATE ? new Date(member.USERMARRIAGEDATE) : null,
+                            status: "Active",
+                            activatedDate: Date.now(),
+                            lastLogin: Date.now(),
+                            vehicleNumber: member.VEHICLENO || "",
+                            vehicleModel: member.VEHICLEMAKE || "",
+                            uploadProofs: [],
+                            creditStop: false,
+                            creditLimit: 0,
+                        });
+
+                        await userSpouse.save();
+                        console.log(`✅ Dependent Spouse Added: ${userSpouseId}`);
+                    } else {
+                        console.log(`⚠️ Skipping existing Dependent Spouse: ${userSpouseId}`);
+                    }
                 }
             }
         }
 
-        // Delete the uploaded file
         fs.unlinkSync(filePath);
 
         return res.status(200).json({ message: "Members, spouses, users, and user spouses uploaded successfully" });
     } catch (error) {
-        console.error(error);
+        console.error("❌ Error uploading members:", error);
         return res.status(500).json({ message: "Error uploading members", error: error.message });
     }
 };
+
 
 
 
