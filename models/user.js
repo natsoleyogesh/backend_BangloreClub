@@ -13,18 +13,18 @@ const userSchema = new mongoose.Schema({
         // required: [true, "Email is required"],
         // unique: true,
         lowercase: true,
-        match: [
-            /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/,
-            "Please provide a valid email address",
-        ],
+        // match: [
+        //     /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/,
+        //     "Please provide a valid email address",
+        // ],
     },
     mobileNumber: {
         type: String,
         trim: true,
-        match: [
-            /^[0-9]{10}$/,
-            "Please provide a valid mobile number",
-        ],
+        // match: [
+        //     /^[0-9]{10}$/,
+        //     "Please provide a valid mobile number",
+        // ],
     },
     email2: {
         type: String,
