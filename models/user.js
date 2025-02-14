@@ -83,10 +83,10 @@ const userSchema = new mongoose.Schema({
     },
     pin: {
         type: String,
-        match: [
-            /^[0-9]{5,10}$/,
-            "Please provide a valid pin code",
-        ],
+        // match: [
+        //     /^[0-9]{5,10}$/,
+        //     "Please provide a valid pin code",
+        // ],
         default: "",
     },
     age: {
