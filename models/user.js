@@ -140,10 +140,10 @@ const userSchema = new mongoose.Schema({
     // New fields added
     vehicleNumber: {
         type: String,
-        match: [
-            /^[A-Za-z0-9- ]{5,15}$/,
-            "Please provide a valid vehicle number",
-        ],
+        // match: [
+        //     /^[A-Za-z0-9- ]{5,15}$/,
+        //     "Please provide a valid vehicle number",
+        // ],
         default: "",
     },
     vehicleModel: {
@@ -152,10 +152,10 @@ const userSchema = new mongoose.Schema({
     },
     drivingLicenceNumber: {
         type: String,
-        match: [
-            /^[A-Za-z0-9-]{5,20}$/,
-            "Please provide a valid driving licence number",
-        ],
+        // match: [
+        //     /^[A-Za-z0-9-]{5,20}$/,
+        //     "Please provide a valid driving licence number",
+        // ],
         default: "",
     },
     uploadProofs: [
