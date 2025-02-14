@@ -148,6 +148,8 @@ const updateUserDetailsByAdmin = async (req, res) => {
             name,
             email,
             mobileNumber,
+            email2,
+            mobileNumber2,
             address,
             address1,
             address2,
@@ -207,6 +209,8 @@ const updateUserDetailsByAdmin = async (req, res) => {
                 if (name) user.name = name;
                 if (email) user.email = email;
                 if (mobileNumber) user.mobileNumber = mobileNumber;
+                if (email2) user.email2 = email2;
+                if (mobileNumber2) user.mobileNumber2 = mobileNumber2;
                 if (address) user.address = address;
                 if (address1) user.address1 = address1;
                 if (address2) user.address2 = address2;
@@ -265,6 +269,8 @@ const updateUserDetailsByAdmin = async (req, res) => {
             if (name) user.name = name;
             if (email) user.email = email;
             if (mobileNumber) user.mobileNumber = mobileNumber;
+            if (email2) user.email2 = email2;
+            if (mobileNumber2) user.mobileNumber2 = mobileNumber2;
             if (address) user.address = address;
             if (address1) user.address1 = address1;
             if (address2) user.address2 = address2;
@@ -314,6 +320,8 @@ const createFamilyMember = async (req, res) => {
             name,
             email,
             mobileNumber,
+            email2,
+            mobileNumber2,
             relation,
             parentUserId,
             address,
@@ -373,6 +381,8 @@ const createFamilyMember = async (req, res) => {
             name,
             email,
             mobileNumber,
+            email2,
+            mobileNumber2,
             memberId,
             relation,
             parentUserId: parentUser._id,
