@@ -6,7 +6,7 @@ let isDevelopment = true;
 const initWebSocket = (server) => {
     io = new Server(server, {
         cors: {
-            origin: isDevelopment ? "*" : ["https://13.201.137.130/"], // https://13.60.85.75/
+            origin: isDevelopment ? "*" : ["https://app.bangaloreclub.com/"], // https://13.60.85.75/
             methods: ['GET', 'POST'], // Adjust for your app
             credentials: true, // Allow credentials if needed
         },
