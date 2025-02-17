@@ -1228,6 +1228,11 @@ const deleteProofs = async (req, res) => {
 //     }
 // };
 
+function excelSerialToJSDate(serial) {
+    const excelEpoch = new Date(1899, 11, 30); // Excel starts at 1900-01-01, but JavaScript starts at 1899-12-30
+    return new Date(excelEpoch.getTime() + serial * 86400000);
+}
+
 const uploadMemberData = async (req, res) => {
     try {
         const filePath = req.file.path;
@@ -1247,7 +1252,7 @@ const uploadMemberData = async (req, res) => {
                     memberId: primaryMemberId,
                     title: member.MEMBERTITLE || "Mr.",
                     name: member.MEMBERNAME,
-                    dateOfBirth: member.MEMBERDOB ? new Date(member.MEMBERDOB) : null,
+                    dateOfBirth: member.MEMBERDOB ? excelSerialToJSDate(member.MEMBERDOB) : null,
                     relation: "Primary",
                     maritalStatus: member.MEMBERMARITALINFO || "Single",
                     address: member.ADDR1 || "",
@@ -1291,7 +1296,7 @@ const uploadMemberData = async (req, res) => {
                         memberId: spouseId,
                         title: member.MEMBERSPOUSETITLE || "Mrs.",
                         name: member.MEMBERSPOUSENAME,
-                        dateOfBirth: member.MEMBERSPOUSEDOB ? new Date(member.MEMBERSPOUSEDOB) : null,
+                        dateOfBirth: member.MEMBERSPOUSEDOB ? excelSerialToJSDate(member.MEMBERSPOUSEDOB) : null,
                         relation: "Spouse",
                         maritalStatus: "Married",
                         parentUserId: primaryMember?._id || null,
@@ -1334,7 +1339,7 @@ const uploadMemberData = async (req, res) => {
                         memberId: userId,
                         title: member.USERTITLE || "Mr.",
                         name: member.USERNAME,
-                        dateOfBirth: member.USERDOB ? new Date(member.USERDOB) : null,
+                        dateOfBirth: member.USERDOB ? excelSerialToJSDate(member.USERDOB) : null,
                         relation: userRelation,
                         parentUserId: primaryMember?._id || null,
                         maritalStatus: member.USERMARITALINFO || "Single",
@@ -1375,7 +1380,7 @@ const uploadMemberData = async (req, res) => {
                             memberId: userSpouseId,
                             title: member.USERSPOUSETITLE || "Mr.",
                             name: member.USERSPOUSENAME,
-                            dateOfBirth: member.USERSPOUSEDOB ? new Date(member.USERSPOUSEDOB) : null,
+                            dateOfBirth: member.USERSPOUSEDOB ? excelSerialToJSDate(member.USERSPOUSEDOB) : null,
                             relation: `${userRelation} Spouse`,
                             maritalStatus: member.USERMARITALINFO || "Single",
                             parentUserId: primaryMember?._id || null,
@@ -1390,7 +1395,7 @@ const uploadMemberData = async (req, res) => {
                             mobileNumber: member.PH1 || "",
                             email2: member.EMAIL2 || "",
                             mobileNumber2: member.PH2 || "",
-                            marriageDate: member.USERMARRIAGEDATE ? new Date(member.USERMARRIAGEDATE) : null,
+                            marriageDate: member.USERMARRIAGEDATE ? excelSerialToJSDate(member.USERMARRIAGEDATE) : null,
                             status: "Active",
                             activatedDate: Date.now(),
                             lastLogin: Date.now(),
