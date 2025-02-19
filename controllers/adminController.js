@@ -265,19 +265,59 @@ const getUserDetailsById = async (req, res) => {
   }
 };
 
+// const getAllUsers = async (req, res) => {
+//   try {
+//     const users = (await User.find({ relation: "Primary" })).reverse();
+//     // Send the response including the user and their full family tree
+//     res.status(200).json({
+//       message: "User details retrieved successfully",
+//       users
+//     });
+//   } catch (error) {
+//     console.error("Error fetching user details:", error);
+//     res.status(500).json({ message: "Error fetching user details", error: error.message });
+//   }
+// };
+
 const getAllUsers = async (req, res) => {
   try {
-    const users = (await User.find({ relation: "Primary" })).reverse();
-    // Send the response including the user and their full family tree
+    let { page, limit } = req.query;
+
+    // Convert query parameters to numbers, set defaults if not provided
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 10; // Default limit: 10 users per page
+
+    // Calculate the number of users to skip
+    const skip = (page - 1) * limit;
+
+    // Fetch total number of users
+    const totalUsers = await User.countDocuments({ relation: "Primary" });
+
+    // Fetch paginated users
+    const users = await User.find({ relation: "Primary" })
+      .sort({ createdAt: -1 }) // Reverse order
+      .skip(skip)
+      .limit(limit);
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalUsers / limit);
+
     res.status(200).json({
       message: "User details retrieved successfully",
-      users
+      users,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalUsers,
+        pageSize: limit,
+      }
     });
   } catch (error) {
     console.error("Error fetching user details:", error);
     res.status(500).json({ message: "Error fetching user details", error: error.message });
   }
 };
+
 
 const deleteMember = async (req, res) => {
   try {
@@ -399,13 +439,59 @@ const getAllActiveUsers = async (req, res) => {
 };
 
 
+// const getUsers = async (req, res) => {
+//   try {
+//     const users = (await User.find()).reverse();
+//     // Send the response including the user and their full family tree
+//     res.status(200).json({
+//       message: "User details retrieved successfully",
+//       users
+//     });
+//   } catch (error) {
+//     console.error("Error fetching user details:", error);
+//     res.status(500).json({ message: "Error fetching user details", error: error.message });
+//   }
+// };
+
 const getUsers = async (req, res) => {
   try {
-    const users = (await User.find()).reverse();
-    // Send the response including the user and their full family tree
+    const { search, page, limit } = req.query;
+
+    // Convert pagination parameters
+    const pageNumber = parseInt(page) || 1;
+    const limitNumber = parseInt(limit) || 10; // Default limit is 10
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Build search query
+    let query = {};
+    if (search) {
+      query = {
+        $or: [
+          { name: { $regex: search, $options: "i" } }, // Case-insensitive search in `name`
+          { memberId: { $regex: search, $options: "i" } } // Case-insensitive search in `memberId`
+        ],
+      };
+    }
+
+    // Get total count of users based on the search
+    const totalUsers = await User.countDocuments(query);
+
+    // Fetch paginated & filtered users
+    const users = await User.find(query)
+      .sort({ createdAt: -1 }) // Sort by newest first
+      .skip(skip)
+      .limit(limitNumber);
+
+    // Send the response including pagination info
     res.status(200).json({
       message: "User details retrieved successfully",
-      users
+      users,
+      pagination: {
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalUsers / limitNumber),
+        totalUsers,
+        pageSize: limitNumber,
+      },
     });
   } catch (error) {
     console.error("Error fetching user details:", error);

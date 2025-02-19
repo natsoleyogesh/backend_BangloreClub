@@ -550,14 +550,76 @@ const updateGCM = async (req, res) => {
     }
 };
 
+// const getAllGCM = async (req, res) => {
+//     try {
+//         const gcms = await GeneralCommitteeMember.find({ status: "Active" })
+//             .populate('userId', 'title name mobileNumber profilePicture memberId')
+//             .populate('categories.name', '_id designationName')
+//             .populate('categories.subCategories.name', '_id departmentName')
+//             .sort({ createdAt: -1 });
+
+//         const formattedGCMs = gcms.map(gcm => ({
+//             _id: gcm._id,
+//             title: gcm.userId.title,
+//             name: gcm.userId.name,
+//             memberId: gcm.userId.memberId,
+//             designation: gcm.designation || "",
+//             categories: gcm.categories.map(category => ({
+//                 name: category.name.designationName || "N/A",
+//                 subCategories: category.subCategories.map(subCategory => ({
+//                     name: subCategory.name.departmentName || "N/A",
+//                     _id: subCategory._id,
+//                     createdAt: subCategory.createdAt,
+//                     updatedAt: subCategory.updatedAt,
+//                 })),
+//                 _id: category._id,
+//                 createdAt: category.createdAt,
+//                 updatedAt: category.updatedAt,
+//             })),
+//             contactNumber: gcm.userId.mobileNumber,
+//             image: gcm.image || "",
+//             priority: gcm.priority || 1,
+//             status: gcm.status,
+//             createdAt: gcm.createdAt,
+//             updatedAt: gcm.updatedAt,
+//         }));
+
+//         return res.status(200).json({
+//             message: "All GCMs fetched successfully",
+//             gcms: formattedGCMs,
+//         });
+//     } catch (error) {
+//         console.error("Error fetching GCMs:", error);
+//         return res.status(500).json({
+//             message: "Error fetching GCMs",
+//             error: error.message,
+//         });
+//     }
+// };
+
+
 const getAllGCM = async (req, res) => {
     try {
-        const gcms = await GeneralCommitteeMember.find({ status: "Active" })
-            .populate('userId', 'title name mobileNumber profilePicture memberId')
-            .populate('categories.name', '_id designationName')
-            .populate('categories.subCategories.name', '_id departmentName')
-            .sort({ createdAt: -1 });
+        let { page, limit } = req.query;
 
+        // Convert pagination parameters
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // Get total count of active GCMs
+        const totalGCMs = await GeneralCommitteeMember.countDocuments({ status: "Active" });
+
+        // Fetch paginated GCMs
+        const gcms = await GeneralCommitteeMember.find({ status: "Active" })
+            .populate("userId", "title name mobileNumber profilePicture memberId")
+            .populate("categories.name", "_id designationName")
+            .populate("categories.subCategories.name", "_id departmentName")
+            .sort({ createdAt: -1 }) // Sort by newest first
+            .skip(skip)
+            .limit(limit);
+
+        // Format GCM data
         const formattedGCMs = gcms.map(gcm => ({
             _id: gcm._id,
             title: gcm.userId.title,
@@ -565,9 +627,9 @@ const getAllGCM = async (req, res) => {
             memberId: gcm.userId.memberId,
             designation: gcm.designation || "",
             categories: gcm.categories.map(category => ({
-                name: category.name.designationName || "N/A",
+                name: category.name?.designationName || "N/A",
                 subCategories: category.subCategories.map(subCategory => ({
-                    name: subCategory.name.departmentName || "N/A",
+                    name: subCategory.name?.departmentName || "N/A",
                     _id: subCategory._id,
                     createdAt: subCategory.createdAt,
                     updatedAt: subCategory.updatedAt,
@@ -587,6 +649,12 @@ const getAllGCM = async (req, res) => {
         return res.status(200).json({
             message: "All GCMs fetched successfully",
             gcms: formattedGCMs,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(totalGCMs / limit),
+                totalGCMs,
+                pageSize: limit,
+            },
         });
     } catch (error) {
         console.error("Error fetching GCMs:", error);
@@ -596,6 +664,7 @@ const getAllGCM = async (req, res) => {
         });
     }
 };
+
 
 const getGCMDetails = async (req, res) => {
     const { id } = req.params;

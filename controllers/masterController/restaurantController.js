@@ -25,15 +25,47 @@ const createRestaurant = async (req, res) => {
     }
 };
 
-// Get all restaurants, excluding soft deleted ones
+// // Get all restaurants, excluding soft deleted ones
+// const getAllRestaurants = async (req, res) => {
+//     try {
+//         // Fetch all restaurants that are not marked as deleted, sorted by `createdAt` in descending order
+//         const restaurants = await Restaurant.find({ isDeleted: false }).sort({ createdAt: -1 });
+
+//         return res.status(200).json({ message: "All Restaurants", restaurants });
+//     } catch (err) {
+//         return res.status(500).json({ message: 'Server error', error: err });
+//     }
+// };
+
+
+// Get all restaurants, excluding soft deleted ones with pagination
 const getAllRestaurants = async (req, res) => {
     try {
-        // Fetch all restaurants that are not marked as deleted, sorted by `createdAt` in descending order
-        const restaurants = await Restaurant.find({ isDeleted: false }).sort({ createdAt: -1 });
+        let { page, limit } = req.query;
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
 
-        return res.status(200).json({ message: "All Restaurants", restaurants });
+        const totalRestaurants = await Restaurant.countDocuments({ isDeleted: false });
+        const totalPages = Math.ceil(totalRestaurants / limit);
+
+        const restaurants = await Restaurant.find({ isDeleted: false })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        return res.status(200).json({
+            message: "All Restaurants",
+            restaurants,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalRestaurants,
+                pageSize: limit,
+            }
+        });
     } catch (err) {
-        return res.status(500).json({ message: 'Server error', error: err });
+        return res.status(500).json({ message: "Server error", error: err });
     }
 };
 

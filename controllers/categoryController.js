@@ -27,24 +27,66 @@ const addCategory = async (req, res) => {
     }
 }
 
+// const getAllCategory = async (req, res) => {
+//     try {
+//         const { isActive } = req.query;
+
+//         // Build query based on isActive if provided
+//         let query = {};
+//         if (isActive !== undefined) {
+//             // Directly convert the isActive string to a boolean
+//             query.isActive = isActive === 'true'; // Expecting 'true' or 'false' string in query
+//         }
+
+//         const categories = (await Category.find(query)).reverse();
+//         res.status(200).json({ message: 'Categories fetched successfully.', categories });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'Server error while fetching categories.' });
+//     }
+// }
+
 const getAllCategory = async (req, res) => {
     try {
-        const { isActive } = req.query;
+        let { isActive, page, limit } = req.query;
+
+        // Convert query parameters
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
 
         // Build query based on isActive if provided
         let query = {};
         if (isActive !== undefined) {
-            // Directly convert the isActive string to a boolean
-            query.isActive = isActive === 'true'; // Expecting 'true' or 'false' string in query
+            query.isActive = isActive === 'true'; // Convert 'true' or 'false' string to boolean
         }
 
-        const categories = (await Category.find(query)).reverse();
-        res.status(200).json({ message: 'Categories fetched successfully.', categories });
+        // Get total count of matching categories
+        const totalCategories = await Category.countDocuments(query);
+        const totalPages = Math.ceil(totalCategories / limit);
+
+        // Fetch paginated categories
+        const categories = await Category.find(query)
+            .sort({ createdAt: -1 }) // Sorting by newest first
+            .skip(skip)
+            .limit(limit);
+
+        res.status(200).json({
+            message: 'Categories fetched successfully.',
+            categories,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalCategories,
+                pageSize: limit,
+            }
+        });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server error while fetching categories.' });
+        res.status(500).json({ message: 'Server error while fetching categories.', error: error.message });
     }
-}
+};
+
 
 const getCategoryById = async (req, res) => {
     try {

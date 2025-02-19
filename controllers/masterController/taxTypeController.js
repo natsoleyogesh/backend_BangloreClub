@@ -25,18 +25,49 @@ const createTaxType = async (req, res) => {
     }
 };
 
-// Get all tax types (excluding soft deleted ones)
+// // Get all tax types (excluding soft deleted ones)
+// const getAllTaxTypes = async (req, res) => {
+//     try {
+//         // Fetch all tax types that are not marked as deleted, sorted by `createdAt` in descending order
+//         const taxTypes = await TaxType.find({ isDeleted: false }).sort({ createdAt: -1 });
+
+//         return res.status(200).json({
+//             message: 'Tax types fetched successfully',
+//             data: taxTypes
+//         });
+//     } catch (err) {
+//         return res.status(500).json({ message: 'Server error', error: err });
+//     }
+// };
+
+// Get all tax types (excluding soft deleted ones) with pagination
 const getAllTaxTypes = async (req, res) => {
     try {
-        // Fetch all tax types that are not marked as deleted, sorted by `createdAt` in descending order
-        const taxTypes = await TaxType.find({ isDeleted: false }).sort({ createdAt: -1 });
+        let { page, limit } = req.query;
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const totalTaxTypes = await TaxType.countDocuments({ isDeleted: false });
+        const totalPages = Math.ceil(totalTaxTypes / limit);
+
+        const taxTypes = await TaxType.find({ isDeleted: false })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
 
         return res.status(200).json({
-            message: 'Tax types fetched successfully',
-            data: taxTypes
+            message: "Tax types fetched successfully",
+            taxTypes,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalTaxTypes,
+                pageSize: limit,
+            }
         });
     } catch (err) {
-        return res.status(500).json({ message: 'Server error', error: err });
+        return res.status(500).json({ message: "Server error", error: err });
     }
 };
 

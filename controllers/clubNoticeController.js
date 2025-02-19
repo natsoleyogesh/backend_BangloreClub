@@ -247,15 +247,49 @@ const addNotice = async (req, res) => {
     }
 };
 
+// const getAllNotices = async (req, res) => {
+//     try {
+//         const data = await ClubNotice.find();
+//         const notices = data.reverse();
+//         return res.status(200).json({ message: "Club Notices fetched successfully", notices });
+//     } catch (error) {
+//         return res.status(500).json({ message: 'Error fetching notices', error: error.message });
+//     }
+// };
+
 const getAllNotices = async (req, res) => {
     try {
-        const data = await ClubNotice.find();
-        const notices = data.reverse();
-        return res.status(200).json({ message: "Club Notices fetched successfully", notices });
+        let { page, limit } = req.query;
+
+        // Convert pagination parameters
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // Get total count of notices
+        const totalNotices = await ClubNotice.countDocuments();
+
+        // Fetch paginated notices
+        const notices = await ClubNotice.find()
+            .sort({ createdAt: -1 }) // Sort by newest first
+            .skip(skip)
+            .limit(limit);
+
+        return res.status(200).json({
+            message: "Club Notices fetched successfully",
+            notices,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(totalNotices / limit),
+                totalNotices,
+                pageSize: limit,
+            },
+        });
     } catch (error) {
-        return res.status(500).json({ message: 'Error fetching notices', error: error.message });
+        return res.status(500).json({ message: "Error fetching notices", error: error.message });
     }
 };
+
 
 const clubNoticeDetails = async (req, res) => {
     try {

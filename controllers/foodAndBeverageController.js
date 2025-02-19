@@ -198,15 +198,73 @@ const getEditFoodAndBeverageById = async (req, res) => {
     }
 };
 
+// const getAllFoodAndBeverages = async (req, res) => {
+//     try {
+//         // Fetch all food and beverages with necessary fields populated
+//         const foodAndBeveragesData = await FoodAndBeverage.find({ isDeleted: false })
+//             .populate('name', '_id name') // Populate the Restaurant reference in the "name" field
+//             .sort({ createdAt: -1 });
+
+//         // Structuring the response to match the desired format
+//         const responseData = foodAndBeveragesData.map(fb => ({
+//             _id: fb._id,
+//             name: fb.name ? fb.name.name : "N/A",
+//             nameId: fb.name ? fb.name._id : null,
+//             location: fb.location || "",
+//             extansion_no: fb.extansion_no || "",
+//             description: fb.description || "",
+//             bannerImage: fb.bannerImage || [],
+//             mainmenu: fb.mainmenu || null,
+//             timings: fb.timings.map(timing => ({
+//                 menu: timing.menu || "",
+//                 menuType: timing.menuType || "",
+//                 startDay: timing.startDay || "",
+//                 endDay: timing.endDay || "",
+//                 startTime: timing.startTime || "",
+//                 endTime: timing.endTime || "",
+//                 _id: timing._id,
+//             })),
+//             status: fb.status || "Active",
+//             createdAt: fb.createdAt,
+//             updatedAt: fb.updatedAt,
+//             __v: fb.__v || 0,
+//         }));
+
+//         // Send the structured response
+//         res.status(200).json({
+//             message: "Food & Beverage categories fetched successfully.",
+//             foodAndBeverages: responseData,
+//         });
+//     } catch (error) {
+//         console.error("Error fetching Food & Beverages:", error);
+//         res.status(500).json({
+//             message: "Failed to fetch Food & Beverages.",
+//             error: error.message,
+//         });
+//     }
+// };
+
 const getAllFoodAndBeverages = async (req, res) => {
     try {
-        // Fetch all food and beverages with necessary fields populated
+        let { page, limit } = req.query;
+
+        // Convert pagination parameters
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // Get total count of food & beverages
+        const totalFoodAndBeverages = await FoodAndBeverage.countDocuments({ isDeleted: false });
+
+        // Fetch paginated food & beverages data
         const foodAndBeveragesData = await FoodAndBeverage.find({ isDeleted: false })
-            .populate('name', '_id name') // Populate the Restaurant reference in the "name" field
-            .sort({ createdAt: -1 });
+            .populate("name", "_id name") // Populate the Restaurant reference in the "name" field
+            .sort({ createdAt: -1 }) // Sort by newest first
+            .skip(skip)
+            .limit(limit);
 
         // Structuring the response to match the desired format
-        const responseData = foodAndBeveragesData.map(fb => ({
+        const responseData = foodAndBeveragesData.map((fb) => ({
             _id: fb._id,
             name: fb.name ? fb.name.name : "N/A",
             nameId: fb.name ? fb.name._id : null,
@@ -215,7 +273,7 @@ const getAllFoodAndBeverages = async (req, res) => {
             description: fb.description || "",
             bannerImage: fb.bannerImage || [],
             mainmenu: fb.mainmenu || null,
-            timings: fb.timings.map(timing => ({
+            timings: fb.timings.map((timing) => ({
                 menu: timing.menu || "",
                 menuType: timing.menuType || "",
                 startDay: timing.startDay || "",
@@ -230,10 +288,16 @@ const getAllFoodAndBeverages = async (req, res) => {
             __v: fb.__v || 0,
         }));
 
-        // Send the structured response
+        // Send the structured response with pagination info
         res.status(200).json({
             message: "Food & Beverage categories fetched successfully.",
             foodAndBeverages: responseData,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(totalFoodAndBeverages / limit),
+                totalFoodAndBeverages,
+                pageSize: limit,
+            },
         });
     } catch (error) {
         console.error("Error fetching Food & Beverages:", error);
@@ -243,6 +307,7 @@ const getAllFoodAndBeverages = async (req, res) => {
         });
     }
 };
+
 
 
 const deleteFoodAndBeverage = async (req, res) => {

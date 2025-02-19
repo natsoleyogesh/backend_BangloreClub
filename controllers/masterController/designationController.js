@@ -24,11 +24,43 @@ const createDesignation = async (req, res) => {
     }
 };
 
-// Get all designations, excluding soft-deleted ones, ordered by latest first
+// // Get all designations, excluding soft-deleted ones, ordered by latest first
+// const getAllDesignations = async (req, res) => {
+//     try {
+//         const designations = await Designation.find({ isDeleted: false }).sort({ createdAt: -1 });
+//         return res.status(200).json({ message: "All Designations", designations });
+//     } catch (err) {
+//         console.error("Error fetching designations:", err);
+//         return res.status(500).json({ message: "Server error", error: err });
+//     }
+// };
+
+// Get all designations, excluding soft-deleted ones, ordered by latest first with pagination
 const getAllDesignations = async (req, res) => {
     try {
-        const designations = await Designation.find({ isDeleted: false }).sort({ createdAt: -1 });
-        return res.status(200).json({ message: "All Designations", designations });
+        let { page, limit } = req.query;
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const totalDesignations = await Designation.countDocuments({ isDeleted: false });
+        const totalPages = Math.ceil(totalDesignations / limit);
+
+        const designations = await Designation.find({ isDeleted: false })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        return res.status(200).json({
+            message: "All Designations",
+            designations,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalDesignations,
+                pageSize: limit,
+            }
+        });
     } catch (err) {
         console.error("Error fetching designations:", err);
         return res.status(500).json({ message: "Server error", error: err });

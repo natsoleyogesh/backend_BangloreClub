@@ -57,10 +57,31 @@ const addAffiliatedClub = async (req, res) => {
 };
 
 
-// API to get all affiliated clubs
+// // API to get all affiliated clubs
+// const getAllAffiliatedClubs = async (req, res) => {
+//     try {
+//         const { countryDescription } = req.query;
+
+//         let filter = { isDeleted: false };
+
+//         // Add countryDescription to filter if provided
+//         if (countryDescription) {
+//             filter.countryDescription = countryDescription;
+//         }
+//         const clubs = await AffiliateClub.find(filter);
+//         return res.status(200).send({ message: "All Affilieated Clubs", clubs });
+//     } catch (error) {
+//         return res.status(500).send({ error: error.message });
+//     }
+// };
 const getAllAffiliatedClubs = async (req, res) => {
     try {
-        const { countryDescription } = req.query;
+        let { countryDescription, page, limit } = req.query;
+
+        // Convert query parameters
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
 
         let filter = { isDeleted: false };
 
@@ -68,12 +89,32 @@ const getAllAffiliatedClubs = async (req, res) => {
         if (countryDescription) {
             filter.countryDescription = countryDescription;
         }
-        const clubs = await AffiliateClub.find(filter);
-        return res.status(200).send({ message: "All Affilieated Clubs", clubs });
+
+        // Get total count of matching clubs
+        const totalClubs = await AffiliateClub.countDocuments(filter);
+        const totalPages = Math.ceil(totalClubs / limit);
+
+        // Fetch paginated affiliated clubs
+        const clubs = await AffiliateClub.find(filter)
+            .sort({ createdAt: -1 }) // Sorting by newest first
+            .skip(skip)
+            .limit(limit);
+
+        return res.status(200).json({
+            message: "All Affiliated Clubs",
+            clubs,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalClubs,
+                pageSize: limit,
+            }
+        });
     } catch (error) {
-        return res.status(500).send({ error: error.message });
+        return res.status(500).json({ message: "Server error while fetching affiliated clubs.", error: error.message });
     }
 };
+
 
 // API to get affiliated club by ID
 const getAffiliatedClubById = async (req, res) => {

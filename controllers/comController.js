@@ -43,15 +43,52 @@ const addCOM = async (req, res, next) => {
     }
 };
 
+// const getAllCOMs = async (req, res) => {
+//     try {
+//         const data = await COM.find();
+//         const coms = data.reverse();
+//         return res.status(200).json({ message: "Consideration Of Membership fetched successfully", coms });
+//     } catch (error) {
+//         return res.status(500).json({ message: 'Error fetching Consideration Of Membership', error: error.message });
+//     }
+// }
+
 const getAllCOMs = async (req, res) => {
     try {
-        const data = await COM.find();
-        const coms = data.reverse();
-        return res.status(200).json({ message: "Consideration Of Membership fetched successfully", coms });
+        let { page, limit } = req.query;
+
+        // Convert pagination parameters
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // Get total count of COMs
+        const totalCOMs = await COM.countDocuments();
+
+        // Fetch paginated COMs
+        const coms = await COM.find()
+            .sort({ createdAt: -1 }) // Sort by newest first
+            .skip(skip)
+            .limit(limit);
+
+        return res.status(200).json({
+            message: "Consideration Of Membership fetched successfully",
+            coms,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(totalCOMs / limit),
+                totalCOMs,
+                pageSize: limit,
+            },
+        });
     } catch (error) {
-        return res.status(500).json({ message: 'Error fetching Consideration Of Membership', error: error.message });
+        return res.status(500).json({
+            message: "Error fetching Consideration Of Membership",
+            error: error.message,
+        });
     }
-}
+};
+
 
 const COMDetails = async (req, res) => {
     try {

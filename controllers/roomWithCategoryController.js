@@ -149,27 +149,68 @@ const addRoomWithCategory = async (req, res) => {
     }
 };
 
+// const getAllRoomWithCategories = async (req, res) => {
+//     try {
+//         // Fetch all room categories, excluding deleted ones by default
+//         const { includeDeleted } = req.query; // Optional query parameter to include deleted records
+//         const filter = includeDeleted === 'true' ? {} : { isDeleted: false };
+
+//         const roomWithCategories = await RoomWithCategory.find(filter)
+//             .populate('categoryName')
+//             .populate('taxTypes')
+//             .populate('amenities')
+//             .sort({ createdAt: -1 });
+
+//         return res.status(200).json({
+//             message: 'Room categories fetched successfully',
+//             data: roomWithCategories,
+//         });
+//     } catch (error) {
+//         console.error('Error fetching room categories:', error);
+//         return res.status(500).json({ message: 'Server error while fetching room categories', error: error.message });
+//     }
+// };
+
 const getAllRoomWithCategories = async (req, res) => {
     try {
-        // Fetch all room categories, excluding deleted ones by default
-        const { includeDeleted } = req.query; // Optional query parameter to include deleted records
+        const { includeDeleted, page, limit } = req.query;
+
+        // Convert pagination parameters
+        const pageNumber = parseInt(page) || 1;
+        const limitNumber = parseInt(limit) || 10;
+        const skip = (pageNumber - 1) * limitNumber;
+
+        // Build the filter query based on whether to include deleted records
         const filter = includeDeleted === 'true' ? {} : { isDeleted: false };
 
+        // Get total count of room categories
+        const totalRooms = await RoomWithCategory.countDocuments(filter);
+
+        // Fetch paginated room categories with relationships
         const roomWithCategories = await RoomWithCategory.find(filter)
             .populate('categoryName')
             .populate('taxTypes')
             .populate('amenities')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limitNumber);
 
         return res.status(200).json({
             message: 'Room categories fetched successfully',
             data: roomWithCategories,
+            pagination: {
+                currentPage: pageNumber,
+                totalPages: Math.ceil(totalRooms / limitNumber),
+                totalRooms,
+                pageSize: limitNumber,
+            },
         });
     } catch (error) {
         console.error('Error fetching room categories:', error);
         return res.status(500).json({ message: 'Server error while fetching room categories', error: error.message });
     }
 };
+
 
 const getRoomWithCategoryById = async (req, res) => {
     try {

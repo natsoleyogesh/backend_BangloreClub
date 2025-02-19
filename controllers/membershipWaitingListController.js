@@ -715,6 +715,7 @@ const addWaiting = async (req, res) => {
 }
 
 
+
 // const getAllApplications = async (req, res) => {
 //     try {
 //         const { search } = req.query;
@@ -736,29 +737,27 @@ const addWaiting = async (req, res) => {
 //         // Fetch matching entries from the database
 //         const results = await MembershipList.find(searchQuery).lean();
 
-//         // Format the response to include seconders as seconder-1, seconder-2, etc.
-//         const formattedResults = results.map(entry => {
-//             const seconders = {};
-//             entry.seconders.forEach((seconder, index) => {
-//                 seconders[`seconder-${index + 1}`] = seconder;
-//             });
-
-//             return {
-//                 ...entry,
-//                 seconders,
-//             };
-//         });
+//         // Format the response ensuring seconders remain an array
+//         const formattedResults = results.map(entry => ({
+//             ...entry,
+//             seconders: Array.isArray(entry.seconders) ? entry.seconders : [], // Ensure seconders is an array
+//         }));
 
 //         res.status(200).json(formattedResults);
 //     } catch (error) {
 //         console.error(error);
 //         res.status(500).json({ message: "An error occurred", error: error.message });
 //     }
-// }
+// };
 
 const getAllApplications = async (req, res) => {
     try {
-        const { search } = req.query;
+        let { search, page, limit } = req.query;
+
+        // Convert pagination parameters
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
 
         // Build the search query
         const searchQuery = search
@@ -774,8 +773,15 @@ const getAllApplications = async (req, res) => {
             }
             : {};
 
-        // Fetch matching entries from the database
-        const results = await MembershipList.find(searchQuery).lean();
+        // Get total count of applications
+        const totalApplications = await MembershipList.countDocuments(searchQuery);
+
+        // Fetch paginated applications
+        const results = await MembershipList.find(searchQuery)
+            .sort({ createdAt: -1 }) // Sort by newest first
+            .skip(skip)
+            .limit(limit)
+            .lean();
 
         // Format the response ensuring seconders remain an array
         const formattedResults = results.map(entry => ({
@@ -783,12 +789,22 @@ const getAllApplications = async (req, res) => {
             seconders: Array.isArray(entry.seconders) ? entry.seconders : [], // Ensure seconders is an array
         }));
 
-        res.status(200).json(formattedResults);
+        res.status(200).json({
+            message: "Applications fetched successfully",
+            applications: formattedResults,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(totalApplications / limit),
+                totalApplications,
+                pageSize: limit,
+            },
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "An error occurred", error: error.message });
     }
 };
+
 
 
 module.exports = {

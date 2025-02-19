@@ -501,10 +501,10 @@ const createRoomBooking = async (req, res) => {
             },
             paymentMode,
             pricingDetails: {
-                final_totalAmount: finalTotalAmount,
-                final_totalTaxAmount: finalTotalTaxAmount,
-                specialDayExtraCharge: specialDayExtraCharge,
-                extraBedTotal: extraBedTotal
+                final_totalAmount: Math.round(finalTotalAmount),
+                final_totalTaxAmount: Math.round(finalTotalTaxAmount),
+                specialDayExtraCharge: Math.round(specialDayExtraCharge),
+                extraBedTotal: Math.round(extraBedTotal)
             },
             paymentStatus: 'Pending',
             bookingStatus: 'Pending',
@@ -521,10 +521,10 @@ const createRoomBooking = async (req, res) => {
             bookingDates,
             paymentMode,
             pricingDetails: {
-                final_totalAmount: finalTotalAmount,
-                final_totalTaxAmount: finalTotalTaxAmount,
-                extraBedTotal: extraBedTotal,
-                specialDayExtraCharge: specialDayExtraCharge
+                final_totalAmount: Math.round(finalTotalAmount),
+                final_totalTaxAmount: Math.round(finalTotalTaxAmount),
+                extraBedTotal: Math.round(extraBedTotal),
+                specialDayExtraCharge: Math.round(specialDayExtraCharge)
             },
             paymentStatus: 'Pending',
             bookingStatus: 'Pending',
@@ -831,10 +831,10 @@ const createRoomBookingDetails = async (req, res) => {
             },
             paymentMode,
             pricingDetails: {
-                final_totalAmount: finalTotalAmount,
-                final_totalTaxAmount: finalTotalTaxAmount,
-                specialDayExtraCharge: specialDayExtraCharge,
-                extraBedTotal: extraBedTotal
+                final_totalAmount: Math.round(finalTotalAmount),
+                final_totalTaxAmount: Math.round(finalTotalTaxAmount),
+                specialDayExtraCharge: Math.round(specialDayExtraCharge),
+                extraBedTotal: Math.round(extraBedTotal)
             },
             paymentStatus: 'Pending',
             bookingStatus: 'Pending',
@@ -884,14 +884,92 @@ function calculateTotalTaxAmount(booking) {
     return totalTaxAmount;
 }
 
+// const getAllBookings = async (req, res) => {
+//     try {
+
+//         const { filterType, customStartDate, customEndDate, bookingStatus, userId } = req.query;
+
+//         let filter = { isDeleted: false };
+
+//         // Add bookingStatus to filter if provided
+//         if (bookingStatus) {
+//             filter.bookingStatus = bookingStatus;
+//         }
+//         if (userId) {
+//             filter.primaryMemberId = userId;
+//         }
+
+//         // Handle date filters
+//         if (filterType) {
+//             const today = moment().startOf('day');
+
+//             switch (filterType) {
+//                 case 'today':
+//                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() };
+//                     break;
+//                 case 'last7days':
+//                     filter.createdAt = { $gte: moment(today).subtract(7, 'days').toDate(), $lt: today.toDate() };
+//                     break;
+//                 case 'last30days':
+//                     filter.createdAt = { $gte: moment(today).subtract(30, 'days').toDate(), $lt: today.toDate() };
+//                     break;
+//                 case 'last3months':
+//                     filter.createdAt = { $gte: moment(today).subtract(3, 'months').toDate(), $lt: today.toDate() };
+//                     break;
+//                 case 'last6months':
+//                     filter.createdAt = { $gte: moment(today).subtract(6, 'months').toDate(), $lt: today.toDate() };
+//                     break;
+//                 case 'last1year':
+//                     filter.createdAt = { $gte: moment(today).subtract(12, 'months').toDate(), $lt: today.toDate() };
+//                     break;
+//                 case 'custom':
+//                     if (!customStartDate || !customEndDate) {
+//                         return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
+//                     }
+//                     filter.createdAt = {
+//                         $gte: moment(customStartDate, 'YYYY-MM-DD').startOf('day').toDate(),
+//                         $lt: moment(customEndDate, 'YYYY-MM-DD').endOf('day').toDate(),
+//                     };
+//                     break;
+//                 default:
+//                     break; // No filter applied if no valid filterType
+//             }
+//         }
+
+//         const bookings = await RoomBooking.find(filter)
+//             // .populate('roomCategoryCounts.roomType') // Populate RoomWithCategory fields
+//             .populate({
+//                 path: 'roomCategoryCounts.roomType',
+//                 populate: {
+//                     path: 'categoryName', // Assuming banquetName references BanquetCategory
+//                     model: 'Category',
+//                 },
+//             })
+//             .populate('primaryMemberId') // Populate User fields (assuming User model has these fields)
+//             .sort({ createdAt: -1 });  // Sort by 'createdAt' in descending order
+//         if (!bookings || bookings.length === 0) {
+//             return res.status(404).json({ message: 'No bookings found' });
+//         }
+
+//         return res.status(200).json({ message: "Fetch All Bookings Successfully", bookings });
+//     } catch (err) {
+//         console.error(err);
+//         return res.status(500).json({ message: 'Error retrieving bookings', error: err.message });
+//     }
+// };
+
 const getAllBookings = async (req, res) => {
     try {
+        let { filterType, customStartDate, customEndDate, bookingStatus, userId, page, limit } = req.query;
 
-        const { filterType, customStartDate, customEndDate, bookingStatus, userId } = req.query;
+        // Convert pagination parameters
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
 
         let filter = { isDeleted: false };
 
-        // Add bookingStatus to filter if provided
+        // Add filters
         if (bookingStatus) {
             filter.bookingStatus = bookingStatus;
         }
@@ -901,62 +979,80 @@ const getAllBookings = async (req, res) => {
 
         // Handle date filters
         if (filterType) {
-            const today = moment().startOf('day');
+            const today = moment().startOf("day");
 
             switch (filterType) {
-                case 'today':
-                    filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() };
+                case "today":
+                    filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf("day").toDate() };
                     break;
-                case 'last7days':
-                    filter.createdAt = { $gte: moment(today).subtract(7, 'days').toDate(), $lt: today.toDate() };
+                case "last7days":
+                    filter.createdAt = { $gte: moment(today).subtract(7, "days").toDate(), $lt: today.toDate() };
                     break;
-                case 'last30days':
-                    filter.createdAt = { $gte: moment(today).subtract(30, 'days').toDate(), $lt: today.toDate() };
+                case "last30days":
+                    filter.createdAt = { $gte: moment(today).subtract(30, "days").toDate(), $lt: today.toDate() };
                     break;
-                case 'last3months':
-                    filter.createdAt = { $gte: moment(today).subtract(3, 'months').toDate(), $lt: today.toDate() };
+                case "last3months":
+                    filter.createdAt = { $gte: moment(today).subtract(3, "months").toDate(), $lt: today.toDate() };
                     break;
-                case 'last6months':
-                    filter.createdAt = { $gte: moment(today).subtract(6, 'months').toDate(), $lt: today.toDate() };
+                case "last6months":
+                    filter.createdAt = { $gte: moment(today).subtract(6, "months").toDate(), $lt: today.toDate() };
                     break;
-                case 'last1year':
-                    filter.createdAt = { $gte: moment(today).subtract(12, 'months').toDate(), $lt: today.toDate() };
+                case "last1year":
+                    filter.createdAt = { $gte: moment(today).subtract(12, "months").toDate(), $lt: today.toDate() };
                     break;
-                case 'custom':
+                case "custom":
                     if (!customStartDate || !customEndDate) {
-                        return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
+                        return res.status(400).json({ message: "Custom date range requires both start and end dates." });
                     }
                     filter.createdAt = {
-                        $gte: moment(customStartDate, 'YYYY-MM-DD').startOf('day').toDate(),
-                        $lt: moment(customEndDate, 'YYYY-MM-DD').endOf('day').toDate(),
+                        $gte: moment(customStartDate, "YYYY-MM-DD").startOf("day").toDate(),
+                        $lt: moment(customEndDate, "YYYY-MM-DD").endOf("day").toDate(),
                     };
                     break;
                 default:
-                    break; // No filter applied if no valid filterType
+                    break;
             }
         }
 
+        // Get total count of matching bookings
+        const totalBookings = await RoomBooking.countDocuments(filter);
+        const totalPages = Math.ceil(totalBookings / limit);
+
+        // Fetch paginated bookings
         const bookings = await RoomBooking.find(filter)
-            // .populate('roomCategoryCounts.roomType') // Populate RoomWithCategory fields
             .populate({
-                path: 'roomCategoryCounts.roomType',
+                path: "roomCategoryCounts.roomType",
                 populate: {
-                    path: 'categoryName', // Assuming banquetName references BanquetCategory
-                    model: 'Category',
+                    path: "categoryName",
+                    model: "Category",
                 },
             })
-            .populate('primaryMemberId') // Populate User fields (assuming User model has these fields)
-            .sort({ createdAt: -1 });  // Sort by 'createdAt' in descending order
-        if (!bookings || bookings.length === 0) {
-            return res.status(404).json({ message: 'No bookings found' });
+            .populate("primaryMemberId") // Populate User fields
+            .sort({ createdAt: -1 }) // Sort newest first
+            .skip(skip)
+            .limit(limit);
+
+        // If no bookings found
+        if (!bookings.length) {
+            return res.status(404).json({ message: "No bookings found" });
         }
 
-        return res.status(200).json({ message: "Fetch All Bookings Successfully", bookings });
+        return res.status(200).json({
+            message: "Fetch All Bookings Successfully",
+            bookings,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalBookings,
+                pageSize: limit,
+            },
+        });
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ message: 'Error retrieving bookings', error: err.message });
+        return res.status(500).json({ message: "Error retrieving bookings", error: err.message });
     }
 };
+
 
 const getBookingById = async (req, res) => {
     try {

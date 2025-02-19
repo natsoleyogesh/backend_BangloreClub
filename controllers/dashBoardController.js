@@ -102,7 +102,7 @@ const totalSales = async (req, res) => {
         };
 
         totalSales.forEach((service) => {
-            formattedSales[service._id] = service.totalSales;
+            formattedSales[service._id] = Math.round(service.totalSales);
         });
 
         res.status(200).json({

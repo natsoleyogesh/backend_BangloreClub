@@ -29,10 +29,37 @@ const createDepartment = async (req, res) => {
 // Get all departments, excluding soft deleted ones, and ordered by latest first
 const getAllDepartments = async (req, res) => {
     try {
-        // Fetch all departments that are not marked as deleted, sorted by `createdAt` in descending order
-        const departments = await Department.find({ isDeleted: false }).sort({ createdAt: -1 });
+        let { page, limit } = req.query;
 
-        return res.status(200).json({ message: "All Departments", departments });
+        // Convert query parameters to numbers, set defaults if not provided
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10; // Default limit: 10 users per page
+
+        // Calculate the number of users to skip
+        const skip = (page - 1) * limit;
+
+        // Fetch total number of users
+        const totalDepartments = await Department.countDocuments({ isDeleted: false });
+
+
+        // Fetch all departments that are not marked as deleted, sorted by `createdAt` in descending order
+        const departments = await Department.find({ isDeleted: false })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+        // Calculate total pages
+        const totalPages = Math.ceil(totalDepartments / limit);
+
+        return res.status(200).json({
+            message: "All Departments",
+            departments,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalDepartments,
+                pageSize: limit,
+            }
+        });
     } catch (err) {
         return res.status(500).json({ message: 'Server error', error: err });
     }

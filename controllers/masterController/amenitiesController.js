@@ -42,17 +42,48 @@ const createAmenity = async (req, res) => {
     });
 };
 
-// Get all amenities (excluding soft deleted ones)
+// // Get all amenities (excluding soft deleted ones)
+// const getAllAmenities = async (req, res) => {
+//     try {
+//         const amenities = await Amenities.find({ isDeleted: false }).sort({ createdAt: -1 });
+
+//         return res.status(200).json({
+//             message: 'Amenities fetched successfully',
+//             data: amenities
+//         });
+//     } catch (err) {
+//         return res.status(500).json({ message: 'Server error', error: err });
+//     }
+// };
+
+// Get all amenities (excluding soft deleted ones) with pagination
 const getAllAmenities = async (req, res) => {
     try {
-        const amenities = await Amenities.find({ isDeleted: false }).sort({ createdAt: -1 });
+        let { page, limit } = req.query;
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const totalAmenities = await Amenities.countDocuments({ isDeleted: false });
+        const totalPages = Math.ceil(totalAmenities / limit);
+
+        const amenities = await Amenities.find({ isDeleted: false })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
 
         return res.status(200).json({
-            message: 'Amenities fetched successfully',
-            data: amenities
+            message: "Amenities fetched successfully",
+            amenities,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalAmenities,
+                pageSize: limit,
+            }
         });
     } catch (err) {
-        return res.status(500).json({ message: 'Server error', error: err });
+        return res.status(500).json({ message: "Server error", error: err });
     }
 };
 

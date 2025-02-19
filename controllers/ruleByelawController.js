@@ -77,15 +77,56 @@ const addRuleBylaw = async (req, res) => {
 };
 
 
+// const getAllRulesBylaws = async (req, res) => {
+//     try {
+//         // Fetch all rules and bylaws from the database, sorted by creation date (newest first)
+//         const rulesBylaws = await ClubRuleByelaw.find({ isDeleted: false }).sort({ createdAt: -1 });
+
+//         // Return success response
+//         return res.status(200).json({
+//             message: "Rules and Bylaws fetched successfully.",
+//             ruleByelaws: rulesBylaws,
+//         });
+//     } catch (error) {
+//         // Log the error for debugging
+//         console.error("Error fetching Rules and Bylaws:", error);
+
+//         // Return error response
+//         return res.status(500).json({
+//             message: "An error occurred while fetching Rules and Bylaws.",
+//             error: error.message,
+//         });
+//     }
+// };
+
 const getAllRulesBylaws = async (req, res) => {
     try {
-        // Fetch all rules and bylaws from the database, sorted by creation date (newest first)
-        const rulesBylaws = await ClubRuleByelaw.find({ isDeleted: false }).sort({ createdAt: -1 });
+        let { page, limit } = req.query;
 
-        // Return success response
+        // Convert pagination parameters
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // Get total count of rules and bylaws
+        const totalRulesBylaws = await ClubRuleByelaw.countDocuments({ isDeleted: false });
+
+        // Fetch paginated rules and bylaws
+        const rulesBylaws = await ClubRuleByelaw.find({ isDeleted: false })
+            .sort({ createdAt: -1 }) // Sort by newest first
+            .skip(skip)
+            .limit(limit);
+
+        // Return success response with pagination info
         return res.status(200).json({
             message: "Rules and Bylaws fetched successfully.",
             ruleByelaws: rulesBylaws,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(totalRulesBylaws / limit),
+                totalRulesBylaws,
+                pageSize: limit,
+            },
         });
     } catch (error) {
         // Log the error for debugging

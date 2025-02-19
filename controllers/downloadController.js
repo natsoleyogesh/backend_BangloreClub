@@ -45,15 +45,52 @@ const addDownload = async (req, res, next) => {
     }
 };
 
+// const getAllDownloads = async (req, res) => {
+//     try {
+//         const data = await Download.find();
+//         const downloads = data.reverse();
+//         return res.status(200).json({ message: "Downloads fetched successfully", downloads });
+//     } catch (error) {
+//         return res.status(500).json({ message: 'Error fetching downloads', error: error.message });
+//     }
+// }
+
 const getAllDownloads = async (req, res) => {
     try {
-        const data = await Download.find();
-        const downloads = data.reverse();
-        return res.status(200).json({ message: "Downloads fetched successfully", downloads });
+        let { page, limit } = req.query;
+
+        // Convert pagination parameters
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // Get total count of downloads
+        const totalDownloads = await Download.countDocuments();
+
+        // Fetch paginated downloads
+        const downloads = await Download.find()
+            .sort({ createdAt: -1 }) // Sort by newest first
+            .skip(skip)
+            .limit(limit);
+
+        return res.status(200).json({
+            message: "Downloads fetched successfully",
+            downloads,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(totalDownloads / limit),
+                totalDownloads,
+                pageSize: limit,
+            },
+        });
     } catch (error) {
-        return res.status(500).json({ message: 'Error fetching downloads', error: error.message });
+        return res.status(500).json({
+            message: "Error fetching downloads",
+            error: error.message,
+        });
     }
-}
+};
+
 
 const downloadDetails = async (req, res) => {
     try {

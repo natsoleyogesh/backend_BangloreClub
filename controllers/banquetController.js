@@ -47,24 +47,66 @@ const addCategory = async (req, res) => {
     }
 }
 
+// const getAllCategory = async (req, res) => {
+//     try {
+//         const { status } = req.query;
+
+//         // Build query based on status if provided
+//         let query = {};
+//         if (status) {
+//             // Directly convert the status string to a boolean
+//             query.status = status
+//         }
+
+//         const categories = (await BanquetCategory.find(query)).reverse();
+//         res.status(200).json({ message: 'Categories fetched successfully.', categories });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'Server error while fetching categories.' });
+//     }
+// }
+
 const getAllCategory = async (req, res) => {
     try {
-        const { status } = req.query;
+        let { status, page, limit } = req.query;
+
+        // Convert query parameters
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
 
         // Build query based on status if provided
         let query = {};
         if (status) {
-            // Directly convert the status string to a boolean
-            query.status = status
+            query.status = status;
         }
 
-        const categories = (await BanquetCategory.find(query)).reverse();
-        res.status(200).json({ message: 'Categories fetched successfully.', categories });
+        // Get total count of matching categories
+        const totalCategories = await BanquetCategory.countDocuments(query);
+        const totalPages = Math.ceil(totalCategories / limit);
+
+        // Fetch paginated categories
+        const categories = await BanquetCategory.find(query)
+            .sort({ createdAt: -1 })  // Sorting by newest first
+            .skip(skip)
+            .limit(limit);
+
+        res.status(200).json({
+            message: 'Categories fetched successfully.',
+            categories,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalCategories,
+                pageSize: limit,
+            }
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error while fetching categories.' });
     }
-}
+};
+
 
 const getCategoryById = async (req, res) => {
     try {
@@ -358,31 +400,77 @@ const createBanquet = async (req, res) => {
 };
 
 
+// const getAllBanquets = async (req, res) => {
+//     try {
+
+//         // Define the filter to exclude deleted records
+//         const filter = { isDeleted: false };
+
+//         // Fetch all banquets with related data
+//         const banquets = await Banquet.find(filter)
+//             .populate('banquetName') // Populate specific fields
+//             .populate('taxTypes') // Populate taxTypes
+//             .populate('amenities') // Populate amenities
+//             .sort({ createdAt: -1 }); // Sort by creation date
+
+//         return res.status(200).json({
+//             message: 'Banquets fetched successfully.',
+//             data: banquets,
+//         });
+//     } catch (error) {
+//         console.error('Error fetching banquets:', error);
+//         return res.status(500).json({
+//             message: 'Server error while fetching banquets.',
+//             error: error.message,
+//         });
+//     }
+// };
+
+
 const getAllBanquets = async (req, res) => {
     try {
+        let { page, limit } = req.query;
+
+        // Convert query parameters
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
 
         // Define the filter to exclude deleted records
         const filter = { isDeleted: false };
 
-        // Fetch all banquets with related data
+        // Fetch total count of banquets
+        const totalBanquets = await Banquet.countDocuments(filter);
+        const totalPages = Math.ceil(totalBanquets / limit);
+
+        // Fetch paginated banquets with related data
         const banquets = await Banquet.find(filter)
             .populate('banquetName') // Populate specific fields
             .populate('taxTypes') // Populate taxTypes
             .populate('amenities') // Populate amenities
-            .sort({ createdAt: -1 }); // Sort by creation date
+            .sort({ createdAt: -1 }) // Sort by creation date
+            .skip(skip)
+            .limit(limit);
 
         return res.status(200).json({
-            message: 'Banquets fetched successfully.',
+            message: "Banquets fetched successfully.",
             data: banquets,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalBanquets,
+                pageSize: limit,
+            }
         });
     } catch (error) {
-        console.error('Error fetching banquets:', error);
+        console.error("Error fetching banquets:", error);
         return res.status(500).json({
-            message: 'Server error while fetching banquets.',
+            message: "Server error while fetching banquets.",
             error: error.message,
         });
     }
 };
+
 
 
 const getBanquetById = async (req, res) => {
@@ -1227,10 +1315,10 @@ const createBanquetBooking = async (req, res) => {
                 duration: durationInHours
             },
             pricingDetails: {
-                totalAmount,
-                specialDayExtraCharge,
-                totalTaxAmount,
-                final_totalAmount: finalTotalAmount,
+                totalAmount: Math.round(totalAmount),
+                specialDayExtraCharge: Math.round(specialDayExtraCharge),
+                totalTaxAmount: Math.round(totalTaxAmount),
+                final_totalAmount: Math.round(finalTotalAmount),
                 taxTypes: taxDetails,
             },
             paymentMode,
@@ -1576,10 +1664,10 @@ const createBanquetBookingDetails = async (req, res) => {
                 duration: durationInHours
             },
             pricingDetails: {
-                totalAmount,
-                specialDayExtraCharge,
-                totalTaxAmount,
-                final_totalAmount: finalTotalAmount,
+                totalAmount: Math.round(totalAmount),
+                specialDayExtraCharge: Math.round(specialDayExtraCharge),
+                totalTaxAmount: Math.round(totalTaxAmount),
+                final_totalAmount: Math.round(finalTotalAmount),
                 taxTypes: taxDetails,
             },
             paymentMode,
@@ -1608,14 +1696,100 @@ const createBanquetBookingDetails = async (req, res) => {
 /**
  * Get all banquet bookings
  */
+// const getAllBanquetBookings = async (req, res) => {
+//     try {
+
+//         const { filterType, customStartDate, customEndDate, bookingStatus, userId } = req.query;
+
+//         let filter = { isDeleted: false };
+
+//         // Add paymentStatus to filter if provided
+//         if (bookingStatus) {
+//             filter.bookingStatus = bookingStatus;
+//         }
+//         if (userId) {
+//             filter.primaryMemberId = userId;
+//         }
+
+//         // Handle date filters
+//         if (filterType) {
+//             const today = moment().startOf('day');
+
+//             switch (filterType) {
+//                 case 'today':
+//                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() };
+//                     break;
+//                 case 'last7days':
+//                     filter.createdAt = { $gte: moment(today).subtract(7, 'days').toDate(), $lt: today.toDate() };
+//                     break;
+//                 case 'last30days':
+//                     filter.createdAt = { $gte: moment(today).subtract(30, 'days').toDate(), $lt: today.toDate() };
+//                     break;
+//                 case 'last3months':
+//                     filter.createdAt = { $gte: moment(today).subtract(3, 'months').toDate(), $lt: today.toDate() };
+//                     break;
+//                 case 'last6months':
+//                     filter.createdAt = { $gte: moment(today).subtract(6, 'months').toDate(), $lt: today.toDate() };
+//                     break;
+//                 case 'last1year':
+//                     filter.createdAt = { $gte: moment(today).subtract(1, 'year').toDate(), $lt: today.toDate() };
+//                     break;
+//                 case 'custom':
+//                     if (!customStartDate || !customEndDate) {
+//                         return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
+//                     }
+//                     filter.createdAt = {
+//                         $gte: moment(customStartDate, 'YYYY-MM-DD').startOf('day').toDate(),
+//                         $lt: moment(customEndDate, 'YYYY-MM-DD').endOf('day').toDate(),
+//                     };
+//                     break;
+//                 default:
+//                     break; // No filter applied if no valid filterType
+//             }
+//         }
+
+//         const bookings = await BanquetBooking.find(filter)
+//             .populate({
+//                 path: 'banquetType',
+//                 populate: {
+//                     path: 'banquetName', // Assuming banquetName references BanquetCategory
+//                     model: 'BanquetCategory',
+//                 },
+//             })
+//             .populate('primaryMemberId')
+//             .sort({ createdAt: -1 });
+
+//         if (!bookings.length) {
+//             return res.status(404).json({ message: 'No bookings found' });
+//         }
+
+//         return res.status(200).json({
+//             message: "Fetched all bookings successfully",
+//             bookings,
+//         });
+//     } catch (error) {
+//         console.error('Error fetching banquet bookings:', error);
+//         return res.status(500).json({
+//             message: 'Error retrieving bookings',
+//             error: error.message,
+//         });
+//     }
+// };
+
+
+
 const getAllBanquetBookings = async (req, res) => {
     try {
+        let { page, limit, filterType, customStartDate, customEndDate, bookingStatus, userId } = req.query;
 
-        const { filterType, customStartDate, customEndDate, bookingStatus, userId } = req.query;
+        // Convert query parameters
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
 
         let filter = { isDeleted: false };
 
-        // Add paymentStatus to filter if provided
+        // Add bookingStatus to filter if provided
         if (bookingStatus) {
             filter.bookingStatus = bookingStatus;
         }
@@ -1648,45 +1822,60 @@ const getAllBanquetBookings = async (req, res) => {
                     break;
                 case 'custom':
                     if (!customStartDate || !customEndDate) {
-                        return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
+                        return res.status(400).json({ message: "Custom date range requires both start and end dates." });
                     }
                     filter.createdAt = {
-                        $gte: moment(customStartDate, 'YYYY-MM-DD').startOf('day').toDate(),
-                        $lt: moment(customEndDate, 'YYYY-MM-DD').endOf('day').toDate(),
+                        $gte: moment(customStartDate, "YYYY-MM-DD").startOf("day").toDate(),
+                        $lt: moment(customEndDate, "YYYY-MM-DD").endOf("day").toDate(),
                     };
                     break;
                 default:
-                    break; // No filter applied if no valid filterType
+                    break;
             }
         }
 
+        // Get total count of matching bookings
+        const totalBookings = await BanquetBooking.countDocuments(filter);
+        const totalPages = Math.ceil(totalBookings / limit);
+
+        // Fetch paginated bookings
         const bookings = await BanquetBooking.find(filter)
             .populate({
-                path: 'banquetType',
+                path: "banquetType",
                 populate: {
-                    path: 'banquetName', // Assuming banquetName references BanquetCategory
-                    model: 'BanquetCategory',
+                    path: "banquetName",
+                    model: "BanquetCategory",
                 },
             })
-            .populate('primaryMemberId')
-            .sort({ createdAt: -1 });
+            .populate("primaryMemberId")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
 
         if (!bookings.length) {
-            return res.status(404).json({ message: 'No bookings found' });
+            return res.status(404).json({ message: "No bookings found" });
         }
 
         return res.status(200).json({
             message: "Fetched all bookings successfully",
             bookings,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalBookings,
+                pageSize: limit,
+            }
         });
     } catch (error) {
-        console.error('Error fetching banquet bookings:', error);
+        console.error("Error fetching banquet bookings:", error);
         return res.status(500).json({
-            message: 'Error retrieving bookings',
+            message: "Error retrieving bookings",
             error: error.message,
         });
     }
 };
+
+
 
 /**
  * Get a single booking by ID

@@ -72,21 +72,47 @@ const saveRequest = async (req, res) => {
 const getAllRequests = async (req, res) => {
     try {
         const { status } = req.query;
+        let { page, limit } = req.query;
+
+        // Convert query parameters to numbers, set defaults if not provided
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10; // Default limit: 10 users per page
+
+        // Calculate the number of users to skip
+        const skip = (page - 1) * limit;
+
         const filter = {
             isDeleted: false
         }
         if (status) {
             filter.status = status;
         }
+
+        // Fetch total number of users
+        const totalRequest = await AllRequest.countDocuments(filter);
+
+
         const requests = await AllRequest.find(filter)
             .populate('primaryMemberId', 'name email memberId')
             .populate('departmentId')
             .sort({ createdAt: -1 }) // Sort by creation date
+            .skip(skip)
+            .limit(limit)
             .exec();
+
+        // Calculate total pages
+        const totalPages = Math.ceil(totalRequest / limit);
+
         // return requests;
         return res.status(200).json({
             message: "All Requests",
-            requests
+            requests,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalRequest,
+                pageSize: limit,
+            }
         });
     } catch (error) {
         console.error('Error in saveRequest:', error);
