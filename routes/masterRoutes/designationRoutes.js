@@ -1,4 +1,5 @@
-const { createDesignation, getAllDesignations, getDesignationById, updateDesignation, deleteDesignation, getActiveDesignation } = require("../../controllers/masterController/designationController");
+const { createDesignation, getAllDesignations, getDesignationById, updateDesignation, deleteDesignation, getActiveDesignation, uploadDesignation } = require("../../controllers/masterController/designationController");
+const { xslUpload } = require("../../utils/upload");
 
 module.exports = (router) => {
     router.post("/designation", createDesignation);
@@ -7,4 +8,6 @@ module.exports = (router) => {
     router.put("/designation/:id", updateDesignation);
     router.delete("/designation/:id", deleteDesignation);
     router.get("/active-designations", getActiveDesignation);
+    router.post("/upload-designation", xslUpload.single('file'), uploadDesignation);
+
 };

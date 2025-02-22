@@ -76,7 +76,7 @@ const addAffiliatedClub = async (req, res) => {
 // };
 const getAllAffiliatedClubs = async (req, res) => {
     try {
-        let { countryDescription, page, limit } = req.query;
+        let { countryDescription, stateDescription, page, limit } = req.query;
 
         // Convert query parameters
         page = parseInt(page) || 1;
@@ -89,6 +89,10 @@ const getAllAffiliatedClubs = async (req, res) => {
         if (countryDescription) {
             filter.countryDescription = countryDescription;
         }
+        // Add countryDescription to filter if provided
+        if (stateDescription) {
+            filter.stateDescription = stateDescription;
+        }
 
         // Get total count of matching clubs
         const totalClubs = await AffiliateClub.countDocuments(filter);
@@ -96,7 +100,7 @@ const getAllAffiliatedClubs = async (req, res) => {
 
         // Fetch paginated affiliated clubs
         const clubs = await AffiliateClub.find(filter)
-            .sort({ createdAt: -1 }) // Sorting by newest first
+            .sort({ affiliateClubNo: 1 }) // Sorting by newest first
             .skip(skip)
             .limit(limit);
 
@@ -198,7 +202,8 @@ const getAffiliatedClubs = async (req, res) => {
             .skip(skip)
             .limit(pageSize);
 
-        const totalClubs = await AffiliateClub.countDocuments(filter);
+        const totalClubs = await AffiliateClub.countDocuments(filter)
+            .sort({ affiliateClubNo: 1 }); // Sorting by newest first
 
         return res.status(200).send({
             message: "All Affiliated Clubs",

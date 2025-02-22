@@ -1037,6 +1037,8 @@ const getAllBillingsWithFilters = async (req, res) => {
     try {
         let { userId, paymentStatus, transactionMonth, page, limit } = req.query;
 
+        // console.log(userId, paymentStatus, transactionMonth, page, limit, "userId, paymentStatus, transactionMonth, page, limit")
+
         // Convert pagination parameters
         page = parseInt(page) || 1;
         limit = parseInt(limit) || 10;

@@ -1,6 +1,10 @@
 const Designation = require("../../models/designation");
 const { toTitleCase } = require("../../utils/common");
 
+const fs = require("fs");
+const path = require("path");
+const xlsx = require('xlsx');
+
 // Create a new designation
 const createDesignation = async (req, res) => {
     try {
@@ -159,11 +163,64 @@ const getActiveDesignation = async (req, res) => {
     }
 };
 
+
+const uploadDesignation = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded" });
+        }
+
+        const filePath = req.file.path;
+        const workbook = xlsx.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+        let addedCount = 0;
+        let skippedCount = 0;
+
+        for (const designation of data) {
+            const designationName = designation.DESCRIPTION?.trim();
+
+            if (!designationName) {
+                console.log("⚠️ Skipping empty designation");
+                continue;
+            }
+
+            const existingDesig = await Designation.findOne({ designationName });
+
+            if (!existingDesig) {
+                const newDesignation = new Designation({ designationName });
+                await newDesignation.save();
+                console.log(`✅ Added Designation: ${designationName}`);
+                addedCount++;
+            } else {
+                console.log(`⚠️ Skipping existing Designation: ${designationName}`);
+                skippedCount++;
+            }
+        }
+
+        // Remove the uploaded file after processing
+        fs.unlinkSync(filePath);
+
+        return res.status(200).json({
+            message: "Designations uploaded successfully",
+            added: addedCount,
+            skipped: skippedCount,
+        });
+    } catch (error) {
+        console.error("❌ Error uploading designations:", error);
+        return res.status(500).json({ message: "Error uploading designations", error: error.message });
+    }
+};
+
+
+
 module.exports = {
     createDesignation,
     getAllDesignations,
     getDesignationById,
     updateDesignation,
     deleteDesignation,
-    getActiveDesignation
+    getActiveDesignation,
+    uploadDesignation
 };
