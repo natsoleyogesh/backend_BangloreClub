@@ -455,7 +455,7 @@ const getAllActiveUsers = async (req, res) => {
 
 const getUsers = async (req, res) => {
   try {
-    const { search, page, limit } = req.query;
+    const { relation, search, page, limit } = req.query;
 
     // Convert pagination parameters
     const pageNumber = parseInt(page) || 1;
@@ -464,6 +464,9 @@ const getUsers = async (req, res) => {
 
     // Build search query
     let query = {};
+    if (relation) {
+      query.relation = relation; // Always include relation filter
+    }
     if (search) {
       query = {
         $or: [
