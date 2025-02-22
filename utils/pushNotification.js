@@ -161,7 +161,7 @@ const pushNotification = async (deviceTokens, payload) => {
 
 const createNotification = async ({ title, send_to, push_message, department, departmentId = null, image = '' }) => {
     try {
-        if (!['All', 'Event', 'Offer', 'Notice'].includes(department) && !departmentId) {
+        if (!['All', 'Event', 'Offer', 'clubNotice'].includes(department) && !departmentId) {
             throw new Error('Department ID is required for the specified department.');
         }
 
