@@ -81,4 +81,12 @@ const toTitleCase = (str) => {
     .join(' ');
 };
 
-module.exports = { generateToken, verifyToken, decodeToken, generatePrimaryMemberId, generateFamilyMemberId, generateOtp, toTitleCase };
+const toLowerCase = (str) => {
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toLowerCase() + word.slice(1))
+    .join(' ');
+};
+
+module.exports = { generateToken, verifyToken, decodeToken, generatePrimaryMemberId, generateFamilyMemberId, generateOtp, toTitleCase, toLowerCase };

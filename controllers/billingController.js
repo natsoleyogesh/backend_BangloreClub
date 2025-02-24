@@ -858,14 +858,34 @@ const generateOfflineInvoiceNumber = async () => {
     const invoicePrefix = `OFFINV/${date.getFullYear()}${('0' + (date.getMonth() + 1)).slice(-2)}${('0' + date.getDate()).slice(-2)}/${String(nextInvoiceNumber).padStart(4, '0')}`;
     return invoicePrefix;
 };
-// Parse TRANSMONTH and ensure it's set to the first day of the month in UTC
+// // Parse TRANSMONTH and ensure it's set to the first day of the month in UTC
+// const parseTransactionMonth = (transactionMonth) => {
+//     try {
+//         const [month, year] = transactionMonth.trim().split('-'); // Extract month and year
+//         const monthIndex = new Date(Date.parse(`${month} 1, ${year}`)).getMonth(); // Get month index (0-based)
+//         return new Date(Date.UTC(year, monthIndex, 1)); // Set to the first day of the month in UTC
+//     } catch (error) {
+//         console.error('Error parsing TRANSMONTH:', error.message);
+//         return null;
+//     }
+// };
+
 const parseTransactionMonth = (transactionMonth) => {
     try {
         const [month, year] = transactionMonth.trim().split('-'); // Extract month and year
         const monthIndex = new Date(Date.parse(`${month} 1, ${year}`)).getMonth(); // Get month index (0-based)
-        return new Date(Date.UTC(year, monthIndex, 1)); // Set to the first day of the month in UTC
+
+        const formattedDate = new Date(Date.UTC(year, monthIndex, 1))
+            .toLocaleDateString("en-GB", {
+                weekday: "short", // "Wed"
+                day: "2-digit",   // "01"
+                month: "short",   // "Jan"
+                year: "numeric"   // "2025"
+            });
+
+        return formattedDate; // "Wed, 01 Jan 2025"
     } catch (error) {
-        console.error('Error parsing TRANSMONTH:', error.message);
+        console.error('❌ Error parsing TRANSMONTH:', error.message);
         return null;
     }
 };
@@ -1407,6 +1427,127 @@ const getOfflineMemberActiveBills = async (req, res) => {
     }
 };
 
+const deleteBillingByTransactionMonth = async (req, res) => {
+    try {
+        const { transactionMonth } = req.query; // Get transactionMonth from request
+
+        if (!transactionMonth) {
+            return res.status(400).json({ message: "❌ Transaction month is required." });
+        }
+
+        // Convert "January-2025" (input) into the required format "Wed, 01 Jan 2025"
+        const parsedDate = new Date(Date.parse(`${transactionMonth.split('-')[0]} 1, ${transactionMonth.split('-')[1]}`));
+
+        if (isNaN(parsedDate.getTime())) {
+            return res.status(400).json({ message: "❌ Invalid transaction month format. Use 'January-2025' format." });
+        }
+
+        // Format to match the stored format in the database: "Wed, 01 Jan 2025"
+        const formattedTransactionMonth = parsedDate.toLocaleDateString("en-GB", {
+            weekday: "short",  // "Wed"
+            day: "2-digit",    // "01"
+            month: "short",    // "Jan"
+            year: "numeric"    // "2025"
+        });
+
+        console.log(`🔍 Searching for records with transactionMonth: ${formattedTransactionMonth}`);
+
+        // Update all records matching the transactionMonth (Soft delete)
+        const result = await ConsolidatedBilling.updateMany(
+            { transactionMonth: formattedTransactionMonth, isDeleted: false }, // Match only the short format
+            { $set: { isDeleted: true, status: "Inactive", updatedAt: new Date() } }
+        );
+
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ message: `⚠️ No records found for transaction month: ${formattedTransactionMonth}.` });
+        }
+
+        res.status(200).json({
+            message: `✅ ${result.modifiedCount} billing records marked as deleted for transaction month ${formattedTransactionMonth}.`,
+        });
+    } catch (error) {
+        console.error("❌ Error deleting billing records:", error);
+        res.status(500).json({ message: "❌ Internal server error", error: error.message });
+    }
+};
+
+
+// const deleteBillingByTransactionMonth = async (req, res) => {
+
+//     try {
+//         const { transactionMonth } = req.query; // Get transactionMonth from request body
+
+//         if (!transactionMonth) {
+//             return res.status(400).json({ message: "❌ Transaction month is required." });
+//         }
+
+//         // Convert "January-2025" to a Date object representing the first day of the month
+//         const parsedMonth = new Date(Date.parse(`${transactionMonth.split('-')[0]} 1, ${transactionMonth.split('-')[1]}`));
+//         console.log(parsedMonth, "patrh")
+
+//         if (isNaN(parsedMonth.getTime())) {
+//             return res.status(400).json({ message: "❌ Invalid transaction month format. Use 'January-2025' format." });
+//         }
+
+//         console.log(`🔍 Searching for records with transactionMonth: ${parsedMonth}`);
+
+//         // Update all records matching the transactionMonth (Soft delete)
+//         const result = await ConsolidatedBilling.updateMany(
+//             { transactionMonth: parsedMonth.toISOString(), isDeleted: false },
+//             { $set: { isDeleted: true, status: "Inactive", updatedAt: new Date() } }
+//         );
+
+//         if (result.matchedCount === 0) {
+//             return res.status(404).json({ message: `⚠️ No records found for transaction month: ${transactionMonth}.` });
+//         }
+
+//         res.status(200).json({
+//             message: `✅ ${result.modifiedCount} billing records marked as deleted for transaction month ${transactionMonth}.`,
+//         });
+//     } catch (error) {
+//         console.error("❌ Error deleting billing records:", error);
+//         res.status(500).json({ message: "❌ Internal server error", error: error.message });
+//     }
+// };
+
+// const deleteBillingByTransactionMonth = async (req, res) => {
+//     try {
+//         const { transactionMonth } = req.query; // Expecting format: "January-2025"
+
+//         if (!transactionMonth) {
+//             return res.status(400).json({ message: "❌ Transaction month is required." });
+//         }
+
+//         // Convert "January-2025" to Date object (First day of the month in UTC)
+//         const [monthName, year] = transactionMonth.split('-');
+//         const parsedDate = new Date(Date.UTC(year, new Date(Date.parse(`${monthName} 1, ${year}`)).getMonth(), 1));
+
+//         if (isNaN(parsedDate.getTime())) {
+//             return res.status(400).json({ message: "❌ Invalid transaction month format. Use 'January-2025' format." });
+//         }
+
+//         // Format parsedDate to match the stored transactionMonth format in MongoDB
+//         const formattedTransactionMonth = parsedDate.toUTCString().replace("GMT", "UTC");
+//         console.log(`🔍 Searching for records with transactionMonth: ${formattedTransactionMonth}`);
+
+//         // Find and soft delete multiple records
+//         const result = await ConsolidatedBilling.updateMany(
+//             { transactionMonth: formattedTransactionMonth, isDeleted: false },
+//             { $set: { isDeleted: true, status: "Inactive", updatedAt: new Date() } }
+//         );
+
+//         if (result.matchedCount === 0) {
+//             return res.status(404).json({ message: `⚠️ No records found for transaction month: ${transactionMonth}.` });
+//         }
+
+//         res.status(200).json({
+//             message: `✅ ${result.modifiedCount} billing records marked as deleted for transaction month ${transactionMonth}.`,
+//         });
+//     } catch (error) {
+//         console.error("❌ Error deleting billing records:", error);
+//         res.status(500).json({ message: "❌ Internal server error", error: error.message });
+//     }
+// };
 
 module.exports = {
     createBilling,
@@ -1428,5 +1569,6 @@ module.exports = {
     deleteOfflineBilling,
     getOfflineActiveBill,
     updateOfflineBilling,
-    getOfflineMemberActiveBills
+    getOfflineMemberActiveBills,
+    deleteBillingByTransactionMonth
 };

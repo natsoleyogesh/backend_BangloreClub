@@ -19,6 +19,7 @@ const banquetBookingReject = require("./template/banquetBookingReject");
 const eventBookingCancel = require("./template/eventBookingCancelled/eventBookingCancel");
 const dependentBookingCanclled = require("./template/eventBookingCancelled/dependentBookingCanclled");
 const guestBookingCanclled = require("./template/eventBookingCancelled/guestBookingCanclled");
+const createAdminTemplate = require("./template/createAdminTemplate");
 
 module.exports = {
     // event booking Confirmation Template
@@ -45,5 +46,7 @@ module.exports = {
     memberEditRequestTemplate: memberEditRequestTemplate,
     familymemberEditTemplate: familymemberEditTemplate,
 
-    otpTemplate: otpTemplate
+    otpTemplate: otpTemplate,
+
+    createAdminTemplate
 };

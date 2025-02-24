@@ -151,6 +151,10 @@ const eventSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        showInApp: {
+            type: Boolean,
+            default: true,
+        },
         isDeleted: {
             type: Boolean,
             default: false,

@@ -49,7 +49,8 @@ const createEvent = async (req, res) => {
             bookingPermissionChild,
             bookingPermissionDependent,
             bookingPermissionSeniorDependent,
-            guideline
+            guideline,
+            showInApp
         } = req.body;
 
         // Check if the required image file is uploaded
@@ -148,7 +149,8 @@ const createEvent = async (req, res) => {
             bookingPermissionChild: bookingPermissionChild || false,
             bookingPermissionDependent: bookingPermissionDependent || false,
             bookingPermissionSeniorDependent: bookingPermissionSeniorDependent || false,
-            guideline
+            guideline,
+            showInApp: showInApp || false
         });
 
         // Save the new event to the database
@@ -317,54 +319,168 @@ const createEvent = async (req, res) => {
 //     }
 // };
 
-const getAllEventsList = async (req, res) => {
-    try {
-        const { isAdmin } = req.query;
+//-------------------------------------------------------------------------------------
 
-        // Get the current date and time
-        const currentDateTime = new Date();
+// const getAllEventsList = async (req, res) => {
+//     try {
+//         const { isAdmin } = req.query;
 
-        // Determine the query for events based on admin or non-admin access
-        let query = { isDeleted: false };
+//         // Get the current date and time
+//         const currentDateTime = new Date();
 
-        if (isAdmin === 'true') {
-            // Admin access: Fetch all non-deleted events without filtering by date
-            query = { isDeleted: false };
-        } else {
-            // Non-admin access: Fetch only non-expired events
-            query = {
-                isDeleted: false,
-                $or: [
-                    // Future or ongoing events
-                    { eventEndDate: { $gte: currentDateTime.toISOString().split('T')[0] } },
-                    // Events ending today but still ongoing based on time
-                    {
-                        $and: [
-                            { eventEndDate: currentDateTime.toISOString().split('T')[0] },
-                            { endTime: { $gt: currentDateTime.toTimeString().split(' ')[0] } },
-                        ],
-                    },
-                ],
-            };
-        }
+//         // Determine the query for events based on admin or non-admin access
+//         let query = { isDeleted: false };
 
-        // Fetch events and populate the taxTypes field
-        const events = await Event.find(query).populate("taxTypes");
+//         if (isAdmin === 'true') {
+//             // Admin access: Fetch all non-deleted events without filtering by date
+//             query = { isDeleted: false, };
+//         } else {
+//             // Non-admin access: Fetch only non-expired events
+//             query = {
+//                 isDeleted: false,
+//                 showInApp: true,
+//                 $or: [
+//                     // Future or ongoing events
+//                     { eventEndDate: { $gte: currentDateTime.toISOString().split('T')[0] } },
+//                     // Events ending today but still ongoing based on time
+//                     {
+//                         $and: [
+//                             { eventEndDate: currentDateTime.toISOString().split('T')[0] },
+//                             { endTime: { $gt: currentDateTime.toTimeString().split(' ')[0] } },
+//                         ],
+//                     },
+//                 ],
+//             };
+//         }
 
-        // Reverse events to show the latest first
-        const allEvents = events.reverse();
+//         // Fetch events and populate the taxTypes field
+//         const events = await Event.find(query).populate("taxTypes");
 
-        // Return the fetched events
-        return res.status(200).json({
-            message: 'Events fetched successfully.',
-            allEvents,
-        });
-    } catch (error) {
-        console.error('Error fetching events:', error);
-        return res.status(500).json({ message: 'Internal server error.' });
+//         // Reverse events to show the latest first
+//         const allEvents = events.reverse();
+
+//         // Return the fetched events
+//         return res.status(200).json({
+//             message: 'Events fetched successfully.',
+//             allEvents,
+//         });
+//     } catch (error) {
+//         console.error('Error fetching events:', error);
+//         return res.status(500).json({ message: 'Internal server error.' });
+//     }
+// };
+
+// const getAllEvents = async (req, res) => {
+//     try {
+//         let { isAdmin, page, limit } = req.query;
+
+//         // Convert pagination parameters
+//         page = parseInt(page) || 1;
+//         limit = parseInt(limit) || 10;
+//         const skip = (page - 1) * limit;
+
+//         // Get the current date and time
+//         const currentDateTime = new Date();
+
+//         // Determine the query for events based on admin or non-admin access
+//         let query = { isDeleted: false };
+
+//         if (isAdmin === "true") {
+//             // Admin access: Fetch all non-deleted events without filtering by date
+//             query = { isDeleted: false };
+//         } else {
+//             // Non-admin access: Fetch only non-expired events
+//             query = {
+//                 isDeleted: false,
+//                 showInApp: true,
+//                 $or: [
+//                     // Future or ongoing events
+//                     { eventEndDate: { $gte: currentDateTime.toISOString().split("T")[0] } },
+//                     // Events ending today but still ongoing based on time
+//                     {
+//                         $and: [
+//                             { eventEndDate: currentDateTime.toISOString().split("T")[0] },
+//                             { endTime: { $gt: currentDateTime.toTimeString().split(" ")[0] } },
+//                         ],
+//                     },
+//                 ],
+//             };
+//         }
+
+//         // Get total count of matching events
+//         const totalEvents = await Event.countDocuments(query);
+//         const totalPages = Math.ceil(totalEvents / limit);
+
+//         // Fetch paginated events and populate taxTypes field
+//         const events = await Event.find(query)
+//             .populate("taxTypes")
+//             .sort({ createdAt: -1 }) // Sort by latest first
+//             .skip(skip)
+//             .limit(limit);
+
+//         // Return the fetched events with pagination
+//         return res.status(200).json({
+//             message: "Events fetched successfully.",
+//             events,
+//             pagination: {
+//                 currentPage: page,
+//                 totalPages,
+//                 totalEvents,
+//                 pageSize: limit,
+//             },
+//         });
+//     } catch (error) {
+//         console.error("Error fetching events:", error);
+//         return res.status(500).json({ message: "Internal server error.", error: error.message });
+//     }
+// };
+
+const getEventsQuery = (isAdmin) => {
+    const currentDateTime = new Date();
+
+    if (isAdmin === "true") {
+        return { isDeleted: false }; // Admin fetches all non-deleted events
+    } else {
+        return {
+            isDeleted: false,
+            showInApp: true,
+            $or: [
+                { eventEndDate: { $gte: currentDateTime.toISOString().split("T")[0] } },
+                {
+                    $and: [
+                        { eventEndDate: currentDateTime.toISOString().split("T")[0] },
+                        { endTime: { $gt: currentDateTime.toTimeString().split(" ")[0] } },
+                    ],
+                },
+            ],
+        };
     }
 };
 
+/**
+ * Get all events list (without pagination)
+ */
+const getAllEventsList = async (req, res) => {
+    try {
+        const { isAdmin } = req.query;
+        const query = getEventsQuery(isAdmin);
+
+        // Fetch events and populate taxTypes
+        const events = await Event.find(query).populate("taxTypes").sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            message: "Events fetched successfully.",
+            allEvents: events,
+        });
+    } catch (error) {
+        console.error("❌ Error fetching events:", error);
+        return res.status(500).json({ message: "Internal server error.", error: error.message });
+    }
+};
+
+/**
+ * Get paginated events
+ */
 const getAllEvents = async (req, res) => {
     try {
         let { isAdmin, page, limit } = req.query;
@@ -374,45 +490,19 @@ const getAllEvents = async (req, res) => {
         limit = parseInt(limit) || 10;
         const skip = (page - 1) * limit;
 
-        // Get the current date and time
-        const currentDateTime = new Date();
-
-        // Determine the query for events based on admin or non-admin access
-        let query = { isDeleted: false };
-
-        if (isAdmin === "true") {
-            // Admin access: Fetch all non-deleted events without filtering by date
-            query = { isDeleted: false };
-        } else {
-            // Non-admin access: Fetch only non-expired events
-            query = {
-                isDeleted: false,
-                $or: [
-                    // Future or ongoing events
-                    { eventEndDate: { $gte: currentDateTime.toISOString().split("T")[0] } },
-                    // Events ending today but still ongoing based on time
-                    {
-                        $and: [
-                            { eventEndDate: currentDateTime.toISOString().split("T")[0] },
-                            { endTime: { $gt: currentDateTime.toTimeString().split(" ")[0] } },
-                        ],
-                    },
-                ],
-            };
-        }
+        const query = getEventsQuery(isAdmin);
 
         // Get total count of matching events
         const totalEvents = await Event.countDocuments(query);
         const totalPages = Math.ceil(totalEvents / limit);
 
-        // Fetch paginated events and populate taxTypes field
+        // Fetch paginated events
         const events = await Event.find(query)
             .populate("taxTypes")
-            .sort({ createdAt: -1 }) // Sort by latest first
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
-        // Return the fetched events with pagination
         return res.status(200).json({
             message: "Events fetched successfully.",
             events,
@@ -424,12 +514,13 @@ const getAllEvents = async (req, res) => {
             },
         });
     } catch (error) {
-        console.error("Error fetching events:", error);
+        console.error("❌ Error fetching events:", error);
         return res.status(500).json({ message: "Internal server error.", error: error.message });
     }
 };
 
 
+//--------------------------------------------------------------
 
 // const getAllEvents = async (req, res) => {
 //     try {
@@ -556,7 +647,8 @@ const updateEvent = async (req, res) => {
             // bookingPermissionDaughter,
             bookingPermissionDependent,
             bookingPermissionSeniorDependent,
-            guideline
+            guideline,
+            showInApp
         } = req.body;
 
         // Find the existing event
@@ -708,6 +800,10 @@ const updateEvent = async (req, res) => {
                 bookingPermissionDependent !== undefined
                     ? bookingPermissionDependent
                     : existingEvent.bookingPermissionDependent,
+            showInApp:
+                showInApp !== undefined
+                    ? showInApp
+                    : existingEvent.showInApp,
         };
 
         // Update the event using findByIdAndUpdate

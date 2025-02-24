@@ -3,6 +3,9 @@ const bcrypt = require("bcryptjs");
 const { generateToken } = require("../utils/common");
 const User = require("../models/user");
 const { logAction, logActivity } = require("./commonController");
+const sendEmail = require("../utils/sendMail");
+const emailTemplates = require("../utils/emailTemplates");
+const { otpRenderTemplate } = require("../utils/templateRenderer");
 
 
 // Create a new admin
@@ -38,12 +41,25 @@ const createAdmin = async (req, res) => {
     });
 
     await admin.save();
-    res
+
+    const templateData = {
+      name: admin.name,
+      email: admin.email,
+      password: password
+    }
+
+    const emailTemplate = emailTemplates.createAdminTemplate;
+    const htmlBody = otpRenderTemplate(emailTemplate.body, templateData);
+    const subject = otpRenderTemplate(emailTemplate.subject, templateData);
+
+    await sendEmail(admin.email, subject, htmlBody);
+
+    return res
       .status(201)
       .json({ success: true, message: "Admin created successfully", admin });
   } catch (error) {
     console.error("Error creating admin:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error creating admin",
       error: error.message,
@@ -64,7 +80,7 @@ const adminLogin = async (req, res) => {
     }
 
     // Find admin by email
-    const admin = await Admin.findOne({ email });
+    const admin = await Admin.findOne({ email }).populate("role");
     if (!admin) {
       return res
         .status(400)
@@ -93,7 +109,8 @@ const adminLogin = async (req, res) => {
     const tokenData = {
       userId: admin._id,
       email: admin.email,
-      role: admin.role,
+      role: admin.role.name,
+      roleId: admin.role._id
     };
     const token = generateToken(tokenData);
 
@@ -107,7 +124,7 @@ const adminLogin = async (req, res) => {
       userId: admin._id,
       userType: "Admin",
       action: "login",
-      role: admin.role,
+      role: admin.role.name,
       ipAddress: ip,
       userAgent: req.headers["user-agent"],
     });
@@ -121,7 +138,8 @@ const adminLogin = async (req, res) => {
         id: admin._id,
         name: admin.name,
         email: admin.email,
-        role: admin.role,
+        role: admin.role.name,
+        roleId: admin.role._id,
         lastLogin: admin.lastLogin,
       },
     });
@@ -502,6 +520,108 @@ const getUsers = async (req, res) => {
   }
 };
 
+
+// Update an existing admin
+const updateAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, password, role } = req.body;
+
+    // Check if admin exists
+    const admin = await Admin.findById(id);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin not found",
+      });
+    }
+
+    // Check if email is already used by another admin
+    if (email && email !== admin.email) {
+      const existingAdmin = await Admin.findOne({ email });
+      if (existingAdmin) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already in use by another admin",
+        });
+      }
+      admin.email = email;
+    }
+
+    // Update fields if provided
+    if (name) admin.name = name;
+    if (role) admin.role = role;
+
+    // Hash new password if provided
+    if (password) {
+      admin.password = await bcrypt.hash(password, 10);
+    }
+
+    await admin.save();
+    res.status(200).json({
+      success: true,
+      message: "Admin updated successfully",
+      admin,
+    });
+  } catch (error) {
+    console.error("Error updating admin:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating admin",
+      error: error.message,
+    });
+  }
+};
+
+
+// Get admin by ID
+const getAdminById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const admin = await Admin.findById(id).select("-password").populate("role");
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      admin,
+    });
+  } catch (error) {
+    console.error("Error fetching admin:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching admin",
+      error: error.message,
+    });
+  }
+};
+
+
+// Get all admins except the current admin
+const getAllAdmins = async (req, res) => {
+  try {
+    const currentAdminId = req.user.userId;
+    const admins = await Admin.find({ _id: { $ne: currentAdminId } }).select("-password").populate("role");
+
+    res.status(200).json({
+      success: true,
+      admins,
+    });
+  } catch (error) {
+    console.error("Error fetching admins:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching admins",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createAdmin,
   adminLogin,
@@ -514,5 +634,10 @@ module.exports = {
   getAllActiveUsers,
 
   getAdminDetails,
-  getUsers
+  getUsers,
+
+
+  updateAdmin,
+  getAdminById,
+  getAllAdmins
 };

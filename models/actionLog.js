@@ -13,7 +13,7 @@ const actionLogSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            enum: ["member", "gatekeeper", "admin"], // Roles to log
+            // enum: ["member", "gatekeeper", "admin"], // Roles to log
             required: true,
         },
         action: {

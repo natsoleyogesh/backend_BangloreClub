@@ -10,6 +10,9 @@ const {
   getAllActiveUsers,
   getAdminDetails,
   getUsers,
+  getAdminById,
+  getAllAdmins,
+  updateAdmin,
 } = require("../controllers/adminController");
 const { verifyToken } = require("../utils/common");
 
@@ -26,5 +29,9 @@ module.exports = (router) => {
   router.post("/getkeeper/scanqr", verifyToken, qrScanDetails);
   router.get("/admin/active-members", getAllActiveUsers);
 
-  router.get("/admin-deails", verifyToken, getAdminDetails)
+  router.get("/admin-deails", verifyToken, getAdminDetails);
+
+  router.get("/admin/:id", getAdminById);
+  router.get("/all-admins", verifyToken, getAllAdmins);
+  router.put("/admin/update/:id", updateAdmin)
 };
