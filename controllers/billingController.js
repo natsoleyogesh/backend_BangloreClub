@@ -923,7 +923,8 @@ const uploadConsolidatedBill = async (req, res) => {
             let billing = await ConsolidatedBilling.findOne({
                 memberId: member._id,
                 transactionMonth,
-                paymentStatus: "Due"
+                paymentStatus: "Due",
+                isDeleted: false
             });
 
             if (!billing) {
