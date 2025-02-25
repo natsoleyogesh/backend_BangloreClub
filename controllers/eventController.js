@@ -50,7 +50,8 @@ const createEvent = async (req, res) => {
             bookingPermissionDependent,
             bookingPermissionSeniorDependent,
             guideline,
-            showInApp
+            showInApp,
+            showInGatekeeper
         } = req.body;
 
         // Check if the required image file is uploaded
@@ -150,7 +151,8 @@ const createEvent = async (req, res) => {
             bookingPermissionDependent: bookingPermissionDependent || false,
             bookingPermissionSeniorDependent: bookingPermissionSeniorDependent || false,
             guideline,
-            showInApp: showInApp || false
+            showInApp: showInApp || true,
+            showInGatekeeper: showInGatekeeper || false
         });
 
         // Save the new event to the database
@@ -435,35 +437,84 @@ const createEvent = async (req, res) => {
 //     }
 // };
 
-const getEventsQuery = (isAdmin) => {
+// const getEventsQuery = ({ isAdmin, gateKeeper }) => {
+//     const currentDateTime = new Date();
+
+//     if (isAdmin === "true") {
+//         return { isDeleted: false }; // Admin fetches all non-deleted events
+//     }
+//     else if (isAdmin === "false" && gateKeeper === "true") {
+//         return {
+//             isDeleted: false,
+//             showInGatekeeper: true,
+//             $or: [
+//                 { eventEndDate: { $gte: currentDateTime.toISOString().split("T")[0] } },
+//                 {
+//                     $and: [
+//                         { eventEndDate: currentDateTime.toISOString().split("T")[0] },
+//                         { endTime: { $gt: currentDateTime.toTimeString().split(" ")[0] } },
+//                     ],
+//                 },
+//             ],
+//         };
+//     } else {
+//         return {
+//             isDeleted: false,
+//             showInApp: true,
+//             $or: [
+//                 { eventEndDate: { $gte: currentDateTime.toISOString().split("T")[0] } },
+//                 {
+//                     $and: [
+//                         { eventEndDate: currentDateTime.toISOString().split("T")[0] },
+//                         { endTime: { $gt: currentDateTime.toTimeString().split(" ")[0] } },
+//                     ],
+//                 },
+//             ],
+//         };
+//     }
+// };
+const getEventsQuery = ({ isAdmin, gateKeeper }) => {
     const currentDateTime = new Date();
+    const currentDate = currentDateTime.toISOString().split("T")[0];  // YYYY-MM-DD
+    const currentTime = currentDateTime.toTimeString().split(" ")[0]; // HH:MM:SS
+
+    const commonConditions = {
+        isDeleted: false,
+        $or: [
+            { eventEndDate: { $gte: currentDate } },
+            {
+                $and: [
+                    { eventEndDate: currentDate },
+                    { endTime: { $gt: currentTime } },
+                ],
+            },
+        ],
+    };
 
     if (isAdmin === "true") {
-        return { isDeleted: false }; // Admin fetches all non-deleted events
+        return commonConditions; // Admin fetches all non-deleted events
+    }
+    else if (isAdmin === "false" && gateKeeper === "true") {
+        return {
+            ...commonConditions,
+            showInGatekeeper: true,
+        };
     } else {
         return {
-            isDeleted: false,
+            ...commonConditions,
             showInApp: true,
-            $or: [
-                { eventEndDate: { $gte: currentDateTime.toISOString().split("T")[0] } },
-                {
-                    $and: [
-                        { eventEndDate: currentDateTime.toISOString().split("T")[0] },
-                        { endTime: { $gt: currentDateTime.toTimeString().split(" ")[0] } },
-                    ],
-                },
-            ],
         };
     }
 };
+
 
 /**
  * Get all events list (without pagination)
  */
 const getAllEventsList = async (req, res) => {
     try {
-        const { isAdmin } = req.query;
-        const query = getEventsQuery(isAdmin);
+        const { isAdmin, gateKeeper } = req.query;
+        const query = getEventsQuery({ isAdmin, gateKeeper });
 
         // Fetch events and populate taxTypes
         const events = await Event.find(query).populate("taxTypes").sort({ createdAt: -1 });
@@ -490,7 +541,7 @@ const getAllEvents = async (req, res) => {
         limit = parseInt(limit) || 10;
         const skip = (page - 1) * limit;
 
-        const query = getEventsQuery(isAdmin);
+        const query = getEventsQuery({ isAdmin });
 
         // Get total count of matching events
         const totalEvents = await Event.countDocuments(query);
@@ -648,7 +699,8 @@ const updateEvent = async (req, res) => {
             bookingPermissionDependent,
             bookingPermissionSeniorDependent,
             guideline,
-            showInApp
+            showInApp,
+            showInGatekeeper
         } = req.body;
 
         // Find the existing event
@@ -804,6 +856,10 @@ const updateEvent = async (req, res) => {
                 showInApp !== undefined
                     ? showInApp
                     : existingEvent.showInApp,
+            showInGatekeeper:
+                showInGatekeeper !== undefined
+                    ? showInGatekeeper
+                    : existingEvent.showInGatekeeper,
         };
 
         // Update the event using findByIdAndUpdate

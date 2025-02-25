@@ -155,6 +155,10 @@ const eventSchema = new mongoose.Schema(
             type: Boolean,
             default: true,
         },
+        showInGatekeeper: {
+            type: Boolean,
+            default: false,
+        },
         isDeleted: {
             type: Boolean,
             default: false,
