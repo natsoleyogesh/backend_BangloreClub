@@ -911,7 +911,7 @@ const uploadConsolidatedBill = async (req, res) => {
                 continue;
             }
             // Set the transactionMonth to UTC
-            transactionMonth = new Date(Date.UTC(transactionMonth.getUTCFullYear(), transactionMonth.getUTCMonth(), transactionMonth.getUTCDate()));
+            // transactionMonth = new Date(Date.UTC(transactionMonth.getUTCFullYear(), transactionMonth.getUTCMonth(), transactionMonth.getUTCDate()));
             // Find the member
             const member = await User.findOne({ memberId: memberAccNo });
             if (!member) {
