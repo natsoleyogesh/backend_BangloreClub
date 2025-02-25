@@ -176,35 +176,89 @@ const addHOD = async (req, res) => {
 
 
 
+const getAllHODs = async (req, res) => {
+    try {
+        // Fetch HODs and populate user and department details
+        const data = await HOD.find({ status: "Active" })
+            .populate('department', 'departmentName'); // Populating department name
+
+        // Map the data for the desired response format
+        const hods = data.reverse().map(hod => ({
+            _id: hod._id,
+            departmentId: hod.department._id,
+            designation: hod.designation,
+            name: hod.name,
+            contactNumber: hod.contactNumber,
+            email: hod.email,
+            image: hod.image,
+            department: hod.department ? hod.department.departmentName : 'N/A', // Handle missing department
+            status: hod.status,
+            createdAt: hod.createdAt,
+            updatedAt: hod.updatedAt,
+        }));
+
+        return res.status(200).json({ message: "HODs fetched successfully", hods });
+    } catch (error) {
+        console.error("Error fetching HODs:", error);
+        return res.status(500).json({ message: "Error fetching HODs", error: error.message });
+    }
+};
+
 // const getAllHODs = async (req, res) => {
 //     try {
-//         // Fetch HODs and populate user and department details
-//         const data = await HOD.find()
-//             .populate('department', 'departmentName'); // Populating department name
+//         let { page, limit } = req.query;
 
-//         // Map the data for the desired response format
-//         const hods = data.reverse().map(hod => ({
+//         // Convert pagination parameters
+//         page = parseInt(page) || 1;
+//         limit = parseInt(limit) || 10;
+//         const skip = (page - 1) * limit;
+
+//         // Get total count of HODs
+//         const totalHODs = await HOD.countDocuments();
+
+//         // Fetch paginated HODs and populate department details
+//         const data = await HOD.find()
+//             .populate("department", "departmentName")
+//             .sort({ createdAt: -1 }) // Sort by newest first
+//             .skip(skip)
+//             .limit(limit);
+
+//         // Format HOD data
+//         const hods = data.map(hod => ({
 //             _id: hod._id,
-//             departmentId: hod.department._id,
+//             departmentId: hod.department?._id || null,
 //             designation: hod.designation,
 //             name: hod.name,
 //             contactNumber: hod.contactNumber,
 //             email: hod.email,
 //             image: hod.image,
-//             department: hod.department ? hod.department.departmentName : 'N/A', // Handle missing department
+//             department: hod.department?.departmentName || "N/A", // Handle missing department
 //             status: hod.status,
 //             createdAt: hod.createdAt,
 //             updatedAt: hod.updatedAt,
 //         }));
 
-//         return res.status(200).json({ message: "HODs fetched successfully", hods });
+//         return res.status(200).json({
+//             message: "HODs fetched successfully",
+//             hods,
+//             pagination: {
+//                 currentPage: page,
+//                 totalPages: Math.ceil(totalHODs / limit),
+//                 totalHODs,
+//                 pageSize: limit,
+//             },
+//         });
 //     } catch (error) {
 //         console.error("Error fetching HODs:", error);
-//         return res.status(500).json({ message: "Error fetching HODs", error: error.message });
+//         return res.status(500).json({
+//             message: "Error fetching HODs",
+//             error: error.message,
+//         });
 //     }
 // };
 
-const getAllHODs = async (req, res) => {
+
+const getAllHODsInAdmin = async (req, res) => {
     try {
         let { page, limit } = req.query;
 
@@ -256,7 +310,6 @@ const getAllHODs = async (req, res) => {
         });
     }
 };
-
 
 
 const getActiveHODs = async (req, res) => {
@@ -406,5 +459,6 @@ module.exports = {
     getAllHODs,
     getHODById,
     deleteHOD,
-    getActiveHODs
+    getActiveHODs,
+    getAllHODsInAdmin
 }
