@@ -50,7 +50,7 @@ const ConsolidatedBillingSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ['Active', 'Paid', "Paid Offline"],
+            enum: ['Active', 'Paid', "Paid Offline", "Inactive"],
             default: 'Active'
         },
         isDeleted: {
