@@ -2710,81 +2710,18 @@ const bookingDetails = async (req, res) => {
     }
 };
 
-
-
 // const getAllBookings = async (req, res) => {
 //     try {
+//         let { filterType, customStartDate, customEndDate, bookingStatus, userId, eventId, page, limit } = req.query;
 
-//         const { filterType, customStartDate, customEndDate, bookingStatus, userId } = req.query;
+//         // Convert pagination parameters
+//         page = parseInt(page) || 1;
+//         limit = parseInt(limit) || 10;
+//         const skip = (page - 1) * limit;
 
 //         let filter = { isDeleted: false, deletedAt: null };
 
-//         // Add paymentStatus to filter if provided
-//         if (bookingStatus) {
-//             filter.bookingStatus = bookingStatus;
-//         }
-//         if (userId) {
-//             filter.primaryMemberId = userId;
-//         }
-
-//         // Handle date filters
-//         if (filterType) {
-//             const today = moment().startOf('day');
-
-//             switch (filterType) {
-//                 case 'today':
-//                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() };
-//                     break;
-//                 case 'last7days':
-//                     filter.createdAt = { $gte: moment(today).subtract(7, 'days').toDate(), $lt: today.toDate() };
-//                     break;
-//                 case 'last30days':
-//                     filter.createdAt = { $gte: moment(today).subtract(30, 'days').toDate(), $lt: today.toDate() };
-//                     break;
-//                 case 'last3months':
-//                     filter.createdAt = { $gte: moment(today).subtract(3, 'months').toDate(), $lt: today.toDate() };
-//                     break;
-//                 case 'last6months':
-//                     filter.createdAt = { $gte: moment(today).subtract(6, 'months').toDate(), $lt: today.toDate() };
-//                     break;
-//                 case 'last1year':
-//                     filter.createdAt = { $gte: moment(today).subtract(1, 'year').toDate(), $lt: today.toDate() };
-//                     break;
-//                 case 'custom':
-//                     if (!customStartDate || !customEndDate) {
-//                         return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
-//                     }
-//                     filter.createdAt = {
-//                         $gte: moment(customStartDate, 'YYYY-MM-DD').startOf('day').toDate(),
-//                         $lt: moment(customEndDate, 'YYYY-MM-DD').endOf('day').toDate(),
-//                     };
-//                     break;
-//                 default:
-//                     break; // No filter applied if no valid filterType
-//             }
-//         }
-
-//         // const bookings = await EventBooking.find({ isDeleted: false, deletedAt: null })
-//         const bookings = await EventBooking.find(filter)
-//             .select("-allDetailsQRCode -primaryMemberQRCode -dependents.qrCode  -guests.qrCode")
-//             .populate("eventId")
-//             .populate("primaryMemberId", "-qrCode")
-//             .lean();  // 🚀 Converts the result into a plain JavaScript objec
-//         const reversedata = bookings.reverse()
-//         return res.status(200).json({ message: 'Bookings fetched successfully', bookings: reversedata });
-//     } catch (error) {
-//         console.error('Error fetching bookings:', error);
-//         return res.status(500).json({ message: 'An error occurred while fetching bookings', error });
-//     }
-// };
-
-// const getAllBookings = async (req, res) => {
-//     try {
-//         const { filterType, customStartDate, customEndDate, bookingStatus, userId, eventId } = req.query;
-
-//         let filter = { isDeleted: false, deletedAt: null };
-
-//         // Add paymentStatus to filter if provided
+//         // Add filters
 //         if (bookingStatus) {
 //             filter.bookingStatus = bookingStatus;
 //         }
@@ -2797,75 +2734,81 @@ const bookingDetails = async (req, res) => {
 
 //         // Handle date filters
 //         if (filterType) {
-//             const today = moment().startOf('day');
+//             const today = moment().startOf("day");
 
 //             switch (filterType) {
-//                 case 'today':
-//                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() };
+//                 case "today":
+//                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf("day").toDate() };
 //                     break;
-//                 case 'last7days':
-//                     filter.createdAt = { $gte: moment(today).subtract(7, 'days').toDate(), $lt: today.toDate() };
+//                 case "last7days":
+//                     filter.createdAt = { $gte: moment(today).subtract(7, "days").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last30days':
-//                     filter.createdAt = { $gte: moment(today).subtract(30, 'days').toDate(), $lt: today.toDate() };
+//                 case "last30days":
+//                     filter.createdAt = { $gte: moment(today).subtract(30, "days").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last3months':
-//                     filter.createdAt = { $gte: moment(today).subtract(3, 'months').toDate(), $lt: today.toDate() };
+//                 case "last3months":
+//                     filter.createdAt = { $gte: moment(today).subtract(3, "months").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last6months':
-//                     filter.createdAt = { $gte: moment(today).subtract(6, 'months').toDate(), $lt: today.toDate() };
+//                 case "last6months":
+//                     filter.createdAt = { $gte: moment(today).subtract(6, "months").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last1year':
-//                     filter.createdAt = { $gte: moment(today).subtract(1, 'year').toDate(), $lt: today.toDate() };
+//                 case "last1year":
+//                     filter.createdAt = { $gte: moment(today).subtract(1, "year").toDate(), $lt: today.toDate() };
 //                     break;
-//                 // case 'currentMonth':  // ✅ New filter added for the current month
-//                 //     filter.createdAt = {
-//                 //         $gte: moment().startOf('month').toDate(),
-//                 //         $lt: moment().endOf('month').toDate()
-//                 //     };
-//                 //     break;
-//                 case 'currentMonth':  // ✅ Ensure strict time range
+//                 case "currentMonth":
 //                     filter.createdAt = {
-//                         $gte: moment().startOf('month').hour(0).minute(1).second(0).toDate(),  // 1st day at 12:01 AM
-//                         $lt: moment().endOf('month').hour(23).minute(59).second(59).toDate()  // Last day at 11:59 PM
+//                         $gte: moment().startOf("month").hour(0).minute(1).second(0).toDate(),
+//                         $lt: moment().endOf("month").hour(23).minute(59).second(59).toDate(),
 //                     };
 //                     break;
-//                 case 'custom':
+//                 case "custom":
 //                     if (!customStartDate || !customEndDate) {
-//                         return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
+//                         return res.status(400).json({ message: "Custom date range requires both start and end dates." });
 //                     }
 //                     filter.createdAt = {
-//                         $gte: moment(customStartDate, 'YYYY-MM-DD').startOf('day').toDate(),
-//                         $lt: moment(customEndDate, 'YYYY-MM-DD').endOf('day').toDate(),
+//                         $gte: moment(customStartDate, "YYYY-MM-DD").startOf("day").toDate(),
+//                         $lt: moment(customEndDate, "YYYY-MM-DD").endOf("day").toDate(),
 //                     };
 //                     break;
 //                 default:
-//                     break; // No filter applied if no valid filterType
+//                     break;
 //             }
 //         }
 
+//         // Get total count of matching bookings
+//         const totalBookings = await EventBooking.countDocuments(filter);
+//         const totalPages = Math.ceil(totalBookings / limit);
+
 //         // Fetch paginated bookings
 //         const bookings = await EventBooking.find(filter)
-// .select("-allDetailsQRCode -primaryMemberQRCode -dependents.qrCode -dependents.uniqueQRCode -guests.qrCode -guests.uniqueQRCode")
-// .populate("eventId", "eventTitle eventStartDate eventEndDate primaryMemberPrice dependentMemberPrice guestMemberPrice kidsMemberPrice spouseMemberPrice seniorDependentMemberPrice ")
-// .populate("primaryMemberId", "memberId name relation")
-// .populate("dependents.userId", "memberId name relation")
-// .sort({ createdAt: -1 })  // Sorting in MongoDB instead of using `.reverse()`
-// .lean();  // 🚀 Converts the result into a plain JavaScript object
+//             .select("-allDetailsQRCode -primaryMemberQRCode -dependents.qrCode -dependents.uniqueQRCode -guests.qrCode -guests.uniqueQRCode")
+//             .populate("eventId", "eventTitle eventStartDate eventEndDate primaryMemberPrice dependentMemberPrice guestMemberPrice kidsMemberPrice spouseMemberPrice seniorDependentMemberPrice ")
+//             .populate("primaryMemberId", "memberId name relation")
+//             .populate("dependents.userId", "memberId name relation")
+//             .sort({ createdAt: -1 })  // Sorting in MongoDB instead of using `.reverse()`
+//             .skip(skip)
+//             .limit(limit)
+//             .lean(); // Convert to plain JavaScript object
 
 //         return res.status(200).json({
-//             message: 'Bookings fetched successfully',
+//             message: "Bookings fetched successfully",
 //             bookings,
+//             pagination: {
+//                 currentPage: page,
+//                 totalPages,
+//                 totalBookings,
+//                 pageSize: limit,
+//             },
 //         });
 //     } catch (error) {
-//         console.error('Error fetching bookings:', error);
-//         return res.status(500).json({ message: 'An error occurred while fetching bookings', error });
+//         console.error("Error fetching bookings:", error);
+//         return res.status(500).json({ message: "An error occurred while fetching bookings", error: error.message });
 //     }
 // };
 
 const getAllBookings = async (req, res) => {
     try {
-        let { filterType, customStartDate, customEndDate, bookingStatus, userId, eventId, page, limit } = req.query;
+        let { filterType, customStartDate, customEndDate, bookingStatus, userId, eventId, page, limit, exportData } = req.query;
 
         // Convert pagination parameters
         page = parseInt(page) || 1;
@@ -2875,15 +2818,9 @@ const getAllBookings = async (req, res) => {
         let filter = { isDeleted: false, deletedAt: null };
 
         // Add filters
-        if (bookingStatus) {
-            filter.bookingStatus = bookingStatus;
-        }
-        if (userId) {
-            filter.primaryMemberId = userId;
-        }
-        if (eventId) {
-            filter.eventId = eventId;
-        }
+        if (bookingStatus) filter.bookingStatus = bookingStatus;
+        if (userId) filter.primaryMemberId = userId;
+        if (eventId) filter.eventId = eventId;
 
         // Handle date filters
         if (filterType) {
@@ -2928,23 +2865,43 @@ const getAllBookings = async (req, res) => {
             }
         }
 
-        // Get total count of matching bookings
+        // **📌 Aggregate Total Bookings Count**
         const totalBookings = await EventBooking.countDocuments(filter);
         const totalPages = Math.ceil(totalBookings / limit);
 
-        // Fetch paginated bookings
+        // **📌 Export All Data if Requested (No Pagination)**
+        if (exportData === "true") {
+            console.log("📥 Exporting all event bookings...");
+
+            const allBookings = await EventBooking.find(filter)
+                .select("-allDetailsQRCode -primaryMemberQRCode -dependents.qrCode -dependents.uniqueQRCode -guests.qrCode -guests.uniqueQRCode")
+                .populate("eventId", "eventTitle eventStartDate eventEndDate primaryMemberPrice dependentMemberPrice guestMemberPrice kidsMemberPrice spouseMemberPrice seniorDependentMemberPrice")
+                .populate("primaryMemberId", "memberId name relation")
+                .populate("dependents.userId", "memberId name relation")
+                .sort({ createdAt: -1 });
+
+            return res.status(200).json({
+                message: "All event bookings fetched successfully for export.",
+                totalBookings,
+                bookings: allBookings,
+            });
+        }
+
+        // **📌 Paginated Query**
         const bookings = await EventBooking.find(filter)
             .select("-allDetailsQRCode -primaryMemberQRCode -dependents.qrCode -dependents.uniqueQRCode -guests.qrCode -guests.uniqueQRCode")
-            .populate("eventId", "eventTitle eventStartDate eventEndDate primaryMemberPrice dependentMemberPrice guestMemberPrice kidsMemberPrice spouseMemberPrice seniorDependentMemberPrice ")
+            .populate("eventId", "eventTitle eventStartDate eventEndDate primaryMemberPrice dependentMemberPrice guestMemberPrice kidsMemberPrice spouseMemberPrice seniorDependentMemberPrice")
             .populate("primaryMemberId", "memberId name relation")
             .populate("dependents.userId", "memberId name relation")
-            .sort({ createdAt: -1 })  // Sorting in MongoDB instead of using `.reverse()`
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
-            .lean(); // Convert to plain JavaScript object
+            .lean();
 
+        // **📌 Return Paginated Response**
         return res.status(200).json({
             message: "Bookings fetched successfully",
+            totalBookings,
             bookings,
             pagination: {
                 currentPage: page,
@@ -2954,8 +2911,8 @@ const getAllBookings = async (req, res) => {
             },
         });
     } catch (error) {
-        console.error("Error fetching bookings:", error);
-        return res.status(500).json({ message: "An error occurred while fetching bookings", error: error.message });
+        console.error("❌ Error fetching event bookings:", error);
+        return res.status(500).json({ message: "❌ Internal server error", error: error.message });
     }
 };
 

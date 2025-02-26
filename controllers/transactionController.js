@@ -110,82 +110,95 @@ const createTransaction = async (req, res) => {
     }
 };
 
-
 // const getAllTransactions = async (req, res) => {
 //     try {
+//         let { filterType, customStartDate, customEndDate, paymentStatus, userId, page, limit } = req.query;
 
-//         const { filterType, customStartDate, customEndDate, paymentStatus, userId } = req.query; // Extract filter type and custom date range from query
+//         // Convert pagination parameters
+//         page = parseInt(page) || 1;
+//         limit = parseInt(limit) || 10;
+//         const skip = (page - 1) * limit;
 
 //         let filter = { isDeleted: false };
 
-//         // Add paymentStatus to filter if provided
+//         // Add paymentStatus filter
 //         if (paymentStatus) {
 //             filter.paymentStatus = paymentStatus;
 //         }
 //         if (userId) {
-//             filter.memberId = userId
+//             filter.memberId = userId;
 //         }
 
 //         // Handle date filters
 //         if (filterType) {
-//             const today = moment().startOf('day');
+//             const today = moment().startOf("day");
 
 //             switch (filterType) {
-//                 case 'today':
-//                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() };
+//                 case "today":
+//                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf("day").toDate() };
 //                     break;
-//                 case 'last7days':
-//                     filter.createdAt = { $gte: moment(today).subtract(7, 'days').toDate(), $lt: today.toDate() };
+//                 case "last7days":
+//                     filter.createdAt = { $gte: moment(today).subtract(7, "days").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last30days':
-//                     filter.createdAt = { $gte: moment(today).subtract(30, 'days').toDate(), $lt: today.toDate() };
+//                 case "last30days":
+//                     filter.createdAt = { $gte: moment(today).subtract(30, "days").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last3months':
-//                     filter.createdAt = { $gte: moment(today).subtract(3, 'months').toDate(), $lt: today.toDate() };
+//                 case "last3months":
+//                     filter.createdAt = { $gte: moment(today).subtract(3, "months").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last6months':
-//                     filter.createdAt = { $gte: moment(today).subtract(6, 'months').toDate(), $lt: today.toDate() };
+//                 case "last6months":
+//                     filter.createdAt = { $gte: moment(today).subtract(6, "months").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last1year':
-//                     filter.createdAt = { $gte: moment(today).subtract(1, 'year').toDate(), $lt: today.toDate() };
+//                 case "last1year":
+//                     filter.createdAt = { $gte: moment(today).subtract(1, "year").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'custom':
+//                 case "custom":
 //                     if (!customStartDate || !customEndDate) {
-//                         return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
+//                         return res.status(400).json({ message: "Custom date range requires both start and end dates." });
 //                     }
 //                     filter.createdAt = {
-//                         // $gte: moment(customStartDate, 'YYYY-MM-DD').startOf('day').toDate(),
-//                         // $lt: moment(customEndDate, 'YYYY-MM-DD').endOf('day').toDate()
-//                         $lt: moment(customStartDate, 'YYYY-MM-DD').endOf('day').toDate(),
-//                         $gte: moment(customEndDate, 'YYYY-MM-DD').startOf('day').toDate()
+//                         $gte: moment(customStartDate, "YYYY-MM-DD").startOf("day").toDate(),
+//                         $lt: moment(customEndDate, "YYYY-MM-DD").endOf("day").toDate(),
 //                     };
 //                     break;
 //                 default:
-//                     break; // No filter applied if no valid filterType
+//                     break;
 //             }
 //         }
 
+//         // Get total count of matching transactions
+//         const totalTransactions = await Transaction.countDocuments(filter);
+//         const totalPages = Math.ceil(totalTransactions / limit);
 
-//         // const transactions = await Transaction.find({ isDeleted: false })
+//         // Query to find paginated transactions
 //         const transactions = await Transaction.find(filter)
-//             .populate('memberId')
-//             .populate('billingId')
-//             .sort({ createdAt: -1 }); // Sort by creation date, most recent first
+//             .populate("memberId")
+//             .populate("billingId")
+//             .sort({ createdAt: -1 }) // Sort by newest first
+//             .skip(skip)
+//             .limit(limit);
 
+//         // Return the response with pagination
 //         return res.status(200).json({
-//             message: 'Transactions fetched successfully.',
-//             transactions
+//             message: "Transactions fetched successfully.",
+//             transactions,
+//             pagination: {
+//                 currentPage: page,
+//                 totalPages,
+//                 totalTransactions,
+//                 pageSize: limit,
+//             }
 //         });
 //     } catch (error) {
-//         console.error('Error fetching transactions:', error);
-//         return res.status(500).json({ message: 'Internal server error', error: error.message });
+//         console.error("Error fetching transactions:", error);
+//         return res.status(500).json({ message: "Internal server error", error: error.message });
 //     }
 // };
 
 
 const getAllTransactions = async (req, res) => {
     try {
-        let { filterType, customStartDate, customEndDate, paymentStatus, userId, page, limit } = req.query;
+        let { filterType, customStartDate, customEndDate, paymentStatus, userId, page, limit, exportData } = req.query;
 
         // Convert pagination parameters
         page = parseInt(page) || 1;
@@ -195,12 +208,8 @@ const getAllTransactions = async (req, res) => {
         let filter = { isDeleted: false };
 
         // Add paymentStatus filter
-        if (paymentStatus) {
-            filter.paymentStatus = paymentStatus;
-        }
-        if (userId) {
-            filter.memberId = userId;
-        }
+        if (paymentStatus) filter.paymentStatus = paymentStatus;
+        if (userId) filter.memberId = userId;
 
         // Handle date filters
         if (filterType) {
@@ -239,32 +248,73 @@ const getAllTransactions = async (req, res) => {
             }
         }
 
-        // Get total count of matching transactions
+        // **📌 Calculate Totals using Aggregation**
+        const [totals] = await Transaction.aggregate([
+            { $match: filter },
+            {
+                $group: {
+                    _id: null,
+                    totalAmount: { $sum: "$amount" }, // Total Transaction Amount
+                    totalPaid: {
+                        $sum: { $cond: [{ $eq: ["$paymentStatus", "Paid"] }, "$amount", 0] },
+                    },
+                    totalDue: {
+                        $sum: { $cond: [{ $eq: ["$paymentStatus", "Due"] }, "$amount", 0] },
+                    },
+                },
+            },
+        ]);
+
+        // **📌 Export All Data if Requested (No Pagination)**
+        if (exportData === "true") {
+            console.log("📥 Exporting all transactions...");
+
+            const allTransactions = await Transaction.find(filter)
+                .populate("memberId")
+                .populate("billingId")
+                .sort({ createdAt: -1 });
+
+            return res.status(200).json({
+                message: "All transactions fetched successfully for export.",
+                totals: {
+                    totalAmount: Math.round(totals?.totalAmount || 0),
+                    totalPaid: Math.round(totals?.totalPaid || 0),
+                    totalDue: Math.round(totals?.totalDue || 0),
+                },
+                transactions: allTransactions,
+            });
+        }
+
+        // **📌 Paginated Query**
         const totalTransactions = await Transaction.countDocuments(filter);
         const totalPages = Math.ceil(totalTransactions / limit);
 
-        // Query to find paginated transactions
         const transactions = await Transaction.find(filter)
             .populate("memberId")
             .populate("billingId")
-            .sort({ createdAt: -1 }) // Sort by newest first
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
-        // Return the response with pagination
+        // **📌 Return Paginated Response**
         return res.status(200).json({
             message: "Transactions fetched successfully.",
+            totals: {
+                totalAmount: Math.round(totals?.totalAmount || 0),
+                totalPaid: Math.round(totals?.totalPaid || 0),
+                totalDue: Math.round(totals?.totalDue || 0),
+            },
             transactions,
             pagination: {
                 currentPage: page,
                 totalPages,
                 totalTransactions,
                 pageSize: limit,
-            }
+            },
         });
     } catch (error) {
-        console.error("Error fetching transactions:", error);
-        return res.status(500).json({ message: "Internal server error", error: error.message });
+        console.error("❌ Error fetching transactions:", error);
+        return res.status(500).json({ message: "❌ Internal server error", error: error.message });
     }
 };
 
@@ -617,79 +667,92 @@ const createOfflineBillTransaction = async (req, res) => {
 
 // const getAllOfflineTransactions = async (req, res) => {
 //     try {
+//         let { filterType, customStartDate, customEndDate, paymentStatus, userId, page, limit } = req.query;
 
-//         const { filterType, customStartDate, customEndDate, paymentStatus, userId } = req.query; // Extract filter type and custom date range from query
+//         // Convert pagination parameters
+//         page = parseInt(page) || 1;
+//         limit = parseInt(limit) || 10;
+//         const skip = (page - 1) * limit;
 
 //         let filter = { isDeleted: false };
 
-//         // Add paymentStatus to filter if provided
+//         // Add paymentStatus filter
 //         if (paymentStatus) {
 //             filter.paymentStatus = paymentStatus;
 //         }
 //         if (userId) {
-//             filter.memberId = userId
+//             filter.memberId = userId;
 //         }
 
 //         // Handle date filters
 //         if (filterType) {
-//             const today = moment().startOf('day');
+//             const today = moment().startOf("day");
 
 //             switch (filterType) {
-//                 case 'today':
-//                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() };
+//                 case "today":
+//                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf("day").toDate() };
 //                     break;
-//                 case 'last7days':
-//                     filter.createdAt = { $gte: moment(today).subtract(7, 'days').toDate(), $lt: today.toDate() };
+//                 case "last7days":
+//                     filter.createdAt = { $gte: moment(today).subtract(7, "days").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last30days':
-//                     filter.createdAt = { $gte: moment(today).subtract(30, 'days').toDate(), $lt: today.toDate() };
+//                 case "last30days":
+//                     filter.createdAt = { $gte: moment(today).subtract(30, "days").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last3months':
-//                     filter.createdAt = { $gte: moment(today).subtract(3, 'months').toDate(), $lt: today.toDate() };
+//                 case "last3months":
+//                     filter.createdAt = { $gte: moment(today).subtract(3, "months").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last6months':
-//                     filter.createdAt = { $gte: moment(today).subtract(6, 'months').toDate(), $lt: today.toDate() };
+//                 case "last6months":
+//                     filter.createdAt = { $gte: moment(today).subtract(6, "months").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last1year':
-//                     filter.createdAt = { $gte: moment(today).subtract(1, 'year').toDate(), $lt: today.toDate() };
+//                 case "last1year":
+//                     filter.createdAt = { $gte: moment(today).subtract(1, "year").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'custom':
+//                 case "custom":
 //                     if (!customStartDate || !customEndDate) {
-//                         return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
+//                         return res.status(400).json({ message: "Custom date range requires both start and end dates." });
 //                     }
 //                     filter.createdAt = {
-//                         // $gte: moment(customStartDate, 'YYYY-MM-DD').startOf('day').toDate(),
-//                         // $lt: moment(customEndDate, 'YYYY-MM-DD').endOf('day').toDate()
-//                         $lt: moment(customStartDate, 'YYYY-MM-DD').endOf('day').toDate(),
-//                         $gte: moment(customEndDate, 'YYYY-MM-DD').startOf('day').toDate()
+//                         $gte: moment(customStartDate, "YYYY-MM-DD").startOf("day").toDate(),
+//                         $lt: moment(customEndDate, "YYYY-MM-DD").endOf("day").toDate(),
 //                     };
 //                     break;
 //                 default:
-//                     break; // No filter applied if no valid filterType
+//                     break;
 //             }
 //         }
 
+//         // Get total count of matching offline transactions
+//         const totalTransactions = await OfflineBillTransaction.countDocuments(filter);
+//         const totalPages = Math.ceil(totalTransactions / limit);
 
-//         // const transactions = await Transaction.find({ isDeleted: false })
+//         // Query to find paginated offline transactions
 //         const transactions = await OfflineBillTransaction.find(filter)
-//             .populate('memberId')
-//             .populate('billingId')
-//             .sort({ createdAt: -1 }); // Sort by creation date, most recent first
+//             .populate("memberId")
+//             .populate("billingId")
+//             .sort({ createdAt: -1 }) // Sort by newest first
+//             .skip(skip)
+//             .limit(limit);
 
+//         // Return the response with pagination
 //         return res.status(200).json({
-//             message: 'Transactions fetched successfully.',
-//             transactions
+//             message: "Offline transactions fetched successfully.",
+//             transactions,
+//             pagination: {
+//                 currentPage: page,
+//                 totalPages,
+//                 totalTransactions,
+//                 pageSize: limit,
+//             }
 //         });
 //     } catch (error) {
-//         console.error('Error fetching transactions:', error);
-//         return res.status(500).json({ message: 'Internal server error', error: error.message });
+//         console.error("Error fetching offline transactions:", error);
+//         return res.status(500).json({ message: "Internal server error", error: error.message });
 //     }
 // };
 
-
 const getAllOfflineTransactions = async (req, res) => {
     try {
-        let { filterType, customStartDate, customEndDate, paymentStatus, userId, page, limit } = req.query;
+        let { filterType, customStartDate, customEndDate, paymentStatus, userId, page, limit, exportData } = req.query;
 
         // Convert pagination parameters
         page = parseInt(page) || 1;
@@ -698,13 +761,9 @@ const getAllOfflineTransactions = async (req, res) => {
 
         let filter = { isDeleted: false };
 
-        // Add paymentStatus filter
-        if (paymentStatus) {
-            filter.paymentStatus = paymentStatus;
-        }
-        if (userId) {
-            filter.memberId = userId;
-        }
+        // Add filters
+        if (paymentStatus) filter.paymentStatus = paymentStatus;
+        if (userId) filter.memberId = userId;
 
         // Handle date filters
         if (filterType) {
@@ -743,36 +802,75 @@ const getAllOfflineTransactions = async (req, res) => {
             }
         }
 
-        // Get total count of matching offline transactions
+        // **📌 Aggregate Totals**
+        const [totals] = await OfflineBillTransaction.aggregate([
+            { $match: filter },
+            {
+                $group: {
+                    _id: null,
+                    totalAmount: { $sum: "$amount" }, // Total Transaction Amount
+                    totalPaid: {
+                        $sum: { $cond: [{ $eq: ["$paymentStatus", "Paid"] }, "$amount", 0] },
+                    },
+                    totalDue: {
+                        $sum: { $cond: [{ $eq: ["$paymentStatus", "Due"] }, "$amount", 0] },
+                    },
+                },
+            },
+        ]);
+
+        // **📌 Export All Data if Requested (No Pagination)**
+        if (exportData === "true") {
+            console.log("📥 Exporting all offline transactions...");
+
+            const allTransactions = await OfflineBillTransaction.find(filter)
+                .populate("memberId")
+                .populate("billingId")
+                .sort({ createdAt: -1 });
+
+            return res.status(200).json({
+                message: "All offline transactions fetched successfully for export.",
+                totals: {
+                    totalAmount: Math.round(totals?.totalAmount || 0),
+                    totalPaid: Math.round(totals?.totalPaid || 0),
+                    totalDue: Math.round(totals?.totalDue || 0),
+                },
+                transactions: allTransactions,
+            });
+        }
+
+        // **📌 Paginated Query**
         const totalTransactions = await OfflineBillTransaction.countDocuments(filter);
         const totalPages = Math.ceil(totalTransactions / limit);
 
-        // Query to find paginated offline transactions
         const transactions = await OfflineBillTransaction.find(filter)
             .populate("memberId")
             .populate("billingId")
-            .sort({ createdAt: -1 }) // Sort by newest first
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
-        // Return the response with pagination
+        // **📌 Return Paginated Response**
         return res.status(200).json({
             message: "Offline transactions fetched successfully.",
+            totals: {
+                totalAmount: Math.round(totals?.totalAmount || 0),
+                totalPaid: Math.round(totals?.totalPaid || 0),
+                totalDue: Math.round(totals?.totalDue || 0),
+            },
             transactions,
             pagination: {
                 currentPage: page,
                 totalPages,
                 totalTransactions,
                 pageSize: limit,
-            }
+            },
         });
     } catch (error) {
-        console.error("Error fetching offline transactions:", error);
-        return res.status(500).json({ message: "Internal server error", error: error.message });
+        console.error("❌ Error fetching offline transactions:", error);
+        return res.status(500).json({ message: "❌ Internal server error", error: error.message });
     }
 };
-
-
 
 const getOfflineTransactionById = async (req, res) => {
     const { id } = req.params;

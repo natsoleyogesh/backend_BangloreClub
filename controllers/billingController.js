@@ -91,85 +91,18 @@ const createBilling = async (req, res) => {
     }
 };
 
-
-// // Get all billing records
 // const getAllBillings = async (req, res) => {
 //     try {
+//         let { filterType, customStartDate, customEndDate, paymentStatus, userId, page, limit } = req.query;
 
-//         const { filterType, customStartDate, customEndDate, paymentStatus, userId } = req.query; // Extract filter type and custom date range from query
+//         // Convert pagination parameters
+//         page = parseInt(page) || 1;
+//         limit = parseInt(limit) || 10;
+//         const skip = (page - 1) * limit;
 
 //         let filter = { isDeleted: false };
 
-//         // Add paymentStatus to filter if provided
-//         if (paymentStatus) {
-//             filter.paymentStatus = paymentStatus;
-//         }
-//         if (userId) {
-//             filter.memberId = userId
-//         }
-
-//         // Handle date filters
-//         if (filterType) {
-//             const today = moment().startOf('day');
-
-//             switch (filterType) {
-//                 case 'today':
-//                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() };
-//                     break;
-//                 case 'last7days':
-//                     filter.createdAt = { $gte: moment(today).subtract(7, 'days').toDate(), $lt: today.toDate() };
-//                     break;
-//                 case 'last30days':
-//                     filter.createdAt = { $gte: moment(today).subtract(30, 'days').toDate(), $lt: today.toDate() };
-//                     break;
-//                 case 'last3months':
-//                     filter.createdAt = { $gte: moment(today).subtract(3, 'months').toDate(), $lt: today.toDate() };
-//                     break;
-//                 case 'last6months':
-//                     filter.createdAt = { $gte: moment(today).subtract(6, 'months').toDate(), $lt: today.toDate() };
-//                     break;
-//                 case 'last1year':
-//                     filter.createdAt = { $gte: moment(today).subtract(1, 'year').toDate(), $lt: today.toDate() };
-//                     break;
-//                 case 'custom':
-//                     if (!customStartDate || !customEndDate) {
-//                         return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
-//                     }
-//                     filter.createdAt = {
-//                         // $gte: moment(customStartDate, 'YYYY-MM-DD').startOf('day').toDate(),
-//                         // $lt: moment(customEndDate, 'YYYY-MM-DD').endOf('day').toDate()
-//                         $lt: moment(customStartDate, 'YYYY-MM-DD').endOf('day').toDate(),
-//                         $gte: moment(customEndDate, 'YYYY-MM-DD').startOf('day').toDate()
-//                     };
-//                     break;
-//                 default:
-//                     break; // No filter applied if no valid filterType
-//             }
-//         }
-
-//         // Query to find bills based on the filter
-//         // const billings = await Billing.find({ isDeleted: false, deletedAt: null })
-//         const billings = await Billing.find(filter)
-//             .populate('memberId')
-//             .populate('serviceDetails')
-//             .sort({ createdAt: -1 }); // Sort by creation date
-//         return res.status(200).json({
-//             message: 'Billings fetched successfully.',
-//             billings
-//         });
-//     } catch (error) {
-//         console.error('Error fetching billings:', error);
-//         return res.status(500).json({ message: 'Internal server error', error: error.message });
-//     }
-// };
-
-// const getAllBillings = async (req, res) => {
-//     try {
-//         const { filterType, customStartDate, customEndDate, paymentStatus, userId } = req.query;
-
-//         let filter = { isDeleted: false };
-
-//         // Add paymentStatus to filter if provided
+//         // Add paymentStatus filter
 //         if (paymentStatus) {
 //             filter.paymentStatus = paymentStatus;
 //         }
@@ -179,34 +112,34 @@ const createBilling = async (req, res) => {
 
 //         // Handle date filters
 //         if (filterType) {
-//             const today = moment().startOf('day');
+//             const today = moment().startOf("day");
 
 //             switch (filterType) {
-//                 case 'today':
-//                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() };
+//                 case "today":
+//                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf("day").toDate() };
 //                     break;
-//                 case 'last7days':
-//                     filter.createdAt = { $gte: moment(today).subtract(7, 'days').toDate(), $lt: today.toDate() };
+//                 case "last7days":
+//                     filter.createdAt = { $gte: moment(today).subtract(7, "days").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last30days':
-//                     filter.createdAt = { $gte: moment(today).subtract(30, 'days').toDate(), $lt: today.toDate() };
+//                 case "last30days":
+//                     filter.createdAt = { $gte: moment(today).subtract(30, "days").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last3months':
-//                     filter.createdAt = { $gte: moment(today).subtract(3, 'months').toDate(), $lt: today.toDate() };
+//                 case "last3months":
+//                     filter.createdAt = { $gte: moment(today).subtract(3, "months").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last6months':
-//                     filter.createdAt = { $gte: moment(today).subtract(6, 'months').toDate(), $lt: today.toDate() };
+//                 case "last6months":
+//                     filter.createdAt = { $gte: moment(today).subtract(6, "months").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'last1year':
-//                     filter.createdAt = { $gte: moment(today).subtract(1, 'year').toDate(), $lt: today.toDate() };
+//                 case "last1year":
+//                     filter.createdAt = { $gte: moment(today).subtract(1, "year").toDate(), $lt: today.toDate() };
 //                     break;
-//                 case 'custom':
+//                 case "custom":
 //                     if (!customStartDate || !customEndDate) {
-//                         return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
+//                         return res.status(400).json({ message: "Custom date range requires both start and end dates." });
 //                     }
 //                     filter.createdAt = {
-//                         $gte: moment(customStartDate, 'YYYY-MM-DD').startOf('day').toDate(),
-//                         $lt: moment(customEndDate, 'YYYY-MM-DD').endOf('day').toDate(),
+//                         $gte: moment(customStartDate, "YYYY-MM-DD").startOf("day").toDate(),
+//                         $lt: moment(customEndDate, "YYYY-MM-DD").endOf("day").toDate(),
 //                     };
 //                     break;
 //                 default:
@@ -214,49 +147,67 @@ const createBilling = async (req, res) => {
 //             }
 //         }
 
-//         // Query to find bills based on the filter
+//         // Get total count of matching billings
+//         const totalBillings = await Billing.countDocuments(filter);
+//         const totalPages = Math.ceil(totalBillings / limit);
+
+//         // Query to find paginated billings
 //         const billings = await Billing.find(filter)
-//             .populate('memberId')
-//             .populate('serviceDetails.roomBooking')
-//             .populate('serviceDetails.banquetBooking')
-//             .populate('serviceDetails.eventBooking')
-//             .sort({ createdAt: -1 }); // Sort by creation date
+//             .populate("memberId")
+//             .populate("serviceDetails.roomBooking")
+//             .populate("serviceDetails.banquetBooking")
+//             .populate("serviceDetails.eventBooking")
+//             .sort({ createdAt: -1 }) // Sort by newest first
+//             .skip(skip)
+//             .limit(limit);
 
 //         // Calculate totals
-//         const totalOutstanding = billings.reduce((sum, billing) => sum + (billing.totalAmount || 0), 0);
-//         const totalPaid = billings.reduce(
-//             (sum, billing) => sum + (billing.paymentStatus === 'Paid' ? billing.totalAmount : 0),
-//             0
-//         );
-//         const totalOfflinePaid = billings.reduce(
-//             (sum, billing) => sum + (billing.paymentStatus === 'Paid Offline' ? billing.totalAmount : 0),
-//             0
-//         );
-//         const totalDue = billings.reduce(
-//             (sum, billing) => sum + (billing.paymentStatus === 'Due' ? billing.totalAmount : 0),
-//             0
-//         );
+//         const totalOutstanding = await Billing.aggregate([
+//             { $match: filter },
+//             { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+//         ]).then(res => res[0]?.total || 0);
 
-//         // Return the response with totals
+//         const totalPaid = await Billing.aggregate([
+//             { $match: { ...filter, paymentStatus: "Paid" } },
+//             { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+//         ]).then(res => res[0]?.total || 0);
+
+//         const totalOfflinePaid = await Billing.aggregate([
+//             { $match: { ...filter, paymentStatus: "Paid Offline" } },
+//             { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+//         ]).then(res => res[0]?.total || 0);
+
+//         const totalDue = await Billing.aggregate([
+//             { $match: { ...filter, paymentStatus: "Due" } },
+//             { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+//         ]).then(res => res[0]?.total || 0);
+
+//         // Return the response with totals and pagination
 //         return res.status(200).json({
-//             message: 'Billings fetched successfully.',
+//             message: "Billings fetched successfully.",
 //             totals: {
 //                 totalOutstanding: Math.round(totalOutstanding), // Total of all records
-//                 totalPaid: Math.round(totalPaid),        // Total of Paid records
+//                 totalPaid: Math.round(totalPaid), // Total of Paid records
 //                 totalOfflinePaid: Math.round(totalOfflinePaid), // Total of Offline Paid records
-//                 totalDue: Math.round(totalDue)          // Total of Due records
+//                 totalDue: Math.round(totalDue), // Total of Due records
 //             },
 //             billings,
+//             pagination: {
+//                 currentPage: page,
+//                 totalPages,
+//                 totalBillings,
+//                 pageSize: limit,
+//             }
 //         });
 //     } catch (error) {
-//         console.error('Error fetching billings:', error);
-//         return res.status(500).json({ message: 'Internal server error', error: error.message });
+//         console.error("Error fetching billings:", error);
+//         return res.status(500).json({ message: "Internal server error", error: error.message });
 //     }
 // };
 
 const getAllBillings = async (req, res) => {
     try {
-        let { filterType, customStartDate, customEndDate, paymentStatus, userId, page, limit } = req.query;
+        let { filterType, customStartDate, customEndDate, paymentStatus, userId, page, limit, exportData } = req.query;
 
         // Convert pagination parameters
         page = parseInt(page) || 1;
@@ -265,13 +216,9 @@ const getAllBillings = async (req, res) => {
 
         let filter = { isDeleted: false };
 
-        // Add paymentStatus filter
-        if (paymentStatus) {
-            filter.paymentStatus = paymentStatus;
-        }
-        if (userId) {
-            filter.memberId = userId;
-        }
+        // Add paymentStatus and user filters
+        if (paymentStatus) filter.paymentStatus = paymentStatus;
+        if (userId) filter.memberId = userId;
 
         // Handle date filters
         if (filterType) {
@@ -306,67 +253,80 @@ const getAllBillings = async (req, res) => {
                     };
                     break;
                 default:
-                    break; // No filter applied if no valid filterType
+                    break;
             }
         }
 
-        // Get total count of matching billings
+        // **📌 Aggregate Total Billings Count**
         const totalBillings = await Billing.countDocuments(filter);
         const totalPages = Math.ceil(totalBillings / limit);
 
-        // Query to find paginated billings
+        // **📌 Calculate Totals**
+        const [totalOutstanding, totalPaid, totalOfflinePaid, totalDue] = await Promise.all([
+            Billing.aggregate([{ $match: filter }, { $group: { _id: null, total: { $sum: "$totalAmount" } } }])
+                .then(res => res[0]?.total || 0),
+            Billing.aggregate([{ $match: { ...filter, paymentStatus: "Paid" } }, { $group: { _id: null, total: { $sum: "$totalAmount" } } }])
+                .then(res => res[0]?.total || 0),
+            Billing.aggregate([{ $match: { ...filter, paymentStatus: "Paid Offline" } }, { $group: { _id: null, total: { $sum: "$totalAmount" } } }])
+                .then(res => res[0]?.total || 0),
+            Billing.aggregate([{ $match: { ...filter, paymentStatus: "Due" } }, { $group: { _id: null, total: { $sum: "$totalAmount" } } }])
+                .then(res => res[0]?.total || 0),
+        ]);
+
+        const totals = {
+            totalOutstanding: Math.round(totalOutstanding),
+            totalPaid: Math.round(totalPaid),
+            totalOfflinePaid: Math.round(totalOfflinePaid),
+            totalDue: Math.round(totalDue),
+        };
+
+        // **📌 Export All Data if Requested**
+        if (exportData === "true") {
+            console.log("📥 Exporting all billings...");
+
+            const allBillings = await Billing.find(filter)
+                .populate("memberId")
+                .populate("serviceDetails.roomBooking")
+                .populate("serviceDetails.banquetBooking")
+                .populate("serviceDetails.eventBooking")
+                .sort({ createdAt: -1 });
+
+            return res.status(200).json({
+                message: "All billings fetched successfully for export.",
+                totals,
+                totalBillings,
+                billings: allBillings,
+            });
+        }
+
+        // **📌 Paginated Query**
         const billings = await Billing.find(filter)
             .populate("memberId")
             .populate("serviceDetails.roomBooking")
             .populate("serviceDetails.banquetBooking")
             .populate("serviceDetails.eventBooking")
-            .sort({ createdAt: -1 }) // Sort by newest first
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
-        // Calculate totals
-        const totalOutstanding = await Billing.aggregate([
-            { $match: filter },
-            { $group: { _id: null, total: { $sum: "$totalAmount" } } }
-        ]).then(res => res[0]?.total || 0);
-
-        const totalPaid = await Billing.aggregate([
-            { $match: { ...filter, paymentStatus: "Paid" } },
-            { $group: { _id: null, total: { $sum: "$totalAmount" } } }
-        ]).then(res => res[0]?.total || 0);
-
-        const totalOfflinePaid = await Billing.aggregate([
-            { $match: { ...filter, paymentStatus: "Paid Offline" } },
-            { $group: { _id: null, total: { $sum: "$totalAmount" } } }
-        ]).then(res => res[0]?.total || 0);
-
-        const totalDue = await Billing.aggregate([
-            { $match: { ...filter, paymentStatus: "Due" } },
-            { $group: { _id: null, total: { $sum: "$totalAmount" } } }
-        ]).then(res => res[0]?.total || 0);
-
-        // Return the response with totals and pagination
+        // **📌 Return Response**
         return res.status(200).json({
             message: "Billings fetched successfully.",
-            totals: {
-                totalOutstanding: Math.round(totalOutstanding), // Total of all records
-                totalPaid: Math.round(totalPaid), // Total of Paid records
-                totalOfflinePaid: Math.round(totalOfflinePaid), // Total of Offline Paid records
-                totalDue: Math.round(totalDue), // Total of Due records
-            },
+            totals,
             billings,
             pagination: {
                 currentPage: page,
                 totalPages,
                 totalBillings,
                 pageSize: limit,
-            }
+            },
         });
     } catch (error) {
-        console.error("Error fetching billings:", error);
-        return res.status(500).json({ message: "Internal server error", error: error.message });
+        console.error("❌ Error fetching billings:", error);
+        return res.status(500).json({ message: "❌ Internal server error", error: error.message });
     }
 };
+
 
 
 // Get a billing record by ID
@@ -986,10 +946,16 @@ const uploadConsolidatedBill = async (req, res) => {
     }
 };
 
-// // API to get all consolidated billings with filters
 // const getAllBillingsWithFilters = async (req, res) => {
 //     try {
-//         const { userId, paymentStatus, transactionMonth } = req.query;
+//         let { userId, paymentStatus, transactionMonth, page, limit } = req.query;
+
+//         // console.log(userId, paymentStatus, transactionMonth, page, limit, "userId, paymentStatus, transactionMonth, page, limit")
+
+//         // Convert pagination parameters
+//         page = parseInt(page) || 1;
+//         limit = parseInt(limit) || 10;
+//         const skip = (page - 1) * limit;
 
 //         // Initialize the filter object
 //         let filter = { isDeleted: false };
@@ -1007,58 +973,68 @@ const uploadConsolidatedBill = async (req, res) => {
 //             if (parsedTransactionMonth) {
 //                 filter.transactionMonth = parsedTransactionMonth;
 //             } else {
-//                 return res.status(400).json({ message: 'Invalid transactionMonth format.' });
+//                 return res.status(400).json({ message: "Invalid transactionMonth format." });
 //             }
 //         }
 
-//         // Query the ConsolidatedBilling model with the applied filters
-//         const billings = await ConsolidatedBilling.find(filter)
-//             .populate('memberId') // Populate relevant member fields
-//             .sort({ transactionMonth: -1 }); // Sort by transactionMonth in descending order
+//         // Get total count of matching billings
+//         const totalBillings = await ConsolidatedBilling.countDocuments(filter);
+//         const totalPages = Math.ceil(totalBillings / limit);
 
-//         // // Check if any billings were found
-//         // if (billings.length === 0) {
-//         //     return res.status(404).json({ message: 'No billings found.' });
-//         // }
+//         // Query the ConsolidatedBilling model with the applied filters and pagination
+//         const billings = await ConsolidatedBilling.find(filter)
+//             .populate("memberId") // Populate relevant member fields
+//             .sort({ transactionMonth: -1 }) // Sort by transactionMonth in descending order
+//             .skip(skip)
+//             .limit(limit);
 
 //         // Calculate totals
-//         const totalOutstanding = billings.reduce((sum, billing) => sum + (billing.totalAmount || 0), 0);
-//         const totalPaid = billings.reduce(
-//             (sum, billing) => sum + (billing.paymentStatus === 'Paid' ? billing.totalAmount : 0),
-//             0
-//         );
-//         const totalOfflinePaid = billings.reduce(
-//             (sum, billing) => sum + (billing.paymentStatus === 'Paid Offline' ? billing.totalAmount : 0),
-//             0
-//         );
-//         const totalDue = billings.reduce(
-//             (sum, billing) => sum + (billing.paymentStatus === 'Due' ? billing.totalAmount : 0),
-//             0
-//         );
+//         const totalOutstanding = await ConsolidatedBilling.aggregate([
+//             { $match: filter },
+//             { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+//         ]).then(res => res[0]?.total || 0);
 
+//         const totalPaid = await ConsolidatedBilling.aggregate([
+//             { $match: { ...filter, paymentStatus: "Paid" } },
+//             { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+//         ]).then(res => res[0]?.total || 0);
 
-//         // Return the response with filtered data
+//         const totalOfflinePaid = await ConsolidatedBilling.aggregate([
+//             { $match: { ...filter, paymentStatus: "Paid Offline" } },
+//             { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+//         ]).then(res => res[0]?.total || 0);
+
+//         const totalDue = await ConsolidatedBilling.aggregate([
+//             { $match: { ...filter, paymentStatus: "Due" } },
+//             { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+//         ]).then(res => res[0]?.total || 0);
+
+//         // Return the response with totals and pagination
 //         return res.status(200).json({
-//             message: 'Billings fetched successfully.',
+//             message: "Billings fetched successfully.",
 //             totals: {
-//                 totalOutstanding: Math.round(totalOutstanding), // Total of all records
-//                 totalPaid: Math.round(totalPaid),        // Total of Paid records
-//                 totalOfflinePaid: Math.round(totalOfflinePaid), // Total of Offline Paid records
-//                 totalDue: Math.round(totalDue)          // Total of Due records
+//                 totalOutstanding: Math.round(totalOutstanding),
+//                 totalPaid: Math.round(totalPaid),
+//                 totalOfflinePaid: Math.round(totalOfflinePaid),
+//                 totalDue: Math.round(totalDue),
 //             },
-//             billings
+//             billings,
+//             pagination: {
+//                 currentPage: page,
+//                 totalPages,
+//                 totalBillings,
+//                 pageSize: limit,
+//             }
 //         });
 //     } catch (error) {
-//         console.error('Error fetching billings:', error);
-//         return res.status(500).json({ message: 'Internal server error', error: error.message });
+//         console.error("Error fetching billings:", error);
+//         return res.status(500).json({ message: "Internal server error", error: error.message });
 //     }
 // };
 
 const getAllBillingsWithFilters = async (req, res) => {
     try {
-        let { userId, paymentStatus, transactionMonth, page, limit } = req.query;
-
-        // console.log(userId, paymentStatus, transactionMonth, page, limit, "userId, paymentStatus, transactionMonth, page, limit")
+        let { userId, paymentStatus, transactionMonth, page, limit, exportData } = req.query;
 
         // Convert pagination parameters
         page = parseInt(page) || 1;
@@ -1068,15 +1044,11 @@ const getAllBillingsWithFilters = async (req, res) => {
         // Initialize the filter object
         let filter = { isDeleted: false };
 
-        // Add filters based on the query parameters
-        if (userId) {
-            filter.memberId = userId;
-        }
-        if (paymentStatus) {
-            filter.paymentStatus = paymentStatus;
-        }
+        // Apply filters based on the query parameters
+        if (userId) filter.memberId = userId;
+        if (paymentStatus) filter.paymentStatus = paymentStatus;
         if (transactionMonth) {
-            // Parse the transactionMonth to ensure it matches the correct format
+            // Convert "January-2025" to "Wed, 01 Jan 2025" format for consistency
             const parsedTransactionMonth = parseTransactionMonth(transactionMonth);
             if (parsedTransactionMonth) {
                 filter.transactionMonth = parsedTransactionMonth;
@@ -1085,46 +1057,64 @@ const getAllBillingsWithFilters = async (req, res) => {
             }
         }
 
-        // Get total count of matching billings
+        // **📌 Fetch Totals using Aggregation**
+        const [totals] = await ConsolidatedBilling.aggregate([
+            { $match: filter },
+            {
+                $group: {
+                    _id: null,
+                    totalOutstanding: { $sum: "$totalAmount" },
+                    totalPaid: {
+                        $sum: { $cond: [{ $eq: ["$paymentStatus", "Paid"] }, "$totalAmount", 0] },
+                    },
+                    totalOfflinePaid: {
+                        $sum: { $cond: [{ $eq: ["$paymentStatus", "Paid Offline"] }, "$totalAmount", 0] },
+                    },
+                    totalDue: {
+                        $sum: { $cond: [{ $eq: ["$paymentStatus", "Due"] }, "$totalAmount", 0] },
+                    },
+                },
+            },
+        ]);
+
+        // **📌 Export All Data if Requested (No Pagination)**
+        if (exportData === "true") {
+            console.log("📥 Exporting all billing records...");
+
+            const allBillings = await ConsolidatedBilling.find(filter)
+                .populate("memberId")
+                .sort({ transactionMonth: -1 });
+
+            return res.status(200).json({
+                message: "All billings fetched successfully for export.",
+                totals: {
+                    totalOutstanding: Math.round(totals?.totalOutstanding || 0),
+                    totalPaid: Math.round(totals?.totalPaid || 0),
+                    totalOfflinePaid: Math.round(totals?.totalOfflinePaid || 0),
+                    totalDue: Math.round(totals?.totalDue || 0),
+                },
+                billings: allBillings,
+            });
+        }
+
+        // **📌 Paginated Query**
         const totalBillings = await ConsolidatedBilling.countDocuments(filter);
         const totalPages = Math.ceil(totalBillings / limit);
 
-        // Query the ConsolidatedBilling model with the applied filters and pagination
         const billings = await ConsolidatedBilling.find(filter)
-            .populate("memberId") // Populate relevant member fields
-            .sort({ transactionMonth: -1 }) // Sort by transactionMonth in descending order
+            .populate("memberId")
+            .sort({ transactionMonth: -1 })
             .skip(skip)
             .limit(limit);
 
-        // Calculate totals
-        const totalOutstanding = await ConsolidatedBilling.aggregate([
-            { $match: filter },
-            { $group: { _id: null, total: { $sum: "$totalAmount" } } }
-        ]).then(res => res[0]?.total || 0);
-
-        const totalPaid = await ConsolidatedBilling.aggregate([
-            { $match: { ...filter, paymentStatus: "Paid" } },
-            { $group: { _id: null, total: { $sum: "$totalAmount" } } }
-        ]).then(res => res[0]?.total || 0);
-
-        const totalOfflinePaid = await ConsolidatedBilling.aggregate([
-            { $match: { ...filter, paymentStatus: "Paid Offline" } },
-            { $group: { _id: null, total: { $sum: "$totalAmount" } } }
-        ]).then(res => res[0]?.total || 0);
-
-        const totalDue = await ConsolidatedBilling.aggregate([
-            { $match: { ...filter, paymentStatus: "Due" } },
-            { $group: { _id: null, total: { $sum: "$totalAmount" } } }
-        ]).then(res => res[0]?.total || 0);
-
-        // Return the response with totals and pagination
+        // **📌 Return Paginated Response**
         return res.status(200).json({
             message: "Billings fetched successfully.",
             totals: {
-                totalOutstanding: Math.round(totalOutstanding),
-                totalPaid: Math.round(totalPaid),
-                totalOfflinePaid: Math.round(totalOfflinePaid),
-                totalDue: Math.round(totalDue),
+                totalOutstanding: Math.round(totals?.totalOutstanding || 0),
+                totalPaid: Math.round(totals?.totalPaid || 0),
+                totalOfflinePaid: Math.round(totals?.totalOfflinePaid || 0),
+                totalDue: Math.round(totals?.totalDue || 0),
             },
             billings,
             pagination: {
@@ -1132,11 +1122,11 @@ const getAllBillingsWithFilters = async (req, res) => {
                 totalPages,
                 totalBillings,
                 pageSize: limit,
-            }
+            },
         });
     } catch (error) {
-        console.error("Error fetching billings:", error);
-        return res.status(500).json({ message: "Internal server error", error: error.message });
+        console.error("❌ Error fetching billings:", error);
+        return res.status(500).json({ message: "❌ Internal server error", error: error.message });
     }
 };
 

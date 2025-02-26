@@ -1698,12 +1698,16 @@ const createBanquetBookingDetails = async (req, res) => {
  */
 // const getAllBanquetBookings = async (req, res) => {
 //     try {
+//         let { page, limit, filterType, customStartDate, customEndDate, bookingStatus, userId } = req.query;
 
-//         const { filterType, customStartDate, customEndDate, bookingStatus, userId } = req.query;
+//         // Convert query parameters
+//         page = parseInt(page) || 1;
+//         limit = parseInt(limit) || 10;
+//         const skip = (page - 1) * limit;
 
 //         let filter = { isDeleted: false };
 
-//         // Add paymentStatus to filter if provided
+//         // Add bookingStatus to filter if provided
 //         if (bookingStatus) {
 //             filter.bookingStatus = bookingStatus;
 //         }
@@ -1736,91 +1740,98 @@ const createBanquetBookingDetails = async (req, res) => {
 //                     break;
 //                 case 'custom':
 //                     if (!customStartDate || !customEndDate) {
-//                         return res.status(400).json({ message: 'Custom date range requires both start and end dates.' });
+//                         return res.status(400).json({ message: "Custom date range requires both start and end dates." });
 //                     }
 //                     filter.createdAt = {
-//                         $gte: moment(customStartDate, 'YYYY-MM-DD').startOf('day').toDate(),
-//                         $lt: moment(customEndDate, 'YYYY-MM-DD').endOf('day').toDate(),
+//                         $gte: moment(customStartDate, "YYYY-MM-DD").startOf("day").toDate(),
+//                         $lt: moment(customEndDate, "YYYY-MM-DD").endOf("day").toDate(),
 //                     };
 //                     break;
 //                 default:
-//                     break; // No filter applied if no valid filterType
+//                     break;
 //             }
 //         }
 
+//         // Get total count of matching bookings
+//         const totalBookings = await BanquetBooking.countDocuments(filter);
+//         const totalPages = Math.ceil(totalBookings / limit);
+
+//         // Fetch paginated bookings
 //         const bookings = await BanquetBooking.find(filter)
 //             .populate({
-//                 path: 'banquetType',
+//                 path: "banquetType",
 //                 populate: {
-//                     path: 'banquetName', // Assuming banquetName references BanquetCategory
-//                     model: 'BanquetCategory',
+//                     path: "banquetName",
+//                     model: "BanquetCategory",
 //                 },
 //             })
-//             .populate('primaryMemberId')
-//             .sort({ createdAt: -1 });
+//             .populate("primaryMemberId")
+//             .sort({ createdAt: -1 })
+//             .skip(skip)
+//             .limit(limit);
 
 //         if (!bookings.length) {
-//             return res.status(404).json({ message: 'No bookings found' });
+//             return res.status(404).json({ message: "No bookings found" });
 //         }
 
 //         return res.status(200).json({
 //             message: "Fetched all bookings successfully",
 //             bookings,
+//             pagination: {
+//                 currentPage: page,
+//                 totalPages,
+//                 totalBookings,
+//                 pageSize: limit,
+//             }
 //         });
 //     } catch (error) {
-//         console.error('Error fetching banquet bookings:', error);
+//         console.error("Error fetching banquet bookings:", error);
 //         return res.status(500).json({
-//             message: 'Error retrieving bookings',
+//             message: "Error retrieving bookings",
 //             error: error.message,
 //         });
 //     }
 // };
 
-
-
 const getAllBanquetBookings = async (req, res) => {
     try {
-        let { page, limit, filterType, customStartDate, customEndDate, bookingStatus, userId } = req.query;
+        let { page, limit, filterType, customStartDate, customEndDate, bookingStatus, userId, exportData } = req.query;
 
-        // Convert query parameters
+        // Convert pagination parameters
         page = parseInt(page) || 1;
         limit = parseInt(limit) || 10;
         const skip = (page - 1) * limit;
 
         let filter = { isDeleted: false };
 
-        // Add bookingStatus to filter if provided
-        if (bookingStatus) {
-            filter.bookingStatus = bookingStatus;
-        }
-        if (userId) {
-            filter.primaryMemberId = userId;
-        }
+        // Add filters
+        if (bookingStatus) filter.bookingStatus = bookingStatus;
+        if (userId) filter.primaryMemberId = userId;
 
         // Handle date filters
         if (filterType) {
-            const today = moment().startOf('day');
+            const today = moment().startOf("day");
 
             switch (filterType) {
-                case 'today':
-                    filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() };
+                case "today":
+                    filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf("day").toDate() };
                     break;
-                case 'last7days':
-                    filter.createdAt = { $gte: moment(today).subtract(7, 'days').toDate(), $lt: today.toDate() };
+                case "last7days":
+                    filter.createdAt = { $gte: moment(today).subtract(7, "days").toDate(), $lt: today.toDate() };
                     break;
-                case 'last30days':
-                    filter.createdAt = { $gte: moment(today).subtract(30, 'days').toDate(), $lt: today.toDate() };
+                case "last30days":
+                    filter.createdAt = { $gte: moment(today).subtract(30, "days").toDate(), $lt: today.toDate() };
                     break;
-                case 'last3months':
-                    filter.createdAt = { $gte: moment(today).subtract(3, 'months').toDate(), $lt: today.toDate() };
+                case "last3months":
+                    filter.createdAt = { $gte: moment(today).subtract(3, "months").toDate(), $lt: today.toDate() };
                     break;
-                case 'last6months':
-                    filter.createdAt = { $gte: moment(today).subtract(6, 'months').toDate(), $lt: today.toDate() };
+                case "last6months":
+                    filter.createdAt = { $gte: moment(today).subtract(6, "months").toDate(), $lt: today.toDate() };
                     break;
-                case 'last1year':
-                    filter.createdAt = { $gte: moment(today).subtract(1, 'year').toDate(), $lt: today.toDate() };
+                case "last1year":
+                    filter.createdAt = { $gte: moment(today).subtract(12, "months").toDate(), $lt: today.toDate() };
                     break;
-                case 'custom':
+                case "custom":
                     if (!customStartDate || !customEndDate) {
                         return res.status(400).json({ message: "Custom date range requires both start and end dates." });
                     }
@@ -1834,11 +1845,33 @@ const getAllBanquetBookings = async (req, res) => {
             }
         }
 
-        // Get total count of matching bookings
+        // **📌 Aggregate Total Banquet Bookings**
         const totalBookings = await BanquetBooking.countDocuments(filter);
         const totalPages = Math.ceil(totalBookings / limit);
 
-        // Fetch paginated bookings
+        // **📌 Export All Data if Requested (No Pagination)**
+        if (exportData === "true") {
+            console.log("📥 Exporting all banquet bookings...");
+
+            const allBookings = await BanquetBooking.find(filter)
+                .populate({
+                    path: "banquetType",
+                    populate: {
+                        path: "banquetName",
+                        model: "BanquetCategory",
+                    },
+                })
+                .populate("primaryMemberId")
+                .sort({ createdAt: -1 });
+
+            return res.status(200).json({
+                message: "All banquet bookings fetched successfully for export.",
+                totalBookings,
+                bookings: allBookings,
+            });
+        }
+
+        // **📌 Paginated Query**
         const bookings = await BanquetBooking.find(filter)
             .populate({
                 path: "banquetType",
@@ -1852,26 +1885,21 @@ const getAllBanquetBookings = async (req, res) => {
             .skip(skip)
             .limit(limit);
 
-        if (!bookings.length) {
-            return res.status(404).json({ message: "No bookings found" });
-        }
-
+        // **📌 Return Paginated Response**
         return res.status(200).json({
-            message: "Fetched all bookings successfully",
+            message: "Banquet bookings fetched successfully",
+            totalBookings,
             bookings,
             pagination: {
                 currentPage: page,
                 totalPages,
                 totalBookings,
                 pageSize: limit,
-            }
+            },
         });
     } catch (error) {
-        console.error("Error fetching banquet bookings:", error);
-        return res.status(500).json({
-            message: "Error retrieving bookings",
-            error: error.message,
-        });
+        console.error("❌ Error fetching banquet bookings:", error);
+        return res.status(500).json({ message: "❌ Internal server error", error: error.message });
     }
 };
 
