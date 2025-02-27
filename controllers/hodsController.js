@@ -156,7 +156,7 @@ const addHOD = async (req, res) => {
         if (!department) return res.status(404).json({ message: "Department not found" });
         // Create a new HOD entry
         const newHOD = new HOD({
-            name: normalizedName,
+            name: name,
             designation,
             department: departmentId,
             contactNumber,
