@@ -374,56 +374,110 @@ const getHODById = async (req, res) => {
 };
 
 
+// const updateHOD = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const { name, designation, departmentId, contactNumber, email, status } = req.body;
+
+//         const updates = {};
+
+//         if (email) {
+
+//             const existingEmail = await HOD.findOne({
+//                 email,
+//                 _id: { $ne: id }, // Exclude the current document by ID
+//             });
+
+//             if (existingEmail) {
+//                 return res.status(400).json({ message: 'A Email Is already exists.' });
+//             }
+
+//             // Add normalized title to updates
+//             updates.email = email;
+//         }
+
+//         // Check if file was uploaded
+//         let image;
+//         if (req.file) {
+//             image = req.file ? `/uploads/hods/${req.file.filename}` : "";
+//         }
+
+//         // Validate if department exists
+//         if (departmentId) {
+
+//             const department = await Department.findById(departmentId);
+//             if (!department) return res.status(404).json({ message: "Department not found" });
+//         }
+
+//         // Prepare the update object dynamically
+
+//         if (name) updates.name = name;
+//         if (designation) updates.designation = designation;
+//         if (departmentId) updates.department = departmentId;
+//         if (contactNumber) updates.contactNumber = contactNumber;
+//         if (status) updates.status = status;
+//         if (image) updates.image = image; // Update profile image only if uploaded
+
+//         // Find and update the HOD
+//         const updatedHOD = await HOD.findByIdAndUpdate(id, updates, { new: true });
+
+//         if (!updatedHOD) {
+//             return res.status(404).json({ message: "HOD not found" });
+//         }
+
+//         return res.status(200).json({ message: "HOD updated successfully", hod: updatedHOD });
+//     } catch (error) {
+//         console.error("Error updating HOD:", error);
+//         return res.status(500).json({ message: "Error updating HOD", error: error.message });
+//     }
+// };
+
 const updateHOD = async (req, res) => {
     try {
         const { id } = req.params;
         const { name, designation, departmentId, contactNumber, email, status } = req.body;
+        
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: "Invalid HOD ID" });
+        }
 
-        const updates = {};
+        let updates = {};
+        
+        // Check if HOD exists before updating
+        const existingHOD = await HOD.findById(id);
+        if (!existingHOD) {
+            return res.status(404).json({ message: "HOD not found" });
+        }
 
-        if (email) {
-
-            const existingEmail = await HOD.findOne({
-                email,
-                _id: { $ne: id }, // Exclude the current document by ID
-            });
-
+        // Email validation: Check if email is actually being updated
+        if (email && email !== existingHOD.email) {
+            const existingEmail = await HOD.findOne({ email, _id: { $ne: id } });
             if (existingEmail) {
-                return res.status(400).json({ message: 'A Email Is already exists.' });
+                return res.status(400).json({ message: "Email already exists." });
             }
-
-            // Add normalized title to updates
             updates.email = email;
         }
 
-        // Check if file was uploaded
-        let image;
+        // File upload handling
         if (req.file) {
-            image = req.file ? `/uploads/hods/${req.file.filename}` : "";
+            updates.image = `/uploads/hods/${req.file.filename}`;
         }
 
-        // Validate if department exists
-        if (departmentId) {
-
+        // Validate department existence if departmentId is changed
+        if (departmentId && departmentId !== existingHOD.department) {
             const department = await Department.findById(departmentId);
             if (!department) return res.status(404).json({ message: "Department not found" });
+            updates.department = departmentId;
         }
 
-        // Prepare the update object dynamically
-
+        // Dynamically update fields if they exist in the request
         if (name) updates.name = name;
         if (designation) updates.designation = designation;
-        if (departmentId) updates.department = departmentId;
         if (contactNumber) updates.contactNumber = contactNumber;
         if (status) updates.status = status;
-        if (image) updates.image = image; // Update profile image only if uploaded
 
-        // Find and update the HOD
+        // Perform update
         const updatedHOD = await HOD.findByIdAndUpdate(id, updates, { new: true });
-
-        if (!updatedHOD) {
-            return res.status(404).json({ message: "HOD not found" });
-        }
 
         return res.status(200).json({ message: "HOD updated successfully", hod: updatedHOD });
     } catch (error) {
@@ -431,8 +485,6 @@ const updateHOD = async (req, res) => {
         return res.status(500).json({ message: "Error updating HOD", error: error.message });
     }
 };
-
-
 
 
 // Delete HOD
