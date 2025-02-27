@@ -136,6 +136,7 @@ const HOD = require("../models/clubHods");
 const User = require("../models/user");
 const Department = require("../models/department");
 const { toTitleCase } = require("../utils/common");
+const { default: mongoose } = require("mongoose");
 
 const addHOD = async (req, res) => {
     try {
