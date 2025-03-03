@@ -32,6 +32,11 @@ const ConsolidatedBillingSchema = new mongoose.Schema(
             required: true,
             trim: true
         },
+        billGeneratedOn: {
+            type: String, // e.g., "SEPTEMBER-2024" 1 month grater on transaction month
+            required: true,
+            trim: true,
+        },
         serviceTypeEntries: [
             {
                 serviceType: { type: String, required: true, trim: true }, // e.g., "Room Rent"

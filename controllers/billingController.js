@@ -830,25 +830,229 @@ const generateOfflineInvoiceNumber = async () => {
 //     }
 // };
 
+// const parseTransactionMonth = (transactionMonth) => {
+//     try {
+//         const [month, year] = transactionMonth.trim().split('-'); // Extract month and year
+//         const monthIndex = new Date(Date.parse(`${month} 1, ${year}`)).getMonth(); // Get month index (0-based)
+
+//         const formattedDate = new Date(Date.UTC(year, monthIndex, 1))
+//             .toLocaleDateString("en-GB", {
+//                 weekday: "short", // "Wed"
+//                 day: "2-digit",   // "01"
+//                 month: "short",   // "Jan"
+//                 year: "numeric"   // "2025"
+//             });
+
+//         return formattedDate; // "Wed, 01 Jan 2025"
+//     } catch (error) {
+//         console.error('❌ Error parsing TRANSMONTH:', error.message);
+//         return null;
+//     }
+// };
+
+// const parseBillGeneratedMonth = (transactionMonth) => { 
+//     try {
+//         const [month, year] = transactionMonth.trim().split('-'); // Extract month and year
+//         const date = new Date(Date.parse(`${month} 1, ${year}`)); // Get date for the given month
+//         date.setUTCMonth(date.getUTCMonth() + 1); // Move to next month
+
+//         const formattedDate = date.toLocaleDateString("en-GB", {
+//             weekday: "short", // "Sat"
+//             day: "2-digit",   // "01"
+//             month: "short",   // "Mar"
+//             year: "numeric"   // "2025"
+//         });
+
+//         return formattedDate; // Example: "Sat, 01 Mar 2025"
+//     } catch (error) {
+//         console.error('❌ Error parsing TRANSMONTH:', error.message);
+//         return null;
+//     }
+// };
+// const getLastDateOfSameMonth = (billGeneratedOn) => {
+//     try {
+//         // Parse the bill generated date
+//         const date = new Date(billGeneratedOn);
+
+//         // Get the last date of the same month
+//         const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0); // Last day of the month
+
+//         return lastDayOfMonth; // Returns a valid Date object
+//     } catch (error) {
+//         console.error("❌ Error calculating due date:", error.message);
+//         return null;
+//     }
+// };
+
+// const parseTransactionMonth = (transactionMonth) => {
+//     try {
+//         if (!transactionMonth || typeof transactionMonth !== "string") {
+//             // throw new Error("Invalid transactionMonth format");
+//             return null;
+//         }
+
+//         const [month, year] = transactionMonth.trim().split('-');
+//         if (!month || !year || isNaN(year)) {
+//             // throw new Error("Invalid month-year format");
+//             return null;
+//         }
+
+//         // Parse the date
+//         const date = new Date(Date.parse(`${month} 1, ${year}`));
+//         // if (isNaN(date)) throw new Error("Invalid date conversion");
+
+//         // Format the date
+//         return date.toLocaleDateString("en-GB", {
+//             weekday: "short", // "Wed"
+//             day: "2-digit",   // "01"
+//             month: "short",   // "Jan"
+//             year: "numeric"   // "2025"
+//         });
+//     } catch (error) {
+//         console.error("❌ Error parsing transaction month:", error.message);
+//         return null;
+//     }
+// };
+
+// const parseBillGeneratedMonth = (transactionMonth) => {
+//     try {
+//         if (!transactionMonth || typeof transactionMonth !== "string") {
+//             // throw new Error("Invalid transactionMonth format");
+//             return null;
+//         }
+
+//         const [month, year] = transactionMonth.trim().split('-');
+//         if (!month || !year || isNaN(year)) {
+//             // throw new Error("Invalid month-year format");
+//             return null;
+//         }
+
+//         // Parse the date and move to next month
+//         const date = new Date(Date.parse(`${month} 1, ${year}`));
+//         // if (isNaN(date)) throw new Error("Invalid date conversion");
+
+//         date.setUTCMonth(date.getUTCMonth() + 1); // Move to next month
+
+//         return date.toLocaleDateString("en-GB", {
+//             weekday: "short", // "Sat"
+//             day: "2-digit",   // "01"
+//             month: "short",   // "Mar"
+//             year: "numeric"   // "2025"
+//         });
+//     } catch (error) {
+//         console.error("❌ Error parsing bill generated month:", error.message);
+//         return null;
+//     }
+// };
+
+// const getLastDateOfSameMonth = (billGeneratedOn) => {
+//     try {
+//         if (!billGeneratedOn || isNaN(Date.parse(billGeneratedOn))) {
+//             // throw new Error("Invalid billGeneratedOn date format");
+//              return null;
+//         }
+
+//         // Convert the string date to Date object
+//         const date = new Date(billGeneratedOn);
+
+//         // Get the last date of the same month
+//         const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0); // Last day of the month
+
+//         return lastDayOfMonth.toLocaleDateString("en-GB", {
+//             weekday: "short", // "Thu"
+//             day: "2-digit",   // "31"
+//             month: "short",   // "Jan"
+//             year: "numeric"   // "2025"
+//         });
+//     } catch (error) {
+//         console.error("❌ Error calculating last date of month:", error.message);
+//         return null;
+//     }
+// };
+
 const parseTransactionMonth = (transactionMonth) => {
     try {
-        const [month, year] = transactionMonth.trim().split('-'); // Extract month and year
-        const monthIndex = new Date(Date.parse(`${month} 1, ${year}`)).getMonth(); // Get month index (0-based)
+        if (!transactionMonth || typeof transactionMonth !== "string") {
+            // throw new Error("Invalid transactionMonth format");
+            return null;
+        }
 
-        const formattedDate = new Date(Date.UTC(year, monthIndex, 1))
-            .toLocaleDateString("en-GB", {
-                weekday: "short", // "Wed"
-                day: "2-digit",   // "01"
-                month: "short",   // "Jan"
-                year: "numeric"   // "2025"
-            });
+        const [month, year] = transactionMonth.trim().split('-');
+        if (!month || !year || isNaN(year)) {
+            // throw new Error("Invalid month-year format");
+            return null;
+        }
 
-        return formattedDate; // "Wed, 01 Jan 2025"
+        // Convert month name to correct format
+        const date = new Date(Date.UTC(year, new Date(Date.parse(`${month} 1`)).getMonth(), 1));
+        // if (isNaN(date.getTime())) throw new Error("Invalid date conversion");
+
+        return date.toLocaleDateString("en-GB", {
+            weekday: "short", // "Fri"
+            day: "2-digit",   // "01"
+            month: "short",   // "Nov"
+            year: "numeric"   // "2024"
+        });
     } catch (error) {
-        console.error('❌ Error parsing TRANSMONTH:', error.message);
+        console.error("❌ Error parsing transaction month:", error.message);
         return null;
     }
 };
+
+const parseBillGeneratedMonth = (transactionMonth) => {
+    try {
+        if (!transactionMonth || typeof transactionMonth !== "string") {
+            // throw new Error("Invalid transactionMonth format");
+            return null;
+        }
+
+        const [month, year] = transactionMonth.trim().split('-');
+        if (!month || !year || isNaN(year)) {
+            // throw new Error("Invalid month-year format");
+            return null;
+        }
+
+        // Convert month name to date object and move to the next month
+        const currentMonthIndex = new Date(Date.parse(`${month} 1`)).getMonth();
+        const date = new Date(Date.UTC(year, currentMonthIndex + 1, 1));
+
+        // if (isNaN(date.getTime())) throw new Error("Invalid date conversion");
+
+        return date.toLocaleDateString("en-GB", {
+            weekday: "short", // "Sun"
+            day: "2-digit",   // "01"
+            month: "short",   // "Dec"
+            year: "numeric"   // "2024"
+        });
+    } catch (error) {
+        console.error("❌ Error parsing bill generated month:", error.message);
+        return null;
+    }
+};
+
+const getLastDateOfNextMonth = (transactionMonth) => {
+    try {
+        if (!transactionMonth || typeof transactionMonth !== "string") {
+            return null;
+        }
+
+        // Convert transactionMonth to a Date object in UTC
+        const date = new Date(Date.parse(transactionMonth));
+        if (isNaN(date.getTime())) return null;
+
+        // Move to next month and set the date to 0 (last day of that month)
+        const lastDayOfNextMonth = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 2, 0));
+
+        return lastDayOfNextMonth.toISOString(); // Ensures consistent UTC output
+    } catch (error) {
+        console.error("❌ Error calculating due date:", error.message);
+        return null;
+    }
+};
+
+
+
+
 
 // API to upload consolidated bills
 const uploadConsolidatedBill = async (req, res) => {
@@ -866,6 +1070,7 @@ const uploadConsolidatedBill = async (req, res) => {
 
             // Parse TRANSMONTH
             let transactionMonth = parseTransactionMonth(row['TRANSMONTH']);
+            let billGeneratedOn = parseBillGeneratedMonth(row['TRANSMONTH']);
             if (!transactionMonth) {
                 console.warn(`Skipping row due to invalid TRANSMONTH: ${row['TRANSMONTH']}`);
                 continue;
@@ -883,6 +1088,7 @@ const uploadConsolidatedBill = async (req, res) => {
             let billing = await ConsolidatedBilling.findOne({
                 memberId: member._id,
                 transactionMonth,
+                billGeneratedOn,
                 paymentStatus: "Due",
                 isDeleted: false
             });
@@ -892,6 +1098,7 @@ const uploadConsolidatedBill = async (req, res) => {
                     memberId: member._id,
                     memberShipId: memberAccNo,
                     transactionMonth,
+                    billGeneratedOn,
                     serviceTypeEntries: []
                 });
             }
@@ -925,15 +1132,16 @@ const uploadConsolidatedBill = async (req, res) => {
             // billing.invoiceDate = transactionMonth; // Set to the first day of the transaction month
             // const dueDate = new Date(transactionMonth);
             billing.invoiceDate = transactionMonth; // Explicitly set to the same as transactionMonth
-            const dueDate = new Date(transactionMonth);
-            dueDate.setMonth(dueDate.getMonth() + 3); // Add 3 months for due date
-            billing.dueDate = dueDate;
+            const billDate = new Date(billGeneratedOn);
+            // dueDate.setMonth(dueDate.getMonth() + 3); // Add 3 months for due date
+            billing.dueDate = getLastDateOfNextMonth(billGeneratedOn); // Due date (Last day of March)
+            // billing.dueDate = new Date(dueDate);
 
             // Update payment status based on totalDebit
             billing.paymentStatus = billing.totalAmount === 0 ? 'Paid Offline' : 'Due';
 
             // Save the consolidated billing entry
-            await billing.save();
+            await billing. save();
         }
 
         // Delete the uploaded file
