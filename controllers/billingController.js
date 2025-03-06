@@ -1134,7 +1134,9 @@ const uploadConsolidatedBill = async (req, res) => {
             billing.invoiceDate = transactionMonth; // Explicitly set to the same as transactionMonth
             const billDate = new Date(billGeneratedOn);
             // dueDate.setMonth(dueDate.getMonth() + 3); // Add 3 months for due date
-            billing.dueDate = getLastDateOfNextMonth(billGeneratedOn); // Due date (Last day of March)
+            // billing.dueDate = getLastDateOfNextMonth(billGeneratedOn); // Due date (Last day of March)
+            billing.dueDate = getLastDateOfNextMonth(transactionMonth); // Due date (Last day of March)
+
             // billing.dueDate = new Date(dueDate);
 
             // Update payment status based on totalDebit
