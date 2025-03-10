@@ -13,6 +13,9 @@ const {
   getAdminById,
   getAllAdmins,
   updateAdmin,
+  getAdminsSearch,
+  verifyOtp,
+  resendOtp,
 } = require("../controllers/adminController");
 const { verifyToken } = require("../utils/common");
 
@@ -33,5 +36,11 @@ module.exports = (router) => {
 
   router.get("/admin/:id", getAdminById);
   router.get("/all-admins", verifyToken, getAllAdmins);
-  router.put("/admin/update/:id", updateAdmin)
+  router.put("/admin/update/:id", updateAdmin);
+
+  router.get("/get-admin-search", getAdminsSearch);
+
+  router.post("/admin-verify-otp", verifyOtp);
+  router.post("/admin-resend-otp", resendOtp);
+
 };

@@ -460,7 +460,7 @@ const loginRequest = async (req, res) => {
             userType: "User",
             action: "login",
             role: 'member',
-            ipAddress: ip,
+            ipAddress: req.userIp, // ip,
             userAgent: req.headers["user-agent"],
         });
 
@@ -800,7 +800,7 @@ const userLogout = async (req, res) => {
             userType: "User",
             action: "logout",
             role: user.role,
-            ipAddress: ip,
+            ipAddress: req.userIp, // ip,
             userAgent: req.headers["user-agent"],
         });
 
@@ -1793,7 +1793,7 @@ const updateQrDetails = async (req, res) => {
             adminId: adminDetails.userId,
             activity: "qrUpdate",
             details: "QR code Update and member details update.",
-            ipAddress: ip,
+            ipAddress: req.userIp, // ip,
             userAgent: req.headers["user-agent"],
         })
 

@@ -1,4 +1,4 @@
-const { getActions, deleteActionLog, logUpdateQrCode, getQrCodeUpdateLogs } = require("../../controllers/commonController");
+const { getActions, deleteActionLog, logUpdateQrCode, getQrCodeUpdateLogs, getApiLogs, deleteApiLog } = require("../../controllers/commonController");
 const { verifyToken } = require("../../utils/common");
 
 module.exports = (router) => {
@@ -9,6 +9,11 @@ module.exports = (router) => {
 
     router.get("/qrUpdate-log", verifyToken, logUpdateQrCode);
 
-    router.get("/get-qr-logs", verifyToken, getQrCodeUpdateLogs)
+    router.get("/get-qr-logs", verifyToken, getQrCodeUpdateLogs);
+
+    router.get("/api-logs", getApiLogs);
+
+    router.delete("/delete-api-log/:id", deleteApiLog);
+
 
 };

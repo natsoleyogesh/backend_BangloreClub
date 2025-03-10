@@ -67,72 +67,204 @@ const createAdmin = async (req, res) => {
   }
 };
 
-// Admin login
+// // Admin login
+// const adminLogin = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+
+//     // Validate required fields
+//     if (!email || !password) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Email and password are required" });
+//     }
+
+//     // Find admin by email
+//     const admin = await Admin.findOne({ email }).populate("role");
+//     if (!admin) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Invalid email or password" });
+//     }
+
+//     // Check if password matches
+//     const isMatch = await bcrypt.compare(password, admin.password);
+//     if (!isMatch) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Invalid email or password" });
+//     }
+
+//     // Check if the account is active
+//     if (admin.isDeleted) {
+//       return res
+//         .status(403)
+//         .json({ success: false, message: "Account is deactivated" });
+//     }
+
+//     // Update last login timestamp
+//     admin.lastLogin = new Date();
+//     await admin.save();
+//     // Generate token
+//     const tokenData = {
+//       userId: admin._id,
+//       email: admin.email,
+//       role: admin.role.name,
+//       roleId: admin.role._id
+//     };
+//     const token = generateToken(tokenData);
+
+//     // Set token in response headers
+//     res.setHeader('Authorization', `Bearer ${token}`);
+//     console.log(req.ip, "fdhffdjh")
+//     // Log the login action
+//     const ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+//     await logAction({
+//       userId: admin._id,
+//       userType: "Admin",
+//       action: "login",
+//       role: admin.role.name,
+//       ipAddress: ip,
+//       userAgent: req.headers["user-agent"],
+//     });
+
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Login successful",
+//       token,
+//       user: {
+//         id: admin._id,
+//         name: admin.name,
+//         email: admin.email,
+//         role: admin.role.name,
+//         roleId: admin.role._id,
+//         lastLogin: admin.lastLogin,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error logging in admin:", error);
+//     res
+//       .status(500)
+//       .json({ message: "Error logging in admin", error: error.message });
+//   }
+// };
+
+
+const otpStore = new Map(); // Temporary OTP storage
+
+// ✅ Step 1: Admin Login API (Checks Email/Password & Sends OTP)
 const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate required fields
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email and password are required" });
+      return res.status(400).json({ success: false, message: "Email and password are required" });
     }
 
-    // Find admin by email
     const admin = await Admin.findOne({ email }).populate("role");
     if (!admin) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid email or password" });
+      return res.status(400).json({ success: false, message: "Invalid email or password" });
     }
 
-    // Check if password matches
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid email or password" });
+      return res.status(400).json({ success: false, message: "Invalid email or password" });
     }
 
-    // Check if the account is active
     if (admin.isDeleted) {
-      return res
-        .status(403)
-        .json({ success: false, message: "Account is deactivated" });
+      return res.status(403).json({ success: false, message: "Account is deactivated" });
     }
 
-    // Update last login timestamp
+    // ✅ Generate OTP (Valid for 60 seconds)
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    otpStore.set(email, { otp, expiresAt: Date.now() + 60 * 1000 });
+
+    const templateData = {
+      otp: otp
+    }
+
+    const emailTemplate = emailTemplates.otpTemplate;
+    const htmlBody = otpRenderTemplate(emailTemplate.body, templateData);
+    const subject = otpRenderTemplate(emailTemplate.subject, templateData);
+
+    // // ✅ Send OTP via email
+    // await sendEmail({
+    //   to: email,
+    //   subject: "Your OTP for Admin Login",
+    //   text: `Your OTP code is: ${otp}. This code is valid for 60 seconds.`,
+    // });
+
+    // Send OTP via Email
+    await sendEmail(email, subject, htmlBody);
+
+
+    res.status(200).json({
+      success: true,
+      message: "OTP sent to email. Please verify within 60 seconds.",
+    });
+
+  } catch (error) {
+    console.error("Error logging in admin:", error);
+    res.status(500).json({ success: false, message: "Error logging in admin", error: error.message });
+  }
+};
+
+// ✅ Step 2: Verify OTP & Complete Login
+const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: "Email and OTP are required" });
+    }
+
+    const storedOtpData = otpStore.get(email);
+    if (!storedOtpData) {
+      return res.status(400).json({ success: false, message: "OTP expired. Please request a new OTP." });
+    }
+
+    if (storedOtpData.expiresAt < Date.now()) {
+      otpStore.delete(email); // Remove expired OTP
+      return res.status(400).json({ success: false, message: "OTP expired. Please request a new OTP." });
+    }
+
+    if (storedOtpData.otp !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid OTP. Please try again." });
+    }
+
+    otpStore.delete(email); // ✅ OTP Verified, remove from store
+
+    const admin = await Admin.findOne({ email }).populate("role");
+    if (!admin) {
+      return res.status(404).json({ success: false, message: "Admin not found" });
+    }
+
     admin.lastLogin = new Date();
     await admin.save();
-    // Generate token
+
     const tokenData = {
       userId: admin._id,
       email: admin.email,
       role: admin.role.name,
-      roleId: admin.role._id
+      roleId: admin.role._id,
     };
     const token = generateToken(tokenData);
 
-    // Set token in response headers
-    res.setHeader('Authorization', `Bearer ${token}`);
-    console.log(req.ip, "fdhffdjh")
-    // Log the login action
     const ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
     await logAction({
       userId: admin._id,
       userType: "Admin",
       action: "login",
       role: admin.role.name,
-      ipAddress: ip,
+      ipAddress: req.userIp,// ip,
       userAgent: req.headers["user-agent"],
     });
 
-
     res.status(200).json({
       success: true,
-      message: "Login successful",
+      message: "OTP verified, login successful",
       token,
       user: {
         id: admin._id,
@@ -143,13 +275,63 @@ const adminLogin = async (req, res) => {
         lastLogin: admin.lastLogin,
       },
     });
+
   } catch (error) {
-    console.error("Error logging in admin:", error);
-    res
-      .status(500)
-      .json({ message: "Error logging in admin", error: error.message });
+    console.error("Error verifying OTP:", error);
+    res.status(500).json({ success: false, message: "Error verifying OTP", error: error.message });
   }
 };
+
+// ✅ Resend OTP API
+const resendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const storedOtpData = otpStore.get(email);
+
+    // Check if previous OTP exists & is still valid
+    if (storedOtpData && storedOtpData.expiresAt > Date.now()) {
+      return res.status(400).json({ success: false, message: "Please wait before requesting a new OTP." });
+    }
+
+    // ✅ Generate new 6-digit OTP
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    otpStore.set(email, { otp: newOtp, expiresAt: Date.now() + 60 * 1000 });
+
+    const templateData = {
+      otp: newOtp
+    }
+
+    const emailTemplate = emailTemplates.otpTemplate;
+    const htmlBody = otpRenderTemplate(emailTemplate.body, templateData);
+    const subject = otpRenderTemplate(emailTemplate.subject, templateData);
+
+    // // ✅ Send OTP via email
+    // await sendEmail({
+    //   to: email,
+    //   subject: "Your OTP for Admin Login",
+    //   text: `Your OTP code is: ${otp}. This code is valid for 60 seconds.`,
+    // });
+
+    // Send OTP via Email
+    await sendEmail(email, subject, htmlBody);
+
+
+    res.status(200).json({
+      success: true,
+      message: "OTP sent to email. Please verify within 60 seconds.",
+    });
+
+  } catch (error) {
+    console.error("Error resending OTP:", error);
+    res.status(500).json({ success: false, message: "Error resending OTP", error: error.message });
+  }
+};
+
 
 // Get all admins
 const getAdmins = async (req, res) => {
@@ -382,7 +564,7 @@ const adminLogout = async (req, res) => {
       userType: "Admin",
       action: "logout",
       role: admin.role,
-      ipAddress: ip,
+      ipAddress: req.userIp, // ip,
       userAgent: req.headers["user-agent"],
     });
 
@@ -421,7 +603,7 @@ const qrScanDetails = async (req, res) => {
       gatekeeperId: userDetails.userId,
       activity: "qrScan",
       details: "QR code scanned and member details fetched.",
-      ipAddress: ip,
+      ipAddress: req.userIp, // ip,
       userAgent: req.headers["user-agent"],
     })
 
@@ -622,6 +804,54 @@ const getAllAdmins = async (req, res) => {
   }
 };
 
+
+const getAdminsSearch = async (req, res) => {
+  try {
+    const { search, page, limit } = req.query;
+
+    // Convert pagination parameters
+    const pageNumber = parseInt(page) || 1;
+    const limitNumber = parseInt(limit) || 10; // Default limit is 10
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Build search query
+    let query = { isDeleted: false };
+    if (search) {
+      query = {
+        $or: [
+          { name: { $regex: search, $options: "i" } }, // Case-insensitive search in `name`
+          { email: { $regex: search, $options: "i" } } // Case-insensitive search in `email`
+        ],
+      };
+    }
+
+    // Get total count of users based on the search
+    const totalUsers = await Admin.countDocuments(query);
+
+    // Fetch paginated & filtered users
+    const users = await Admin.find(query)
+      .sort({ createdAt: -1 }) // Sort by newest first
+      .skip(skip)
+      .limit(limitNumber);
+
+    // Send the response including pagination info
+    res.status(200).json({
+      message: "Admin details retrieved successfully",
+      users,
+      pagination: {
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalUsers / limitNumber),
+        totalUsers,
+        pageSize: limitNumber,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    res.status(500).json({ message: "Error fetching user details", error: error.message });
+  }
+};
+
+
 module.exports = {
   createAdmin,
   adminLogin,
@@ -639,5 +869,9 @@ module.exports = {
 
   updateAdmin,
   getAdminById,
-  getAllAdmins
+  getAllAdmins,
+  getAdminsSearch,
+
+  verifyOtp,
+  resendOtp
 };
