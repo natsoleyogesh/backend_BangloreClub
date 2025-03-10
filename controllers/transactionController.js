@@ -220,7 +220,11 @@ const getAllTransactions = async (req, res) => {
                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf("day").toDate() };
                     break;
                 case "last7days":
-                    filter.createdAt = { $gte: moment(today).subtract(7, "days").toDate(), $lt: today.toDate() };
+                    // filter.createdAt = { $gte: moment(today).subtract(7, "days").toDate(), $lt: today.toDate() };
+                    filter.createdAt = {
+                        $gte: moment().subtract(7, "days").startOf("day").toDate(),
+                        $lte: moment().endOf("day").toDate(), // includes today till 23:59:59
+                    };
                     break;
                 case "last30days":
                     filter.createdAt = { $gte: moment(today).subtract(30, "days").toDate(), $lt: today.toDate() };
@@ -774,7 +778,12 @@ const getAllOfflineTransactions = async (req, res) => {
                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf("day").toDate() };
                     break;
                 case "last7days":
-                    filter.createdAt = { $gte: moment(today).subtract(7, "days").toDate(), $lt: today.toDate() };
+                    // filter.createdAt = { $gte: moment(today).subtract(7, "days").toDate(), $lt: today.toDate() };
+                    filter.createdAt = {
+                        $gte: moment().subtract(7, "days").startOf("day").toDate(),
+                        $lte: moment().endOf("day").toDate(), // includes today till 23:59:59
+                    };
+
                     break;
                 case "last30days":
                     filter.createdAt = { $gte: moment(today).subtract(30, "days").toDate(), $lt: today.toDate() };
