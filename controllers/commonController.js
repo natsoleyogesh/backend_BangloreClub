@@ -535,7 +535,7 @@ const getApiLogs = async (req, res) => {
             filters.status = parseInt(status);
         }
         if (ipAddress) {
-            filter.ip = ipAddress
+            filters.ip = ipAddress
         }
 
         // Handle date filters
