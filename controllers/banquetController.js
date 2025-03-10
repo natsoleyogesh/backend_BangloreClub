@@ -2035,10 +2035,10 @@ const allocateBanquet = async (req, res) => {
         const { bookingId, bookingStatus } = req.body;
         const { userId, role } = req.user;
 
-        if (!userId || role !== 'admin') {
-            return res.status(400).json({ message: 'Alert You are not update the details!.' });
+        // if (!userId || role !== 'admin') {
+        //     return res.status(400).json({ message: 'Alert You are not update the details!.' });
 
-        }
+        // }
 
         // Validate booking ID
         if (!mongoose.Types.ObjectId.isValid(bookingId)) {
