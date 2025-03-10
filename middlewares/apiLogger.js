@@ -10,7 +10,8 @@ const excludedRoutes = [
   "/api/admin-resend-otp",
   "/api/admin-verify-otp",
   "/api/member/login",
-  "/api/member/verify-otp"
+  "/api/member/verify-otp",
+  "/api/notification"
 ];
 
 // List of routes to exclude from logging
