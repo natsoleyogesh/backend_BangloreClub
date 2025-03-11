@@ -167,6 +167,11 @@ const banquetsSchema = new mongoose.Schema({
         type: Date,
         default: null,
     },
+    priority: {
+        type: Number, // Priority for the category
+        required: true,
+        default: 0, // Default priority
+    },
     guideline: {
         type: String,
         required: true,
