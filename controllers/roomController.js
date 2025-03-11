@@ -530,7 +530,8 @@ const createRoomBooking = async (req, res) => {
             paymentStatus: 'Pending',
             bookingStatus: 'Pending',
             allDetailsQRCode,
-            uniqueQRCode
+            uniqueQRCode,
+            billable: false
         });
 
         await roomBooking.save();
@@ -1630,10 +1631,10 @@ const updateRoomAllocation = async (req, res) => {
         const { allocatedRooms, bookingStatus } = req.body; // Allocated rooms and booking status from the request body
         const { userId, role } = req.user; // User information from the request
 
-        // Check if the user has admin privileges
-        if (!userId || role !== 'admin') {
-            return res.status(400).json({ message: 'Unauthorized: You do not have permission to update the booking.' });
-        }
+        // // Check if the user has admin privileges
+        // if (!userId || role !== 'admin') {
+        //     return res.status(400).json({ message: 'Unauthorized: You do not have permission to update the booking.' });
+        // }
 
         // Validate the booking status
         const validStatuses = ['Pending', 'Confirmed', 'Cancelled'];
@@ -1842,16 +1843,18 @@ const updateRoomAllocation = async (req, res) => {
         if (bookingStatus === 'Confirmed') {
             // Add billing details if the booking is confirmed
             const subtotal = booking.pricingDetails.final_totalAmount - booking.pricingDetails.final_totalTaxAmount;
-            await addBilling(
-                booking.primaryMemberId,
-                'Room',
-                { roomBooking: booking._id },
-                subtotal,
-                0,
-                booking.pricingDetails.final_totalTaxAmount,
-                booking.pricingDetails.final_totalAmount,
-                userId
-            );
+            if (booking.billable) {
+                await addBilling(
+                    booking.primaryMemberId,
+                    'Room',
+                    { roomBooking: booking._id },
+                    subtotal,
+                    0,
+                    booking.pricingDetails.final_totalTaxAmount,
+                    booking.pricingDetails.final_totalAmount,
+                    userId
+                );
+            }
 
             // Create a notification for the user
             await createNotification({
