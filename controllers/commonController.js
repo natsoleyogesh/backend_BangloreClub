@@ -5,6 +5,8 @@ const UpdateQrLog = require("../models/updateQRLog");
 const ApiLog = require("../models/ApiLog");
 const User = require("../models/user");
 const Admin = require("../models/Admin");
+const moment = require("moment")
+const bookingDate = require("../models/bookingDate");
 const logAction = async ({ userId, userType, action, ipAddress, userAgent, role }) => {
     try {
         await ActionLog.create({
@@ -696,6 +698,180 @@ const getClientIp = (req) => {
 };
 
 
+const addBookingDate = async (req, res) => {
+    try {
+        const { minCheckInDays, maxCheckOutMonths, bookingStartDate, bookingEndDate } = req.body;
+
+        // Convert to Moment.js
+        const today = moment().startOf("day"); // Current date (Start of the day)
+        const startDate = moment(bookingStartDate).startOf("day"); // Booking Start Date
+        const endDate = moment(bookingEndDate).endOf("day"); // Booking End Date (End of the day)
+
+        // ✅ Calculate the **expected booking start date**
+        const expectedStartDate = today.clone().add(minCheckInDays, "days"); // Today + `minCheckInDays`
+
+        // ✅ Calculate the **expected max check-out date**
+        const expectedEndDate = startDate.clone().add(maxCheckOutMonths, "months"); // Check-in + `maxCheckOutMonths`
+
+        // ❌ Validate: Booking Start Date must be exactly `minCheckInDays` from today
+        if (!startDate.isSame(expectedStartDate, "day")) {
+            return res.status(400).json({
+                message: `Booking start date must be exactly ${minCheckInDays} days from today (${expectedStartDate.format("YYYY-MM-DD")}).`
+            });
+        }
+
+        // ❌ Validate: Booking End Date must be exactly `maxCheckOutMonths` from start date
+        if (!endDate.isSame(expectedEndDate, "day")) {
+            return res.status(400).json({
+                message: `Booking end date must be exactly ${maxCheckOutMonths} months from booking start date (${expectedEndDate.format("YYYY-MM-DD")}).`
+            });
+        }
+
+        // ✅ Check if a BookingDate record already exists
+        let existingConfig = await bookingDate.findOne();
+
+        if (existingConfig) {
+            // ✅ If exists, update the existing record
+            existingConfig.minCheckInDays = minCheckInDays;
+            existingConfig.maxCheckOutMonths = maxCheckOutMonths;
+            existingConfig.bookingStartDate = bookingStartDate;
+            existingConfig.bookingEndDate = bookingEndDate;
+
+            await existingConfig.save();
+            return res.status(200).json({
+                message: "Booking Date configuration updated successfully.",
+                data: existingConfig
+            });
+        } else {
+            // ✅ If no record exists, create a new one
+            const newBookingDate = new bookingDate({
+                minCheckInDays,
+                maxCheckOutMonths,
+                bookingStartDate,
+                bookingEndDate
+            });
+
+            await newBookingDate.save();
+            return res.status(201).json({
+                message: "Booking Date configuration added successfully.",
+                data: newBookingDate
+            });
+        }
+
+    } catch (error) {
+        console.error("Error adding/updating booking date:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+
+const getBookingDate = async (req, res) => {
+    try {
+        const bookingConfig = await bookingDate.findOne();
+        if (!bookingConfig) {
+            return res.status(404).json({ message: "No Booking Date configuration found." });
+        }
+
+        res.status(200).json({
+            message: "Booking Date configuration retrieved successfully.",
+            data: bookingConfig
+        });
+
+    } catch (error) {
+        console.error("Error fetching booking date:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+
+// // ✅ Validate Booking Dates Based on Admin Rules
+// const validateBookingDates = async (checkIn, checkOut) => {
+//     try {
+//         const today = moment().startOf("day"); // Today's date (start of the day)
+//         const checkInDate = moment(checkIn).startOf("day"); // Check-in Date
+//         const checkOutDate = moment(checkOut).endOf("day"); // Check-out Date (End of the day)
+
+//         // ✅ Fetch Booking Rules from Admin Settings in DB
+//         const bookingSettings = await bookingDate.findOne();
+//         if (!bookingSettings) {
+//             return { success: false, message: "Admin booking settings not found." };
+//         }
+
+//         const { minCheckInDays, maxCheckOutMonths } = bookingSettings;
+
+//         // ✅ Calculate the expected check-in & check-out dates
+//         const expectedCheckInDate = today.clone().add(minCheckInDays, "days"); // Today + `minCheckInDays`
+//         // const expectedCheckOutDate = checkInDate.clone().add(maxCheckOutMonths, "months"); // Check-in + `maxCheckOutMonths`
+//         const maxAllowedCheckOutDate = checkInDate.clone().add(maxCheckOutMonths, "months").endOf("day"); // Max check-out date
+
+//         // ❌ Validate: Check-in must be exactly `minCheckInDays` after today
+//         if (!checkInDate.isSame(expectedCheckInDate, "day")) {
+//             return {
+//                 success: false,
+//                 message: `Check-in must be exactly ${minCheckInDays} days from today (${expectedCheckInDate.format("YYYY-MM-DD")}).`
+//             };
+//         }
+
+//         // ✅ Check-out can be same as check-in or any day before maxAllowedCheckOutDate
+//         if (checkOutDate.isAfter(maxAllowedCheckOutDate, "day")) {
+//             return {
+//                 success: false,
+//                 message: `Check-out date cannot be later than ${maxAllowedCheckOutDate.format("YYYY-MM-DD")}. It can be the same as check-in or any day before it.`,
+//             };
+//         }
+
+//         return { success: true, message: "Booking dates are valid." };
+
+//     } catch (error) {
+//         console.error("Error validating booking dates:", error);
+//         return { success: false, message: "An error occurred while validating booking dates." };
+//     }
+// };
+
+// ✅ Validate Booking Dates Based on Admin Rules
+const validateBookingDates = async (checkIn, checkOut) => {
+    try {
+        const today = moment().startOf("day"); // Today's date (start of the day)
+        const checkInDate = moment(checkIn).startOf("day"); // Check-in Date
+        const checkOutDate = moment(checkOut).endOf("day"); // Check-out Date (End of the day)
+
+        // ✅ Fetch Booking Rules from Admin Settings in DB
+        const bookingSettings = await bookingDate.findOne();
+        if (!bookingSettings) {
+            return { success: false, message: "Admin booking settings not found." };
+        }
+
+        const { minCheckInDays, maxCheckOutMonths } = bookingSettings;
+
+        // ✅ Expected Dates Calculations
+        const expectedCheckInDate = today.clone().add(minCheckInDays, "days"); // Today + `minCheckInDays`
+        const maxAllowedCheckOutDate = checkInDate.clone().add(maxCheckOutMonths, "months").endOf("day"); // Max check-out date
+
+        // ❌ Validation: Check-in must be `minCheckInDays` or later
+        if (checkInDate.isBefore(expectedCheckInDate, "day")) {
+            return {
+                success: false,
+                message: `Check-in must be at least ${minCheckInDays} days from today (${expectedCheckInDate.format("YYYY-MM-DD")}) or later.`,
+            };
+        }
+
+        // ✅ Check-out can be same as check-in or any day before maxAllowedCheckOutDate
+        if (checkOutDate.isAfter(maxAllowedCheckOutDate, "day")) {
+            return {
+                success: false,
+                message: `Check-out date cannot be later than ${maxAllowedCheckOutDate.format("YYYY-MM-DD")}. It can be the same as check-in or any day before it.`,
+            };
+        }
+
+        return { success: true, message: "Booking dates are valid." };
+
+    } catch (error) {
+        console.error("Error validating booking dates:", error);
+        return { success: false, message: "An error occurred while validating booking dates." };
+    }
+};
+
+
 module.exports = {
     logAction,
     logActivity,
@@ -706,4 +882,7 @@ module.exports = {
     getApiLogs,
     deleteApiLog,
     getClientIp,
+    addBookingDate,
+    getBookingDate,
+    validateBookingDates
 }

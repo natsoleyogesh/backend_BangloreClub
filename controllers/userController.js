@@ -443,7 +443,7 @@ const loginRequest = async (req, res) => {
         await sendSMSViaPOST(user.mobileNumber, message);
 
         // Send OTP via Email
-        await sendEmail(user.email, subject, htmlBody);
+        await sendEmail(user.email, subject, htmlBody, attachments = [], cc = null);
 
         // Send OTP via Twilio (commented for testing)
         /*

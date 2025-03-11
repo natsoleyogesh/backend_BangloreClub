@@ -19,6 +19,7 @@ const Admin = require("../models/Admin");
 const Department = require("../models/department");
 const User = require("../models/user");
 const { sendSMSViaPOST } = require("../utils/sendOtp");
+const { validateBookingDates } = require("./commonController");
 
 // Banquet Category APIs Functions
 
@@ -1410,7 +1411,7 @@ const createBanquetBooking = async (req, res) => {
 
         if (admins.length > 0) {
             for (const admin of admins) {
-                await sendEmail(admin.email, subject, htmlBody,
+                await sendEmail(admin.email, subject, htmlBody, attachments = [], cc = null
                     // [
                     //     {
                     //         filename: "qrcode.png",
@@ -1428,7 +1429,7 @@ const createBanquetBooking = async (req, res) => {
 
         await sendSMSViaPOST(templateData.primaryContact, message)
 
-        await sendEmail(primaryMemberEmail, subject, htmlBody,
+        await sendEmail(primaryMemberEmail, subject, htmlBody, attachments = [], cc = null
             //     [
             //     {
             //         filename: "qrcode.png",
@@ -1508,6 +1509,13 @@ const createBanquetBookingDetails = async (req, res) => {
             .populate('pricingDetails').populate('specialDayTariff').populate('taxTypes');
         if (!banquet) {
             return res.status(400).json({ message: 'Invalid banquet type.' });
+        }
+
+        // Validate Dates Using Function
+        const validationBookingDate = await validateBookingDates(bookingDates.checkIn, bookingDates.checkOut);
+
+        if (!validationBookingDate.success) {
+            return res.status(400).json({ message: validationBookingDate.message });
         }
 
         // Validate booking dates
@@ -2197,6 +2205,7 @@ const allocateBanquet = async (req, res) => {
                 primaryMemberEmail,
                 subject,
                 htmlBody,
+                attachments = [], cc = null
             );
 
 
@@ -2226,7 +2235,7 @@ const allocateBanquet = async (req, res) => {
             await sendEmail(
                 primaryMemberEmail,
                 subject,
-                htmlBody,
+                htmlBody, attachments = [], cc = null
             );
 
             // Call the createNotification function

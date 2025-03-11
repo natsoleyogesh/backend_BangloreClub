@@ -15,7 +15,8 @@ const emailTemplates = require("../utils/emailTemplates");
 const sendEmail = require("../utils/sendMail");
 const Admin = require("../models/Admin");
 const User = require("../models/user");
-const Department = require("../models/department")
+const Department = require("../models/department");
+const { validateBookingDates } = require("./commonController");
 
 // Add Room Function
 const addRoom = async (req, res) => {
@@ -616,7 +617,7 @@ const createRoomBooking = async (req, res) => {
 
         if (admins.length > 0) {
             for (const admin of admins) {
-                await sendEmail(admin.email, subject, htmlBody,
+                await sendEmail(admin.email, subject, htmlBody, attachments = [], cc = null
                     //      [
                     //     {
                     //         filename: "qrcode.png",
@@ -638,7 +639,7 @@ const createRoomBooking = async (req, res) => {
             primaryMemberEmail = member.parentUserId.email;
         }
 
-        await sendEmail(primaryMemberEmail, subject, htmlBody,
+        await sendEmail(primaryMemberEmail, subject, htmlBody, attachments = [], cc = null
             //      [
             //     {
             //         filename: "qrcode.png",
@@ -715,6 +716,13 @@ const createRoomBookingDetails = async (req, res) => {
         let totalTaxAmount = 0;
         let extraBedTotal = 0;
         let specialDayExtraCharge = 0;
+
+        const validationBookingDate = await validateBookingDates(bookingDates.checkIn, bookingDates.checkOut);
+
+        if (!validationBookingDate.success) {
+            return res.status(400).json({ message: validationBookingDate.message });
+        }
+
 
         const checkInDate = moment(bookingDates.checkIn);
         const checkOutDate = moment(bookingDates.checkOut);
@@ -1764,7 +1772,7 @@ const updateRoomAllocation = async (req, res) => {
             await sendEmail(
                 populatedBooking.primaryMemberId.email,
                 subject,
-                htmlBody,
+                htmlBody, attachments = [], cc = null
             );
 
         }
@@ -1864,7 +1872,7 @@ const updateRoomAllocation = async (req, res) => {
             await sendEmail(
                 populatedBooking.primaryMemberId.email,
                 subject,
-                htmlBody,
+                htmlBody, attachments = [], cc = null
             );
 
             if (requestId !== null) {

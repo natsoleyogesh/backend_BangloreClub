@@ -2077,7 +2077,7 @@ const bookEvent = async (req, res) => {
             primaryMemberEmail,
             subject,
             htmlBody,
-            emailAttachments
+            emailAttachments, cc = null
         );
 
         // const message = `Dear ${primaryName}, Your event booking for ${event.eventTitle} on ${templateData.eventDate} at ${QRCodeHelper.formatTimeTo12Hour(event.startTime)} to ${QRCodeHelper.formatTimeTo12Hour(event.endTime)} has been successfully confirmed. Event Details:- Event Name: ${event.eventTitle} - Number of Guests: ${totalMemberCount} - Total Amount: ${templateData.totalAmount} BCLUB`
@@ -2583,6 +2583,15 @@ const bookingDetails = async (req, res) => {
         if (guestCount > remainingGuestsAllowed) {
             return res.status(400).json({
                 message: `You have already booked ${totalPreviousGuests} guests. You can only add ${remainingGuestsAllowed} more guests.`,
+            });
+        }
+
+        // ✅ MANDATORY GUEST BOOKING VALIDATION
+        const isAnyMemberAttending = primaryMemberChecked || (dependents && dependents.length > 0) || alreadyBookedPrimaryMember || alreadyBookedDependentUserIds.size > 0;
+
+        if (!isAnyMemberAttending && guestCount > 0) {
+            return res.status(400).json({
+                message: "At least a Primary Member, Spouse, Dependent, or Senior Dependent must be attending the event to book guest tickets.",
             });
         }
 
@@ -3469,7 +3478,7 @@ const getBookingDetails = async (req, res) => {
                     eventStartTime: booking.eventId ? booking.eventId.startTime : "",
                     eventEndTime: booking.eventId ? booking.eventId.endTime : "",
                     bookedBy: booking.primaryMemberId ? booking.primaryMemberId.name : "",
-                    rsvpStatus: booking.eventId ? booking.eventId.rsvpStatus : "N/A",
+                    rsvpStatus: booking.eventId && booking.bookingStatus === "Confirmed" ? "Attending" : "N/A",
                     eventMemberPrice: {
                         primaryMemberPrice: booking.eventId ? booking.eventId.primaryMemberPrice : 0,
                         dependentMemberPrice: booking.eventId ? booking.eventId.dependentMemberPrice : 0,

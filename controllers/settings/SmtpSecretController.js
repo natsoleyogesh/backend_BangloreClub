@@ -84,9 +84,9 @@ const getSmtpConfig = async (req, res) => {
 
         const { role } = req.user;
 
-        if (role !== "admin") {
-            return res.status(400).json({ message: "You Are Not Authenticate Admin" });
-        }
+        // if (role !== "admin") {
+        //     return res.status(400).json({ message: "You Are Not Authenticate Admin" });
+        // }
 
         const config = await SmtpSecret.findOne();
         if (!config) {

@@ -17,22 +17,26 @@ const banquetBookingSchema = new mongoose.Schema(
         officePhoneNumber: {
             type: String,
             trim: true,
-            match: [/^[0-9]{10}$/, 'Please provide a valid mobile number'],
+            default: ""
+            // match: [/^[0-9]{10}$/, 'Please provide a valid mobile number'],
         },
         mobileNumber: {
             type: String,
-            required: true,
+            // required: true,
             trim: true,
-            match: [/^[0-9]{10}$/, 'Please provide a valid mobile number'],
+            default: ""
+            // match: [/^[0-9]{10}$/, 'Please provide a valid mobile number'],
         },
         residencePhoneNo: {
             type: String,
             trim: true,
-            match: [/^[0-9]{10}$/, 'Please provide a valid mobile number'],
+            default: ""
+            // match: [/^[0-9]{10}$/, 'Please provide a valid mobile number'],
         },
         address: {
             type: String,
-            required: true,
+            // required: true,
+            default: ""
         },
         occasion: {
             type: String,

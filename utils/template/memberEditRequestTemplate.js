@@ -1,6 +1,6 @@
 
 module.exports = {
-    subject: "Edit Member Details Request for {{memberName}}",
+    subject: "Edit {{type}} Details Request for {{memberName}}",
     body: `
     <!DOCTYPE html>
 <html lang="en">
@@ -8,7 +8,7 @@ module.exports = {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Member Name &amp; ID | Edit Profile - Bangalore Club</title>
+    <title>{{memberName}}Member Name &amp; ID {{memberId}} | Edit Profile - Bangalore Club</title>
     <style>
         /* General styling for responsive and clean design */
         body {

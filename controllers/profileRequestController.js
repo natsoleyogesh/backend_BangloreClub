@@ -2,6 +2,9 @@ const AllRequest = require('../models/allRequest');
 const ProfileRequest = require('../models/profileRequest');
 const User = require('../models/user');
 const { generateFamilyMemberId } = require('../utils/common');
+const emailTemplates = require('../utils/emailTemplates');
+const sendEmail = require('../utils/sendMail');
+const { otpRenderTemplate } = require('../utils/templateRenderer');
 const { createRequest, updateRequest } = require('./allRequestController');
 
 // User sends a profile edit request
@@ -20,12 +23,16 @@ const sendProfileRequest = async (req, res) => {
             return res.status(400).json({ message: 'Please provide either userId or dependentId to identify the target of the request.' });
         }
 
+        let type = "Member"
+        const memberDetails = await User.findById(userId)
+
         // If dependentId is provided, check that the dependent is a family member of the user
         if (dependentId) {
             const dependentUser = await User.findById(dependentId);
             if (!dependentUser || dependentUser.parentUserId.toString() !== userId) {
                 return res.status(403).json({ message: 'Invalid dependentId. The dependent does not belong to the specified user.' });
             }
+            type = "Family Member"
         }
 
         // Create the profile edit request
@@ -37,6 +44,25 @@ const sendProfileRequest = async (req, res) => {
         });
 
         const savedRequest = await newRequest.save();
+
+        const templateData = {
+            memberName: memberDetails ? memberDetails.name : "",
+            memberId: memberDetails ? memberDetails.memberId : "",
+            mobileNumber: memberDetails ? memberDetails.mobileNumber : "",
+            email: memberDetails ? memberDetails.email : "",
+            memberMessage: description,
+            type: type
+        }
+
+        const emailTemplate = emailTemplates.memberEditRequestTemplate;
+        const htmlBody = otpRenderTemplate(emailTemplate.body, templateData);
+        const subject = otpRenderTemplate(emailTemplate.subject, templateData);
+
+        const email = "secretary@bangaloreclub.com"
+        // Send OTP via Email
+        await sendEmail(email, subject, htmlBody, attachments = [], cc = memberDetails.email);
+
+
 
         await createRequest(req, {
             primaryMemberId: savedRequest.userId,
@@ -82,10 +108,10 @@ const rejectProfileRequest = async (req, res) => {
     try {
         const adminId = req.user.userId; // Extract adminId from the token's decoded data
 
-        // Check if the requesting user is an admin
-        if (req.user.role !== 'admin') {
-            return res.status(403).json({ message: 'Access denied. Admins only.' });
-        }
+        // // Check if the requesting user is an admin
+        // if (req.user.role !== 'admin') {
+        //     return res.status(403).json({ message: 'Access denied. Admins only.' });
+        // }
 
         const { requestId } = req.params; // The ID of the profile edit request
         const { adminResponse } = req.body;

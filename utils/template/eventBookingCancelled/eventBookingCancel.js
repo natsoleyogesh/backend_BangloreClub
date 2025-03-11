@@ -196,13 +196,11 @@ module.exports = {
 
 
                 <div class="details-section2">
-                    <h3>Payment Details</h3>
+                    <h3>Event Charges</h3>
                     <p><strong>Subtotal:</strong> ₹{{subtotal}}</p>
                      {{taxTypes}}
                     <p><strong>Total Tax Amount:</strong> ₹{{taxAmount}}</p>
                     <p><strong>Total Amount:</strong> ₹{{totalAmount}}</p>
-                    <p class="disclaimer"><strong>Important:</strong> The total billed amount will be directly charged
-                        to the member's account.</p>
                 </div>
            
             <div class="icons">

@@ -52,7 +52,7 @@ const createAdmin = async (req, res) => {
     const htmlBody = otpRenderTemplate(emailTemplate.body, templateData);
     const subject = otpRenderTemplate(emailTemplate.subject, templateData);
 
-    await sendEmail(admin.email, subject, htmlBody);
+    await sendEmail(admin.email, subject, htmlBody, attachments = [], cc = null);
 
     return res
       .status(201)
@@ -197,7 +197,7 @@ const adminLogin = async (req, res) => {
     // });
 
     // Send OTP via Email
-    await sendEmail(email, subject, htmlBody);
+    await sendEmail(email, subject, htmlBody, attachments = [], cc = null);
 
 
     res.status(200).json({
@@ -318,7 +318,7 @@ const resendOtp = async (req, res) => {
     // });
 
     // Send OTP via Email
-    await sendEmail(email, subject, htmlBody);
+    await sendEmail(email, subject, htmlBody, attachments = [], cc = null);
 
 
     res.status(200).json({

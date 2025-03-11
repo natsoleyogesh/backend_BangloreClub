@@ -72,7 +72,7 @@ const nodemailer = require("nodemailer");
 const SmtpSecret = require("../models/SmtpSecret"); // Import the SMTP Secrets model
 const { decrypt } = require("./helper");
 
-const sendEmail = async (to, subject, htmlBody, attachments = []) => {
+const sendEmail = async (to, subject, htmlBody, attachments = [], cc = null) => {
     try {
         // Fetch SMTP secrets from the database
         const smtpDetails = await SmtpSecret.findOne();
@@ -123,6 +123,7 @@ const sendEmail = async (to, subject, htmlBody, attachments = []) => {
             subject,
             html: htmlBody,
             attachments,
+            ...(cc ? { cc } : {}), // Add CC only if it's provided
         };
 
         // Check attachment sizes
@@ -144,4 +145,3 @@ const sendEmail = async (to, subject, htmlBody, attachments = []) => {
 };
 
 module.exports = sendEmail;
-

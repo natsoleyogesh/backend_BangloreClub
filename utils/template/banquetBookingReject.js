@@ -173,14 +173,11 @@ module.exports = {
                 <p><strong>Duration:</strong> {{from}} - {{to}} PM ({{duration}} Hours)</p>
             </div>
             <div class="details-section2">
-                <h3>Payment Details</h3>
+                <h3>Venue Charges</h3>
                 <p><strong>Banquet Fees:</strong> ₹{{totalAmount}}</p>
                   {{taxTypes}}
                 <p><strong>Total Tax Amount:</strong> ₹{{totalTaxAmount}}</p>
                 <p><strong>Total Billed Amount:</strong> ₹{{final_totalAmount}}</p>
-                <p class="disclaimer"><strong>Important:</strong> The total billed amount will be directly charged to
-                    the member's account. For detailed tax information, please refer to the respective individual room
-                    sections above.</p>
             </div>
         </div>
         <div class="footer">

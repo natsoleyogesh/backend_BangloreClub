@@ -174,12 +174,10 @@ module.exports = {
           {{roomDetails}}
             
             <div class="details-section2">
-                <h3>Total Payment Details</h3>
+                <h3>Chamber Charges</h3>
                   <p><strong>Total Room Amounts:</strong> {{totalRoomAmounts}}</p>
                   <p><strong>Total Tax Amount:</strong> {{totalTaxAmount}}</p>
                   <p><strong>Final Total Amount:</strong> {{finalTotalAmount}}</p>
-                  <p class="disclaimer"><strong>Important:</strong> The total billed amount will be directly charged to the member's account. For detailed tax information, please refer to the respective individual room sections above.</p>
-
             </div>
 
             <div class="icons">
