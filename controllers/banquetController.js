@@ -250,7 +250,8 @@ const createBanquet = async (req, res) => {
             status,
             pricingDetailDescription,
             billable,
-            guideline
+            guideline,
+            priority
         } = req.body;
 
         // Validate banquet name
@@ -380,8 +381,8 @@ const createBanquet = async (req, res) => {
             pricingDetailDescription,
             billable: parsedBillable,
             billableDate,
-            guideline
-
+            guideline,
+            priority
         });
 
         // Save the new banquet
@@ -675,7 +676,8 @@ const updateBanquet = async (req, res) => {
             status,
             pricingDetailDescription,
             billable,
-            guideline
+            guideline,
+            priority
         } = req.body;
 
         // Find the banquet by ID
@@ -788,7 +790,7 @@ const updateBanquet = async (req, res) => {
         if (pricingDetailDescription) banquet.pricingDetailDescription = pricingDetailDescription;
         if (parsedBillable !== undefined) banquet.billable = parsedBillable;
         if (guideline) banquet.guideline = guideline;
-        // if (billableDate ) banquet.billableDate = billableDate;
+        if (priority) banquet.priority = priority;
         // Always update `billableDate`, even if it's null
         banquet.billableDate = billableDate;
 
@@ -2282,7 +2284,8 @@ const getAllActiveBanquets = async (req, res) => {
         // Fetch all banquets with related data, applying the filter and sorting by creation date
         const banquets = await Banquet.find(filter)
             .populate('banquetName') // Populate the 'banquetName' field with related data
-            .sort({ createdAt: -1 }); // Sort by creation date in descending order
+            // .sort({ createdAt: -1 }); // Sort by creation date in descending order
+            .sort({ priority: 1 });
 
 
         // Transform the banquet data to include the 'name' and formatted day-time details
