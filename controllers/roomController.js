@@ -718,7 +718,7 @@ const createRoomBookingDetails = async (req, res) => {
         let extraBedTotal = 0;
         let specialDayExtraCharge = 0;
 
-        const validationBookingDate = await validateBookingDates(bookingDates.checkIn, bookingDates.checkOut);
+        // const validationBookingDate = await validateBookingDates(bookingDates.checkIn, bookingDates.checkOut);
 
         if (!validationBookingDate.success) {
             return res.status(400).json({ message: validationBookingDate.message });

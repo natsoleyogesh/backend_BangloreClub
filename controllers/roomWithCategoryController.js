@@ -2,6 +2,7 @@ const RoomWithCategory = require('../models/roomWithCategory');  // Import the m
 const path = require("path");
 const fs = require("fs");
 const RoomBooking = require('../models/roomBooking');
+const { validateBookingDates } = require('./commonController');
 
 const addRoomWithCategory = async (req, res) => {
     try {
@@ -412,6 +413,13 @@ const getActiveRoomsWithCategory = async (req, res) => {
 
         if (roomCount > 3) {
             return res.status(400).json({ message: 'Not Applicable greater than 3 rooms Booking!' });
+        }
+
+        // Validate Dates Using Function
+        const validationBookingDate = await validateBookingDates(checkIn, checkOut);
+
+        if (!validationBookingDate.success) {
+            return res.status(400).json({ message: validationBookingDate.message });
         }
 
         const checkInDate = new Date(checkIn);

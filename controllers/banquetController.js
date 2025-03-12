@@ -1521,12 +1521,12 @@ const createBanquetBookingDetails = async (req, res) => {
             return res.status(400).json({ message: 'Invalid banquet type.' });
         }
 
-        // Validate Dates Using Function
-        const validationBookingDate = await validateBookingDates(bookingDates.checkIn, bookingDates.checkOut);
+        // // Validate Dates Using Function
+        // const validationBookingDate = await validateBookingDates(bookingDates.checkIn, bookingDates.checkOut);
 
-        if (!validationBookingDate.success) {
-            return res.status(400).json({ message: validationBookingDate.message });
-        }
+        // if (!validationBookingDate.success) {
+        //     return res.status(400).json({ message: validationBookingDate.message });
+        // }
 
         // Validate booking dates
         const checkInDate = new Date(bookingDates.checkIn);
