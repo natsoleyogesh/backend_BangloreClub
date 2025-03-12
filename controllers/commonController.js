@@ -700,32 +700,34 @@ const getClientIp = (req) => {
 
 const addBookingDate = async (req, res) => {
     try {
-        const { minCheckInDays, maxCheckOutMonths, bookingStartDate, bookingEndDate } = req.body;
+        const { minCheckInDays, maxCheckOutMonths,
+            // bookingStartDate, bookingEndDate 
+        } = req.body;
 
-        // Convert to Moment.js
-        const today = moment().startOf("day"); // Current date (Start of the day)
-        const startDate = moment(bookingStartDate).startOf("day"); // Booking Start Date
-        const endDate = moment(bookingEndDate).endOf("day"); // Booking End Date (End of the day)
+        // // Convert to Moment.js
+        // const today = moment().startOf("day"); // Current date (Start of the day)
+        // const startDate = moment(bookingStartDate).startOf("day"); // Booking Start Date
+        // const endDate = moment(bookingEndDate).endOf("day"); // Booking End Date (End of the day)
 
-        // ✅ Calculate the **expected booking start date**
-        const expectedStartDate = today.clone().add(minCheckInDays, "days"); // Today + `minCheckInDays`
+        // // ✅ Calculate the **expected booking start date**
+        // const expectedStartDate = today.clone().add(minCheckInDays, "days"); // Today + `minCheckInDays`
 
-        // ✅ Calculate the **expected max check-out date**
-        const expectedEndDate = startDate.clone().add(maxCheckOutMonths, "months"); // Check-in + `maxCheckOutMonths`
+        // // ✅ Calculate the **expected max check-out date**
+        // const expectedEndDate = startDate.clone().add(maxCheckOutMonths, "months"); // Check-in + `maxCheckOutMonths`
 
-        // ❌ Validate: Booking Start Date must be exactly `minCheckInDays` from today
-        if (!startDate.isSame(expectedStartDate, "day")) {
-            return res.status(400).json({
-                message: `Booking start date must be exactly ${minCheckInDays} days from today (${expectedStartDate.format("YYYY-MM-DD")}).`
-            });
-        }
+        // // ❌ Validate: Booking Start Date must be exactly `minCheckInDays` from today
+        // if (!startDate.isSame(expectedStartDate, "day")) {
+        //     return res.status(400).json({
+        //         message: `Booking start date must be exactly ${minCheckInDays} days from today (${expectedStartDate.format("YYYY-MM-DD")}).`
+        //     });
+        // }
 
-        // ❌ Validate: Booking End Date must be exactly `maxCheckOutMonths` from start date
-        if (!endDate.isSame(expectedEndDate, "day")) {
-            return res.status(400).json({
-                message: `Booking end date must be exactly ${maxCheckOutMonths} months from booking start date (${expectedEndDate.format("YYYY-MM-DD")}).`
-            });
-        }
+        // // ❌ Validate: Booking End Date must be exactly `maxCheckOutMonths` from start date
+        // if (!endDate.isSame(expectedEndDate, "day")) {
+        //     return res.status(400).json({
+        //         message: `Booking end date must be exactly ${maxCheckOutMonths} months from booking start date (${expectedEndDate.format("YYYY-MM-DD")}).`
+        //     });
+        // }
 
         // ✅ Check if a BookingDate record already exists
         let existingConfig = await bookingDate.findOne();
@@ -734,8 +736,8 @@ const addBookingDate = async (req, res) => {
             // ✅ If exists, update the existing record
             existingConfig.minCheckInDays = minCheckInDays;
             existingConfig.maxCheckOutMonths = maxCheckOutMonths;
-            existingConfig.bookingStartDate = bookingStartDate;
-            existingConfig.bookingEndDate = bookingEndDate;
+            // existingConfig.bookingStartDate = bookingStartDate;
+            // existingConfig.bookingEndDate = bookingEndDate;
 
             await existingConfig.save();
             return res.status(200).json({
@@ -747,8 +749,8 @@ const addBookingDate = async (req, res) => {
             const newBookingDate = new bookingDate({
                 minCheckInDays,
                 maxCheckOutMonths,
-                bookingStartDate,
-                bookingEndDate
+                // bookingStartDate,
+                // bookingEndDate
             });
 
             await newBookingDate.save();
@@ -843,23 +845,23 @@ const validateBookingDates = async (checkIn, checkOut) => {
 
         const { minCheckInDays, maxCheckOutMonths } = bookingSettings;
 
-        // ✅ Expected Dates Calculations
-        const expectedCheckInDate = today.clone().add(minCheckInDays, "days"); // Today + `minCheckInDays`
-        const maxAllowedCheckOutDate = checkInDate.clone().add(maxCheckOutMonths, "months").endOf("day"); // Max check-out date
+        // ✅ Calculate Expected Dates
+        const expectedCheckInDate = today.clone().add(minCheckInDays, "days"); // First valid check-in date
+        const maxAllowedCheckOutDate = expectedCheckInDate.clone().add(maxCheckOutMonths, "months").endOf("day"); // Latest valid check-out date
 
-        // ❌ Validation: Check-in must be `minCheckInDays` or later
-        if (checkInDate.isBefore(expectedCheckInDate, "day")) {
+        // ❌ Validation: Check-in must be within the allowed range
+        if (checkInDate.isBefore(expectedCheckInDate, "day") || checkInDate.isAfter(maxAllowedCheckOutDate, "day")) {
             return {
                 success: false,
-                message: `Check-in must be at least ${minCheckInDays} days from today (${expectedCheckInDate.format("YYYY-MM-DD")}) or later.`,
+                message: `Check-in must be between ${expectedCheckInDate.format("YYYY-MM-DD")} and ${maxAllowedCheckOutDate.format("YYYY-MM-DD")}.`
             };
         }
 
-        // ✅ Check-out can be same as check-in or any day before maxAllowedCheckOutDate
-        if (checkOutDate.isAfter(maxAllowedCheckOutDate, "day")) {
+        // ❌ Validation: Check-out must be within the allowed range
+        if (checkOutDate.isBefore(checkInDate, "day") || checkOutDate.isAfter(maxAllowedCheckOutDate, "day")) {
             return {
                 success: false,
-                message: `Check-out date cannot be later than ${maxAllowedCheckOutDate.format("YYYY-MM-DD")}. It can be the same as check-in or any day before it.`,
+                message: `Check-out must be between check-in (${checkInDate.format("YYYY-MM-DD")}) and ${maxAllowedCheckOutDate.format("YYYY-MM-DD")}.`
             };
         }
 
