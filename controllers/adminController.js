@@ -179,7 +179,8 @@ const adminLogin = async (req, res) => {
 
     // ✅ Generate OTP (Valid for 60 seconds)
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    otpStore.set(email, { otp, expiresAt: Date.now() + 60 * 1000 });
+    // otpStore.set(email, { otp, expiresAt: Date.now() + 60 * 1000 });
+    otpStore.set(email, { otp, expiresAt: Date.now() + 3 * 60 * 1000 }); // 3 minutes = 180000 ms
 
     const templateData = {
       otp: otp
@@ -300,7 +301,8 @@ const resendOtp = async (req, res) => {
 
     // ✅ Generate new 6-digit OTP
     const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    otpStore.set(email, { otp: newOtp, expiresAt: Date.now() + 60 * 1000 });
+    // otpStore.set(email, { otp: newOtp, expiresAt: Date.now() + 60 * 1000 });
+    otpStore.set(email, { otp: newOtp, expiresAt: Date.now() + 3 * 60 * 1000 }); // 3 minutes = 180000 ms
 
     const templateData = {
       otp: newOtp
