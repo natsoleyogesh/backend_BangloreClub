@@ -2595,27 +2595,28 @@ const bookingDetails = async (req, res) => {
         //     });
         // }
 
-        // ✅ MANDATORY MEMBER ATTENDING VALIDATION
-        const isPrimaryOrDependentAttending = primaryMemberChecked || (dependents && dependents.length > 0) || alreadyBookedPrimaryMember || alreadyBookedDependentUserIds.size > 0;
+        // ✅ Fetch dependents' user details to know their relation
+        let dependentUserDetails = [];
+        if (dependents && dependents.length > 0) {
+            const userIds = dependents.map(dep => dep.userId);
+            dependentUserDetails = await User.find({ _id: { $in: userIds } });
+        }
 
-        // ✅ Check if any "Child" relation is part of current dependents
-        const childrenInCurrentBooking = (dependents || []).filter(dep => dep.relation === "Child");
+        // ✅ Check if all dependents are "Child"
+        const allDependentsAreChildren = dependentUserDetails.length > 0 &&
+            dependentUserDetails.every(user => user.relation === "Child");
 
-        // ✅ Check if the dependents are only children
-        const allDependentsAreChildren = (dependents && dependents.length > 0) &&
-            dependents.every(dep => dep.relation === "Child");
-
-        // ✅ If no primary member/spouse/dependent/senior dependent is attending
-        if (!primaryMemberChecked && !alreadyBookedPrimaryMember) {
-            // Check if all dependents are children AND no eligible member is attending
-            if (allDependentsAreChildren && !alreadyBookedDependentUserIds.size) {
+        // ✅ If no primary member/spouse/dependent/senior dependent is attending (new or old)
+        if (!primaryMemberChecked && !alreadyBookedPrimaryMember && alreadyBookedDependentUserIds.size === 0) {
+            if (allDependentsAreChildren) {
                 return res.status(400).json({
                     message: "Children are not allowed to book the event without a Primary Member, Spouse, Dependent, or Senior Dependent attending."
                 });
             }
         }
 
-        // ✅ MANDATORY GUEST BOOKING VALIDATION (Existing)
+
+        // // ✅ MANDATORY GUEST BOOKING VALIDATION
         const isAnyMemberAttending = primaryMemberChecked || (dependents && dependents.length > 0) || alreadyBookedPrimaryMember || alreadyBookedDependentUserIds.size > 0;
 
         if (!isAnyMemberAttending && guestCount > 0) {
@@ -2623,11 +2624,6 @@ const bookingDetails = async (req, res) => {
                 message: "At least a Primary Member, Spouse, Dependent, or Senior Dependent must be attending the event to book guest tickets.",
             });
         }
-
-        console.log("primaryMemberChecked:", primaryMemberChecked);
-        console.log("alreadyBookedPrimaryMember:", alreadyBookedPrimaryMember);
-        console.log("allDependentsAreChildren:", allDependentsAreChildren);
-        console.log("alreadyBookedDependentUserIds.size:", alreadyBookedDependentUserIds.size);
 
 
 
