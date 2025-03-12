@@ -788,15 +788,45 @@ const getAdminById = async (req, res) => {
 
 // Get all admins except the current admin
 const getAllAdmins = async (req, res) => {
+  // try {
+  //   const currentAdminId = req.user.userId;
+  //   const admins = await Admin.find({ _id: { $ne: currentAdminId } }).select("-password").populate("role");
+
+  //   res.status(200).json({
+  //     success: true,
+  //     admins,
+  //   });
+  // } 
   try {
     const currentAdminId = req.user.userId;
-    const admins = await Admin.find({ _id: { $ne: currentAdminId } }).select("-password").populate("role");
+
+    // Extract pagination parameters from query
+    const page = parseInt(req.query.page) || 1; // Default to page 1
+    const limit = parseInt(req.query.limit) || 10; // Default limit to 10
+    const skip = (page - 1) * limit;
+
+    // Get total count of admins (excluding current admin)
+    const totalAdmins = await Admin.countDocuments({ _id: { $ne: currentAdminId } });
+
+    // Fetch admins with pagination
+    const admins = await Admin.find({ _id: { $ne: currentAdminId } })
+      .select("-password")
+      .populate("role")
+      .skip(skip)
+      .limit(limit);
 
     res.status(200).json({
       success: true,
       admins,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalAdmins / limit),
+        totalAdmins,
+        pageSize: limit,
+      },
     });
-  } catch (error) {
+  }
+  catch (error) {
     console.error("Error fetching admins:", error);
     res.status(500).json({
       success: false,
