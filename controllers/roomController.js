@@ -720,9 +720,9 @@ const createRoomBookingDetails = async (req, res) => {
 
         // const validationBookingDate = await validateBookingDates(bookingDates.checkIn, bookingDates.checkOut);
 
-        if (!validationBookingDate.success) {
-            return res.status(400).json({ message: validationBookingDate.message });
-        }
+        // if (!validationBookingDate.success) {
+        //     return res.status(400).json({ message: validationBookingDate.message });
+        // }
 
 
         const checkInDate = moment(bookingDates.checkIn);
