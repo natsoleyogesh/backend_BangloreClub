@@ -823,6 +823,14 @@ const getActiveBanquets = async (req, res) => {
             });
         }
 
+
+        // Validate Dates Using Function
+        const validationBookingDate = await validateBookingDates(checkIn, checkOut);
+
+        if (!validationBookingDate.success) {
+            return res.status(400).json({ message: validationBookingDate.message });
+        }
+
         const checkInDate = new Date(checkIn);
         const checkOutDate = new Date(checkOut);
 
