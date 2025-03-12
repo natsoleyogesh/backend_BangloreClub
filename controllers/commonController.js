@@ -853,7 +853,7 @@ const validateBookingDates = async (checkIn, checkOut) => {
         if (checkInDate.isBefore(expectedCheckInDate, "day") || checkInDate.isAfter(maxAllowedCheckOutDate, "day")) {
             return {
                 success: false,
-                message: `Check-in must be between ${expectedCheckInDate.format("YYYY-MM-DD")} and ${maxAllowedCheckOutDate.format("YYYY-MM-DD")}.`
+                message: `Check-in must be between ${expectedCheckInDate.format("DD-MM-YYYY")} and ${maxAllowedCheckOutDate.format("DD-MM-YYYY")}.`
             };
         }
 
@@ -861,7 +861,7 @@ const validateBookingDates = async (checkIn, checkOut) => {
         if (checkOutDate.isBefore(checkInDate, "day") || checkOutDate.isAfter(maxAllowedCheckOutDate, "day")) {
             return {
                 success: false,
-                message: `Check-out must be between check-in (${checkInDate.format("YYYY-MM-DD")}) and ${maxAllowedCheckOutDate.format("YYYY-MM-DD")}.`
+                message: `Check-out must be between check-in (${checkInDate.format("DD-MM-YYYY")}) and ${maxAllowedCheckOutDate.format("DD-MM-YYYY")}.`
             };
         }
 
