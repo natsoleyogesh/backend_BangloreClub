@@ -6,50 +6,112 @@ const User = require("../models/user");
 const createAttendanceRecords = async (booking) => {
     const attendanceRecords = [];
 
-    // Add primary member attendance record
+    // // Add primary member attendance record
+    // if (booking.counts.primaryMemberCount > 0) {
+    //     const primaryDetails = await User.findById(booking.primaryMemberId);
+    //     attendanceRecords.push({
+    //         eventId: booking.eventId,
+    //         eventBookingId: booking._id,
+    //         memberId: booking.primaryMemberId,
+    //         name: primaryDetails.name,
+    //         mobileNumber: primaryDetails.mobileNumber,
+    //         email: primaryDetails.email,
+    //         qrCode: booking.uniqueQRCode,
+    //         qrCodeData: booking.primaryMemberQRCode
+    //     });
+    // }
+
+
+    // // Add dependent attendance records
+    // booking.dependents.forEach(async (dependent) => {
+    //     const DependentDetails = await User.findById(dependent.userId);
+    //     attendanceRecords.push({
+    //         eventId: booking.eventId,
+    //         eventBookingId: booking._id,
+    //         memberId: dependent.userId,
+    //         name: DependentDetails.name,
+    //         mobileNumber: DependentDetails.mobileNumber,
+    //         email: DependentDetails.email,
+    //         qrCode: dependent.uniqueQRCode,
+    //         qrCodeData: dependent.qrCode
+    //     });
+    // });
+
+    // // Add guest attendance records
+    // booking.guests.forEach((guest) => {
+    //     attendanceRecords.push({
+    //         eventId: booking.eventId,
+    //         eventBookingId: booking._id,
+    //         guestName: guest.name,
+    //         name: guest.name,
+    //         mobileNumber: guest.phone,
+    //         email: guest.email,
+    //         qrCode: guest.uniqueQRCode,
+    //         qrCodeData: guest.qrCode
+    //     });
+    // });
+
+    // console.log(attendanceRecords, "attendanceRecords")
+
+    // ✅ Add primary member attendance record (if exists)
     if (booking.counts.primaryMemberCount > 0) {
         const primaryDetails = await User.findById(booking.primaryMemberId);
-        attendanceRecords.push({
-            eventId: booking.eventId,
-            eventBookingId: booking._id,
-            memberId: booking.primaryMemberId,
-            name: primaryDetails.name,
-            mobileNumber: primaryDetails.mobileNumber,
-            email: primaryDetails.email,
-            qrCode: booking.uniqueQRCode,
-            qrCodeData: booking.primaryMemberQRCode
+        if (primaryDetails) {
+            attendanceRecords.push({
+                eventId: booking.eventId,
+                eventBookingId: booking._id,
+                memberId: booking.primaryMemberId,
+                name: primaryDetails.name,
+                mobileNumber: primaryDetails.mobileNumber,
+                email: primaryDetails.email,
+                qrCode: booking.uniqueQRCode,
+                qrCodeData: booking.primaryMemberQRCode
+            });
+        }
+    }
+
+    // ✅ Add dependent attendance records (wait for all)
+    if (booking.dependents && booking.dependents.length > 0) {
+        const dependentRecords = await Promise.all(
+            booking.dependents.map(async (dependent) => {
+                const DependentDetails = await User.findById(dependent.userId);
+                if (DependentDetails) {
+                    return {
+                        eventId: booking.eventId,
+                        eventBookingId: booking._id,
+                        memberId: dependent.userId,
+                        name: DependentDetails.name,
+                        mobileNumber: DependentDetails.mobileNumber,
+                        email: DependentDetails.email,
+                        qrCode: dependent.uniqueQRCode,
+                        qrCodeData: dependent.qrCode
+                    };
+                }
+                return null; // If no DependentDetails found, skip
+            })
+        );
+
+        // Filter out any null results (if no DependentDetails found)
+        attendanceRecords.push(...dependentRecords.filter(record => record !== null));
+    }
+
+    // ✅ Add guest attendance records (directly, no need for async)
+    if (booking.guests && booking.guests.length > 0) {
+        booking.guests.forEach((guest) => {
+            attendanceRecords.push({
+                eventId: booking.eventId,
+                eventBookingId: booking._id,
+                guestName: guest.name,
+                name: guest.name,
+                mobileNumber: guest.phone,
+                email: guest.email,
+                qrCode: guest.uniqueQRCode,
+                qrCodeData: guest.qrCode
+            });
         });
     }
 
-
-    // Add dependent attendance records
-    booking.dependents.forEach(async (dependent) => {
-        const DependentDetails = await User.findById(dependent.userId);
-        attendanceRecords.push({
-            eventId: booking.eventId,
-            eventBookingId: booking._id,
-            memberId: dependent.userId,
-            name: DependentDetails.name,
-            mobileNumber: DependentDetails.mobileNumber,
-            email: DependentDetails.email,
-            qrCode: dependent.uniqueQRCode,
-            qrCodeData: dependent.qrCode
-        });
-    });
-
-    // Add guest attendance records
-    booking.guests.forEach((guest) => {
-        attendanceRecords.push({
-            eventId: booking.eventId,
-            eventBookingId: booking._id,
-            guestName: guest.name,
-            name: guest.name,
-            mobileNumber: guest.phone,
-            email: guest.email,
-            qrCode: guest.uniqueQRCode,
-            qrCodeData: guest.qrCode
-        });
-    });
+    console.log("attendanceRecords", attendanceRecords);
 
     // Save all attendance records
     await EventAttendance.insertMany(attendanceRecords);
