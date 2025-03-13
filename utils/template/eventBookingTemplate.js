@@ -157,10 +157,7 @@ module.exports = {
         </div>
         <div class="content">
             <h2>Booking Details</h2>
-            <div class="details-section" style="text-align: center;">
-                <p><img src="cid:qrCodeImage" alt="QR Code" style="width: 250px; height: 250px;" /></p>
-                <p><strong>QR Code ID:</strong> {{uniqueQRCode}}</p>
-            </div>
+            {{uniqueQRCodeDetails}}
 
             <div class="details-section">
                 <h3>Event Information</h3>

@@ -1,3 +1,18 @@
+// ✅ Ensure styles are used properly
+const styles = {
+    detailsSection: `
+        margin-bottom: 20px; 
+        padding: 15px; 
+        background-color: #f9f9f9; 
+        border: 1px solid #ddd; 
+        border-radius: 5px; 
+        text-align: center;
+    `,
+    imageStyle: `
+        width: 250px; 
+        height: 250px;
+    `
+};
 const eventrenderTemplate = (template, data) => {
     // Replace array placeholders (familyMembers, guests, etc.)
     template = template.replace(/{{familyMembers}}/g, () => {
@@ -39,6 +54,19 @@ const eventrenderTemplate = (template, data) => {
             : "<p>No taxes applicable.</p>";
     });
 
+    // ✅ Replace the placeholder for `uniqueQRCodeDetails`
+    template = template.replace(/{{uniqueQRCodeDetails}}/g, () => {
+        return data.uniqueQRCode
+            ? `
+            <div class="details-section" style="${styles.detailsSection}">
+                <p>
+                    <img src="cid:qrCodeImage" alt="QR Code" style="${styles.imageStyle}" />
+                </p>
+                <p><strong>QR Code ID:</strong> ${data.uniqueQRCode}</p>
+            </div>
+        `
+            : "";
+    });
 
     // Replace other placeholders
     return template.replace(/{{(.*?)}}/g, (_, key) => data[key] || "");
