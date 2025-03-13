@@ -1999,7 +1999,7 @@ const bookEvent = async (req, res) => {
 
 
         const templateData = {
-            uniqueQRCode: primaryMemberChecked ? newBooking.uniqueQRCode : newBooking.allDetailsUniqueQRCode,
+            uniqueQRCode: primaryMemberChecked ? newBooking.uniqueQRCode : null,
             qrCode: allDetailsQRCode, // Base64 string for QR Code
             eventTitle: event.eventTitle,
             eventDate: event.eventStartDate.toDateString(),
@@ -2061,15 +2061,15 @@ const bookEvent = async (req, res) => {
                 },
             ]
             : [
-                {
-                    filename: "qrCodeImage.png", // Corrected filename
-                    content: Buffer.from(
-                        newBooking.allDetailsQRCode.split(",")[1],
-                        "base64"
-                    ), // Convert all details QR code to Buffer
-                    encoding: "base64",
-                    cid: "qrCodeImage", // Inline CID for embedding in email
-                },
+                // {
+                //     filename: "qrCodeImage.png", // Corrected filename
+                //     content: Buffer.from(
+                //         newBooking.allDetailsQRCode.split(",")[1],
+                //         "base64"
+                //     ), // Convert all details QR code to Buffer
+                //     encoding: "base64",
+                //     cid: "qrCodeImage", // Inline CID for embedding in email
+                // },
             ];
 
 
