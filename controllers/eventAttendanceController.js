@@ -169,6 +169,10 @@ const getMemberDetailsFromQR = async (req, res) => {
             return res.status(404).json({ message: 'Invalid QR Code. No attendance record found.' });
         }
 
+        if (attendanceRecord.attendanceStatus === 'Present') {
+            return res.status(400).json({ message: 'Attendance already marked for this member/guest.' });
+        }
+
         const eventBooking = await EventBooking.findById(attendanceRecord.eventBookingId);
 
         console.log(eventBooking, "yeeheddb", eventBooking.bookingStatus)
@@ -238,6 +242,10 @@ const getMemberDetailsFromQRCode = async (req, res) => {
 
         if (!attendanceRecord) {
             return res.status(404).json({ message: 'Invalid QR Code. No attendance record found.' });
+        }
+
+        if (attendanceRecord.attendanceStatus === 'Present') {
+            return res.status(400).json({ message: 'Attendance already marked for this member/guest.' });
         }
 
         const eventBooking = await EventBooking.findById(attendanceRecord.eventBookingId);
