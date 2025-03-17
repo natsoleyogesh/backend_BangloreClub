@@ -19,7 +19,7 @@ require("dotenv").config();
 // const twilio = require("twilio"); // Uncomment this when you want to use Twilio for OTPs
 
 // Static OTP for testing
-const STATIC_OTP = "123456";
+const STATIC_OTP = "224455";
 // Twilio setup (uncomment when ready to use Twilio)
 // const accountSid = process.env.TWILIO_ACCOUNT_SID;
 // const authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -465,7 +465,7 @@ const loginRequest = async (req, res) => {
         });
 
         return res.status(200).json({
-            message: process.env.USE_STATIC_OTP === "true" ? "Static OTP set for testing" : "OTP sent to registered mobile number or registered email",
+            message: process.env.USE_STATIC_OTP === "true" ? "OTP sent to registered mobile number or registered email" : "OTP sent to registered mobile number or registered email",
             userId: user._id,
         });
     } catch (error) {
