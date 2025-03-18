@@ -413,6 +413,10 @@ const loginRequest = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
+        if (user.loggedIn) {
+            return res.status(400).json({ message: "You Are Already Logged In!" });
+        }
+
         // Check if the user is active
         if (user.status !== "Active") {
             return res.status(400).json({ message: "User is inactive. Please contact support." });
@@ -500,6 +504,7 @@ const verifyOtp = async (req, res) => {
         user.otp = null;
         user.fcmToken = fcmToken;
         user.lastLogin = Date.now();
+        user.loggedIn = true;
         await user.save();
 
         // Generate JWT token
@@ -795,6 +800,19 @@ const userLogout = async (req, res) => {
         // const adminId = req.user.id; // Assuming JWT middleware attaches `user` to `req`
         const ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
+        // Find user by ID
+        const fetchuser = await User.findById(user.userId);
+
+        if (!fetchuser) {
+            return res.status(400).json({
+                message: "User Not Found!"
+            })
+        }
+
+        fetchuser.loggedIn = false;
+
+        await fetchuser.save();
+
         await logAction({
             userId: user.userId,
             userType: "User",
@@ -808,7 +826,7 @@ const userLogout = async (req, res) => {
         // This could be handled by blacklisting the token or setting an expiry.
 
         res.status(200).json({
-            message: 'Logout successful.',
+            message: 'Logout successfully!.',
         });
     } catch (error) {
         console.error('Logout error:', error);
