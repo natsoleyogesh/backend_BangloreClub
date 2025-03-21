@@ -413,9 +413,9 @@ const loginRequest = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        if (user.loggedIn) {
-            return res.status(400).json({ message: "You Are Already Logged In!" });
-        }
+        // if (user.loggedIn) {
+        //     return res.status(400).json({ message: "You Are Already Logged In!" });
+        // }
 
         // Check if the user is active
         if (user.status !== "Active") {
@@ -436,7 +436,7 @@ const loginRequest = async (req, res) => {
         await user.save();
         const templateData = {
             otp: otp
-        }
+        } 
 
         const emailTemplate = emailTemplates.otpTemplate;
         const htmlBody = otpRenderTemplate(emailTemplate.body, templateData);
