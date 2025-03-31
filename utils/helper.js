@@ -69,7 +69,6 @@ const formatTimeTo12Hour = (time24) => {
 
 
 // Define a secret key for encryption (store this in your environment variables)
-// const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY.padEnd(32, '0').substring(0, 32); // 32-byte key
 const IV_LENGTH = 16; // Initialization vector length
 

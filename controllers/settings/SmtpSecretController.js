@@ -2,29 +2,6 @@ const crypto = require("crypto");
 const SmtpSecret = require("../../models/SmtpSecret");
 const { encrypt, decrypt } = require("../../utils/helper");
 
-// // Define a secret key for encryption (store this in your environment variables)
-// // const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY
-// const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY.padEnd(32, '0').substring(0, 32); // 32-byte key
-// const IV_LENGTH = 16; // Initialization vector length
-
-// // Utility function to encrypt text
-// const encrypt = (text) => {
-//     const iv = crypto.randomBytes(IV_LENGTH);
-//     const cipher = crypto.createCipheriv("aes-256-cbc", Buffer.from(ENCRYPTION_KEY), iv);
-//     let encrypted = cipher.update(text);
-//     encrypted = Buffer.concat([encrypted, cipher.final()]);
-//     return `${iv.toString("hex")}:${encrypted.toString("hex")}`;
-// };
-
-// // Utility function to decrypt text
-// const decrypt = (text) => {
-//     const [iv, encryptedText] = text.split(":");
-//     const decipher = crypto.createDecipheriv("aes-256-cbc", Buffer.from(ENCRYPTION_KEY), Buffer.from(iv, "hex"));
-//     let decrypted = decipher.update(Buffer.from(encryptedText, "hex"));
-//     decrypted = Buffer.concat([decrypted, decipher.final()]);
-//     return decrypted.toString();
-// };
-
 // Create or Update SMTP Secrets
 const configureSmtp = async (req, res) => {
     try {
