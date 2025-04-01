@@ -1300,7 +1300,25 @@ const uploadMemberData = async (req, res) => {
                 console.log(`✅ Primary Member Added: ${primaryMemberId}`);
             } else if (primaryMember) {
                 console.log(member.MARRIAGEDATE, "member.MARRIAGEDATE")
+                primaryMember.title = member.MEMBERTITLE || "Mr.";
+                primaryMember.name = member.MEMBERNAME;
+                primaryMember.dateOfBirth = member.MEMBERDOB ? excelSerialToJSDate(member.MEMBERDOB) : null;
                 primaryMember.marriageDate = member.MARRIAGEDATE ? excelSerialToJSDate(member.MARRIAGEDATE) : null;
+                primaryMember.relation = "Primary";
+                primaryMember.maritalStatus = member.MEMBERMARITALINFO || "Single";
+                primaryMember.address = member.ADDR1 || "";
+                primaryMember.address1 = member.ADDR2 || "";
+                primaryMember.address2 = member.ADDR3 || "";
+                primaryMember.city = member.CITYDESCRIPTION || "";
+                primaryMember.state = member.STATEDESCRIPTION || "";
+                primaryMember.country = member.COUNTRYDESCRIPTION || "";
+                primaryMember.pin = member.PIN || "";
+                primaryMember.email = member.EMAIL1 || "";
+                primaryMember.mobileNumber = member.PH1 || "";
+                primaryMember.email2 = member.EMAIL2 || "";
+                primaryMember.mobileNumber2 = member.PH2 || "";
+                primaryMember.vehicleNumber = member.VEHICLENO || "";
+                primaryMember.vehicleModel = member.VEHICLEMAKE || "";
                 await primaryMember.save();
                 console.log(`✅ Primary Member Updated: ${primaryMemberId}`);
             } else {
@@ -1355,6 +1373,20 @@ const uploadMemberData = async (req, res) => {
                     existingSpouse.email2 = ""; // Remove second email if available
                     existingSpouse.mobileNumber2 = ""; // Remove second mobile if available
                     existingSpouse.marriageDate = null;
+                    existingSpouse.vehicleNumber = member.VEHICLENO || "";
+                    existingSpouse.vehicleModel = member.VEHICLEMAKE || "";
+                    existingSpouse.title = member.MEMBERSPOUSETITLE || "Mrs.";
+                    existingSpouse.name = member.MEMBERSPOUSENAME;
+                    existingSpouse.dateOfBirth = member.MEMBERSPOUSEDOB ? excelSerialToJSDate(member.MEMBERSPOUSEDOB) : null;
+                    existingSpouse.relation = "Spouse";
+                    existingSpouse.maritalStatus = "Married";
+                    existingSpouse.address = member.ADDR1 || "";
+                    existingSpouse.address1 = member.ADDR2 || "";
+                    existingSpouse.address2 = member.ADDR3 || "";
+                    existingSpouse.city = member.CITYDESCRIPTION || "";
+                    existingSpouse.state = member.STATEDESCRIPTION || "";
+                    existingSpouse.country = member.COUNTRYDESCRIPTION || "";
+                    existingSpouse.pin = member.PIN || "";
 
                     await existingSpouse.save();
                     console.log(`✅ Spouse Updated: ${spouseId}`);
@@ -1404,8 +1436,25 @@ const uploadMemberData = async (req, res) => {
                     console.log(`✅ Dependent Added: ${userId}`);
                 } else if (existingUser) {
                     console.log(member.USERMARRIAGEDATE, "userMarrigeDate")
+                    existingUser.vehicleNumber = member.VEHICLENO || "";
+                    existingUser.vehicleModel = member.VEHICLEMAKE || "";
+                    existingUser.title = member.USERTITLE || "Mr.";
+                    existingUser.name = member.USERNAME;
+                    existingUser.dateOfBirth = member.USERDOB ? excelSerialToJSDate(member.USERDOB) : null;
                     existingUser.marriageDate = member.USERMARRIAGEDATE ? excelSerialToJSDate(member.USERMARRIAGEDATE) : null;
-
+                    existingUser.relation = userRelation;
+                    existingUser.maritalStatus = member.USERMARITALINFO || "Single";
+                    existingUser.address = member.ADDR1 || "";
+                    existingUser.address1 = member.ADDR2 || "";
+                    existingUser.address2 = member.ADDR3 || "";
+                    existingUser.city = member.CITYDESCRIPTION || "";
+                    existingUser.state = member.STATEDESCRIPTION || "";
+                    existingUser.country = member.COUNTRYDESCRIPTION || "";
+                    existingUser.pin = member.PIN || "";
+                    existingUser.email = member.EMAIL1 || "";
+                    existingUser.mobileNumber = member.PH1 || "";
+                    existingUser.email2 = member.EMAIL2 || "";
+                    existingUser.mobileNumber2 = member.PH2 || "";
                     await existingUser.save();
                     console.log(`✅ User Updated: ${userId}`);
 
@@ -1458,7 +1507,20 @@ const uploadMemberData = async (req, res) => {
                         existingUserSpouse.email2 = ""; // Remove second email if available
                         existingUserSpouse.mobileNumber2 = ""; // Remove second mobile if available
                         existingUserSpouse.marriageDate = null;
-                        await existingUserSpouse.save();
+                        existingUserSpouse.vehicleNumber = member.VEHICLENO || "";
+                        existingUserSpouse.vehicleModel = member.VEHICLEMAKE || "";
+                        existingUserSpouse.title = member.USERSPOUSETITLE || "Mr.";
+                        existingUserSpouse.name = member.USERSPOUSENAME;
+                        existingUserSpouse.dateOfBirth = member.USERSPOUSEDOB ? excelSerialToJSDate(member.USERSPOUSEDOB) : null;
+                        existingUserSpouse.relation = `${userRelation} Spouse`;
+                        existingUserSpouse.maritalStatus = member.USERMARITALINFO || "Single";
+                        existingUserSpouse.address = member.ADDR1 || "";
+                        existingUserSpouse.address1 = member.ADDR2 || "";
+                        existingUserSpouse.address2 = member.ADDR3 || "";
+                        existingUserSpouse.city = member.CITYDESCRIPTION || "";
+                        existingUserSpouse.state = member.STATEDESCRIPTION || "";
+                        existingUserSpouse.country = member.COUNTRYDESCRIPTION || "";
+                        existingUserSpouse.pin = member.PIN || "";
                         console.log(`✅ Dependent Spouse Updated: ${userSpouseId}`);
                     } else {
                         console.log(`⚠️ Skipping existing Dependent Spouse: ${userSpouseId}`);
