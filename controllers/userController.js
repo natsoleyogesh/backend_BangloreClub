@@ -1272,6 +1272,7 @@ const uploadMemberData = async (req, res) => {
                     title: member.MEMBERTITLE || "Mr.",
                     name: member.MEMBERNAME,
                     dateOfBirth: member.MEMBERDOB ? excelSerialToJSDate(member.MEMBERDOB) : null,
+                    marriageDate: member.MARRIAGEDATE ? excelSerialToJSDate(member.MARRIAGEDATE) : null,
                     relation: "Primary",
                     maritalStatus: member.MEMBERMARITALINFO || "Single",
                     address: member.ADDR1 || "",
@@ -1297,6 +1298,10 @@ const uploadMemberData = async (req, res) => {
 
                 primaryMember = await primaryMember.save();
                 console.log(`✅ Primary Member Added: ${primaryMemberId}`);
+            } else if (primaryMember) {
+                primaryMember.marriageDate = member.MARRIAGEDATE ? excelSerialToJSDate(member.MARRIAGEDATE) : null;
+                await primaryMember.save();
+                console.log(`✅ Primary Member Updated: ${primaryMemberId}`);
             } else {
                 console.log(`⚠️ Skipping existing Primary Member: ${primaryMemberId}`);
             }
@@ -1348,6 +1353,7 @@ const uploadMemberData = async (req, res) => {
                     existingSpouse.mobileNumber = member.PH2 || existingSpouse.mobileNumber;
                     existingSpouse.email2 = ""; // Remove second email if available
                     existingSpouse.mobileNumber2 = ""; // Remove second mobile if available
+                    existingSpouse.marriageDate = null;
 
                     await existingSpouse.save();
                     console.log(`✅ Spouse Updated: ${spouseId}`);
@@ -1368,6 +1374,7 @@ const uploadMemberData = async (req, res) => {
                         title: member.USERTITLE || "Mr.",
                         name: member.USERNAME,
                         dateOfBirth: member.USERDOB ? excelSerialToJSDate(member.USERDOB) : null,
+                        marriageDate: member.USERMARRIAGEDATE ? excelSerialToJSDate(member.USERMARRIAGEDATE) : null,
                         relation: userRelation,
                         parentUserId: primaryMember?._id || null,
                         maritalStatus: member.USERMARITALINFO || "Single",
@@ -1394,6 +1401,12 @@ const uploadMemberData = async (req, res) => {
 
                     await userMember.save();
                     console.log(`✅ Dependent Added: ${userId}`);
+                } else if (existingUser) {
+                    marriageDate = member.USERMARRIAGEDATE ? excelSerialToJSDate(member.USERMARRIAGEDATE) : null;
+
+                    await existingUser.save();
+                    console.log(`✅ User Updated: ${userId}`);
+
                 } else {
                     console.log(`⚠️ Skipping existing Dependent: ${userId}`);
                 }
@@ -1423,7 +1436,7 @@ const uploadMemberData = async (req, res) => {
                             // mobileNumber: member.PH1 || "",
                             email: member.EMAIL2 || "",
                             mobileNumber: member.PH2 || "",
-                            marriageDate: member.USERMARRIAGEDATE ? excelSerialToJSDate(member.USERMARRIAGEDATE) : null,
+                            // marriageDate: member.USERMARRIAGEDATE ? excelSerialToJSDate(member.USERMARRIAGEDATE) : null,
                             status: "Active",
                             activatedDate: Date.now(),
                             lastLogin: Date.now(),
@@ -1442,7 +1455,7 @@ const uploadMemberData = async (req, res) => {
                         existingUserSpouse.mobileNumber = member.PH2 || existingUserSpouse.mobileNumber;
                         existingUserSpouse.email2 = ""; // Remove second email if available
                         existingUserSpouse.mobileNumber2 = ""; // Remove second mobile if available
-
+                        existingUserSpouse.marriageDate = null;
                         await existingUserSpouse.save();
                         console.log(`✅ Dependent Spouse Updated: ${userSpouseId}`);
                     } else {
