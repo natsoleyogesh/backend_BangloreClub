@@ -1299,6 +1299,7 @@ const uploadMemberData = async (req, res) => {
                 primaryMember = await primaryMember.save();
                 console.log(`✅ Primary Member Added: ${primaryMemberId}`);
             } else if (primaryMember) {
+                console.log(member.MARRIAGEDATE, "member.MARRIAGEDATE")
                 primaryMember.marriageDate = member.MARRIAGEDATE ? excelSerialToJSDate(member.MARRIAGEDATE) : null;
                 await primaryMember.save();
                 console.log(`✅ Primary Member Updated: ${primaryMemberId}`);
@@ -1402,7 +1403,8 @@ const uploadMemberData = async (req, res) => {
                     await userMember.save();
                     console.log(`✅ Dependent Added: ${userId}`);
                 } else if (existingUser) {
-                    marriageDate = member.USERMARRIAGEDATE ? excelSerialToJSDate(member.USERMARRIAGEDATE) : null;
+                    console.log(member.USERMARRIAGEDATE, "userMarrigeDate")
+                    existingUser.marriageDate = member.USERMARRIAGEDATE ? excelSerialToJSDate(member.USERMARRIAGEDATE) : null;
 
                     await existingUser.save();
                     console.log(`✅ User Updated: ${userId}`);
