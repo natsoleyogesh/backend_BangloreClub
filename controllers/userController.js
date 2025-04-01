@@ -1308,7 +1308,7 @@ const uploadMemberData = async (req, res) => {
                 primaryMember.name = member.MEMBERNAME;
                 primaryMember.dateOfBirth = member.MEMBERDOB ? excelSerialToJSDate(member.MEMBERDOB) : null;
                 primaryMember.marriageDate = member.MARRIAGEDATE ? excelSerialToJSDate(member.MARRIAGEDATE) : null;
-                primaryMember.relation = "Primary";
+                // primaryMember.relation = "Primary";
                 primaryMember.maritalStatus = member.MEMBERMARITALINFO || "Single";
                 primaryMember.address = member.ADDR1 || "";
                 primaryMember.address1 = member.ADDR2 || "";
@@ -1382,7 +1382,7 @@ const uploadMemberData = async (req, res) => {
                     existingSpouse.title = member.MEMBERSPOUSETITLE || "Mrs.";
                     existingSpouse.name = member.MEMBERSPOUSENAME;
                     existingSpouse.dateOfBirth = member.MEMBERSPOUSEDOB ? excelSerialToJSDate(member.MEMBERSPOUSEDOB) : null;
-                    existingSpouse.relation = "Spouse";
+                    // existingSpouse.relation = "Spouse";
                     existingSpouse.maritalStatus = "Married";
                     existingSpouse.address = member.ADDR1 || "";
                     existingSpouse.address1 = member.ADDR2 || "";
@@ -1446,7 +1446,7 @@ const uploadMemberData = async (req, res) => {
                     existingUser.name = member.USERNAME;
                     existingUser.dateOfBirth = member.USERDOB ? excelSerialToJSDate(member.USERDOB) : null;
                     existingUser.marriageDate = member.USERMARRIAGEDATE ? excelSerialToJSDate(member.USERMARRIAGEDATE) : null;
-                    existingUser.relation = userRelation;
+                    // existingUser.relation = userRelation;
                     existingUser.maritalStatus = member.USERMARITALINFO || "Single";
                     existingUser.address = member.ADDR1 || "";
                     existingUser.address1 = member.ADDR2 || "";
@@ -1516,7 +1516,7 @@ const uploadMemberData = async (req, res) => {
                         existingUserSpouse.title = member.USERSPOUSETITLE || "Mr.";
                         existingUserSpouse.name = member.USERSPOUSENAME;
                         existingUserSpouse.dateOfBirth = member.USERSPOUSEDOB ? excelSerialToJSDate(member.USERSPOUSEDOB) : null;
-                        existingUserSpouse.relation = `${userRelation} Spouse`;
+                        // existingUserSpouse.relation = `${userRelation} Spouse`;
                         existingUserSpouse.maritalStatus = member.USERMARITALINFO || "Single";
                         existingUserSpouse.address = member.ADDR1 || "";
                         existingUserSpouse.address1 = member.ADDR2 || "";
