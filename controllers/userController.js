@@ -600,6 +600,8 @@ const fetchFamilyTree = async (userId) => {
                 qrCodeId: member.qrCodeId,
                 cardId: member.cardId,
                 qrGenratedDate: member.qrGenratedDate,
+                createdAt: member.createdAt,
+                updatedAt: member.updatedAt,
                 qrCode, // Include the generated QR code
                 familyMembers: await fetchFamilyTree(member._id), // Recursively fetch sub-family members
             };
@@ -694,6 +696,8 @@ const getUserDetails = async (req, res) => {
                 qrCodeId: user.qrCodeId,
                 cardId: user.cardId,
                 qrGenratedDate: user.qrGenratedDate,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
                 familyMembers, // Nested family members with QR codes
                 qrCode: primaryUserQRCode, // Include the primary user's QR code
             },

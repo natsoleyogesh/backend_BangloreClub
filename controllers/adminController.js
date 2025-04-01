@@ -458,6 +458,8 @@ const getUserDetailsById = async (req, res) => {
         cardId: user.cardId,
         qrGenratedDate: user.qrGenratedDate,
         qrCode: user.qrCode,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
         familyMembers, // Nested family members
       },
     });
