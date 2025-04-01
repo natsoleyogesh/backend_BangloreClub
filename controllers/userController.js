@@ -397,7 +397,8 @@ const loginRequest = async (req, res) => {
         // );
         const user = await User.findOne({
             $and: [
-                { relation: "Primary" },
+                // { relation: "Primary" || "Spouse"},
+                { relation: { $in: ["Primary", "Spouse"] } },
                 {
                     $or: [
                         { mobileNumber: identifier },
@@ -436,7 +437,7 @@ const loginRequest = async (req, res) => {
         await user.save();
         const templateData = {
             otp: otp
-        } 
+        }
 
         const emailTemplate = emailTemplates.otpTemplate;
         const htmlBody = otpRenderTemplate(emailTemplate.body, templateData);
@@ -1325,10 +1326,10 @@ const uploadMemberData = async (req, res) => {
                         state: member.STATEDESCRIPTION || "",
                         country: member.COUNTRYDESCRIPTION || "",
                         pin: member.PIN || "",
-                        email: member.EMAIL1 || "",
-                        mobileNumber: member.PH1 || "",
-                        email2: member.EMAIL2 || "",
-                        mobileNumber2: member.PH2 || "",
+                        // email: member.EMAIL1 || "",
+                        // mobileNumber: member.PH1 || "",
+                        email: member.EMAIL2 || "",
+                        mobileNumber: member.PH2 || "",
                         status: "Active",
                         activatedDate: Date.now(),
                         lastLogin: Date.now(),
@@ -1341,6 +1342,15 @@ const uploadMemberData = async (req, res) => {
 
                     await spouseMember.save();
                     console.log(`✅ Spouse Added: ${spouseId}`);
+                } else if (existingSpouse) {
+                    // Update Spouse contact details if already exists
+                    existingSpouse.email = member.EMAIL2 || existingSpouse.email;
+                    existingSpouse.mobileNumber = member.PH2 || existingSpouse.mobileNumber;
+                    existingSpouse.email2 = ""; // Remove second email if available
+                    existingSpouse.mobileNumber2 = ""; // Remove second mobile if available
+
+                    await existingSpouse.save();
+                    console.log(`✅ Spouse Updated: ${spouseId}`);
                 } else {
                     console.log(`⚠️ Skipping existing Spouse: ${spouseId}`);
                 }
@@ -1409,10 +1419,10 @@ const uploadMemberData = async (req, res) => {
                             state: member.STATEDESCRIPTION || "",
                             country: member.COUNTRYDESCRIPTION || "",
                             pin: member.PIN || "",
-                            email: member.EMAIL1 || "",
-                            mobileNumber: member.PH1 || "",
-                            email2: member.EMAIL2 || "",
-                            mobileNumber2: member.PH2 || "",
+                            // email: member.EMAIL1 || "",
+                            // mobileNumber: member.PH1 || "",
+                            email: member.EMAIL2 || "",
+                            mobileNumber: member.PH2 || "",
                             marriageDate: member.USERMARRIAGEDATE ? excelSerialToJSDate(member.USERMARRIAGEDATE) : null,
                             status: "Active",
                             activatedDate: Date.now(),
@@ -1426,6 +1436,15 @@ const uploadMemberData = async (req, res) => {
 
                         await userSpouse.save();
                         console.log(`✅ Dependent Spouse Added: ${userSpouseId}`);
+                    } else if (existingUserSpouse) {
+                        // Update User Spouse contact details if already exists
+                        existingUserSpouse.email = member.EMAIL2 || existingUserSpouse.email;
+                        existingUserSpouse.mobileNumber = member.PH2 || existingUserSpouse.mobileNumber;
+                        existingUserSpouse.email2 = ""; // Remove second email if available
+                        existingUserSpouse.mobileNumber2 = ""; // Remove second mobile if available
+
+                        await existingUserSpouse.save();
+                        console.log(`✅ Dependent Spouse Updated: ${userSpouseId}`);
                     } else {
                         console.log(`⚠️ Skipping existing Dependent Spouse: ${userSpouseId}`);
                     }
