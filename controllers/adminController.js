@@ -196,7 +196,7 @@ const adminLogin = async (req, res) => {
     //   subject: "Your OTP for Admin Login",
     //   text: `Your OTP code is: ${otp}. This code is valid for 60 seconds.`,
     // });
-
+    console.log("templateData=======>", templateData)
     // Send OTP via Email
     await sendEmail(email, subject, htmlBody, attachments = [], cc = null);
 
