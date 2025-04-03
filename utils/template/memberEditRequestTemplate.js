@@ -168,7 +168,7 @@ module.exports = {
             </div>
 
             <div class="details-section2">
-                <h3>Edit Requdst Details</h3>
+                <h3>Edit Request Details</h3>
                 <p>{{memberMessage}}</p>
 
             </div>
