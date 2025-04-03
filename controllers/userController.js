@@ -418,6 +418,11 @@ const loginRequest = async (req, res) => {
         //     return res.status(400).json({ message: "You Are Already Logged In!" });
         // }
 
+        if (user.loggedIn && user.mobileNumber !== '9340614804') {
+            return res.status(400).json({ message: "You Are Already Logged In!" });
+        }
+
+
         // Check if the user is active
         if (user.status !== "Active") {
             return res.status(400).json({ message: "User is inactive. Please contact support." });
