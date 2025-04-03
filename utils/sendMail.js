@@ -140,7 +140,7 @@ const sendEmail = async (to, subject, htmlBody, attachments = [], cc = null) => 
         return info;
     } catch (error) {
         console.error("Error sending email:", error.message);
-        // throw error; // Re-throw the error for higher-level handling
+        throw error; // Re-throw the error for higher-level handling
     }
 };
 

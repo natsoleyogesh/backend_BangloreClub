@@ -9,9 +9,9 @@ const configureSmtp = async (req, res) => {
 
         const { role } = req.user;
 
-        if (role !== "admin") {
-            return res.status(400).json({ message: "You Are Not Authenticate Admin" });
-        }
+        // if (role !== "admin") {
+        //     return res.status(400).json({ message: "You Are Not Authenticate Admin" });
+        // }
 
         if (!host || !port || !username || !password || !smtpFrom) {
             return res.status(400).json({ message: "All fields are required" });
