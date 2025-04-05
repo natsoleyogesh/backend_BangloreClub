@@ -298,7 +298,8 @@ const createUser = async (req, res) => {
 
             // Save and generate QR code
             const savedUser = await newUser.save();
-            const userQRCode = await QRCodeHelper.generateQRCode(savedUser);
+            // const userQRCode = await QRCodeHelper.generateQRCode(savedUser);
+            const userQRCode = await QRCodeHelper.generateQRCode({ qrCodeId: savedUser.qrCodeId });
             savedUser.qrCode = userQRCode;
 
             // Save final user with QR code
@@ -357,7 +358,8 @@ const createUser = async (req, res) => {
 
         // Save the family member and generate QR code
         const savedFamilyMember = await familyMember.save();
-        const familyUserQRCode = await QRCodeHelper.generateQRCode(savedFamilyMember);
+        // const familyUserQRCode = await QRCodeHelper.generateQRCode(savedFamilyMember);
+        const familyUserQRCode = await QRCodeHelper.generateQRCode({ qrCodeId: savedFamilyMember.qrCodeId });
         savedFamilyMember.qrCode = familyUserQRCode;
 
         // Final save with QR code for family member
@@ -1803,7 +1805,7 @@ const processBatch = async (batch) => {
             const updatedMember = await updateMemberDetails(member, qrcodeData);
 
             // Generate QR Code
-            const userQRCode = await QRCodeHelper.generateQRCode(updatedMember);
+            const userQRCode = await QRCodeHelper.generateQRCode({ qrCodeId: updatedMember.qrCodeId });
             updatedMember.qrCode = userQRCode;
 
             // Prepare bulk update operation
@@ -1900,7 +1902,7 @@ const updateQrDetails = async (req, res) => {
 
 
         // Generate the new QR Code based on the updated user details
-        const newQrCode = await QRCodeHelper.generateQRCode(user);
+        const newQrCode = await QRCodeHelper.generateQRCode({ qrCodeId: user.qrCodeId });
 
         // Update the qrCode field with the generated QR code
         user.qrCode = newQrCode;

@@ -1143,7 +1143,7 @@ const uploadConsolidatedBill = async (req, res) => {
             billing.paymentStatus = billing.totalAmount === 0 ? 'Paid Offline' : 'Due';
 
             // Save the consolidated billing entry
-            await billing. save();
+            await billing.save();
         }
 
         // Delete the uploaded file
@@ -1419,7 +1419,8 @@ const getOfflineActiveBill = async (req, res) => {
         const bills = await ConsolidatedBilling.find({ memberId: userId, paymentStatus: 'Due', isDeleted: false })
             .skip(skip) // Skip records for pagination
             .limit(pageLimit) // Limit number of records
-            .sort({ createdAt: -1 }); // Optionally, sort by createdAt in descending order
+            // .sort({ createdAt: -1 }); // Optionally, sort by createdAt in descending order
+            .sort({ transactionMonth: -1 });
 
         // Aggregate pipeline to calculate total outstanding amount
         const totalOutstandingAmount = await ConsolidatedBilling.aggregate([
@@ -1579,7 +1580,8 @@ const getOfflineMemberActiveBills = async (req, res) => {
             .populate('memberId') // Populate relevant member fields
             .skip(skip) // Skip records for pagination
             .limit(pageLimit) // Limit number of records
-            .sort({ createdAt: -1 }); // Optionally, sort by createdAt in descending order
+            // .sort({ createdAt: -1 }); // Optionally, sort by createdAt in descending order
+            .sort({ transactionMonth: -1 });
 
         // // Check if any billings were found
         // if (billings.length === 0) {

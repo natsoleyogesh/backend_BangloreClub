@@ -69,7 +69,7 @@ const sendProfileRequest = async (req, res) => {
             departmentId: savedRequest._id,
             department: "profileRequest",
             status: savedRequest.status,
-            description: "This is a Profile Updatetion Request."
+            description: savedRequest.description, // "This is a Profile Updatetion Request."
         });
 
         res.status(201).json({
