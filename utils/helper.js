@@ -13,6 +13,18 @@ const generateQRCode = async (data) => {
     }
 };
 
+// Helper function to generate a standard QR code from any data
+const generateQRCodeWithoutString = async (data) => {
+    try {
+        // Convert the data object to a JSON string and generate the QR code
+        const qrCode = await QRCode.toDataURL(data); // Generate QR from JSON string
+        return qrCode;
+    } catch (error) {
+        console.error('Error generating QR code:', error);
+        throw new Error('Failed to generate QR code');
+    }
+};
+
 // Helper function to generate unique QR codes for multiple members (primary, dependents, and guests)
 const generateMultipleQRCodes = async (members) => {
     const qrCodes = [];
@@ -91,4 +103,4 @@ const decrypt = (text) => {
 };
 
 
-module.exports = { generateQRCode, generateMultipleQRCodes, formatTimeTo12Hour, encrypt, decrypt };
+module.exports = { generateQRCode, generateMultipleQRCodes, formatTimeTo12Hour, encrypt, decrypt, generateQRCodeWithoutString };
