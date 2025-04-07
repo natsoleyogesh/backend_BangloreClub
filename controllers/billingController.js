@@ -1708,9 +1708,9 @@ const getOfflineMemberActiveBills = async (req, res) => {
         // Query the ConsolidatedBilling model with the applied filters
         const billings = await ConsolidatedBilling.find(filter)
             .populate('memberId') // Populate relevant member fields
-            .sort({ transactionMonth: -1 })
-            .skip(skip) // Skip records for pagination
-            .limit(pageLimit); // Limit number of records
+            .sort({ transactionMonth: -1 });
+            // .skip(skip) // Skip records for pagination
+            // .limit(pageLimit); // Limit number of records
         // .sort({ transactionMonth: -1 });
 
         // Manually sort the bills based on the transactionMonth in chronological order
@@ -1722,8 +1722,11 @@ const getOfflineMemberActiveBills = async (req, res) => {
             return bDate - aDate;  // Sort in descending order: March -> Feb -> Jan
         });
 
+            // Apply pagination after sorting
+            const paginatedBills = billings.slice(skip, skip + pageLimit);  // Slicing the bills array for pagination
+
         // Format the 'billGeneratedOn' field to show only "MMM YYYY" (e.g., "Feb 2025")
-        const formattedBills = billings.map(bill => {
+        const formattedBills = paginatedBills.map(bill => {
             const formattedDate = new Date(bill.billGeneratedOn).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
             const formattedMonth = new Date(bill.transactionMonth).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 
