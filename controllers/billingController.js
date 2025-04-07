@@ -1430,7 +1430,15 @@ const getOfflineActiveBill = async (req, res) => {
             .limit(pageLimit) // Limit number of records
             // .sort({ createdAt: -1 }); // Optionally, sort by createdAt in descending order
             .sort({ transactionMonth: -1 });
-            // .sort({ billGeneratedOn: 1 });
+
+        // Manually sort the bills based on the transactionMonth in chronological order
+        bills.sort((a, b) => {
+            // Convert the transactionMonth string into a Date object for comparison
+            const aDate = new Date(a.transactionMonth.replace(/^(\w+), (\d+), (\w+ \d{4})$/, '$2 $1 $3'));
+            const bDate = new Date(b.transactionMonth.replace(/^(\w+), (\d+), (\w+ \d{4})$/, '$2 $1 $3'));
+
+            return bDate - aDate;  // Sort in descending order: March -> Feb -> Jan
+        });
 
         // Aggregate pipeline to calculate total outstanding amount
         const totalOutstandingAmount = await ConsolidatedBilling.aggregate([
@@ -1592,7 +1600,16 @@ const getOfflineMemberActiveBills = async (req, res) => {
             .limit(pageLimit) // Limit number of records
             // .sort({ createdAt: -1 }); // Optionally, sort by createdAt in descending order
             .sort({ transactionMonth: -1 });
-            // .sort({ billGeneratedOn: -1 });
+        // .sort({ billGeneratedOn: -1 });
+
+        // Manually sort the bills based on the transactionMonth in chronological order
+        billings.sort((a, b) => {
+            // Convert the transactionMonth string into a Date object for comparison
+            const aDate = new Date(a.transactionMonth.replace(/^(\w+), (\d+), (\w+ \d{4})$/, '$2 $1 $3'));
+            const bDate = new Date(b.transactionMonth.replace(/^(\w+), (\d+), (\w+ \d{4})$/, '$2 $1 $3'));
+
+            return bDate - aDate;  // Sort in descending order: March -> Feb -> Jan
+        });
 
         // // Check if any billings were found
         // if (billings.length === 0) {
