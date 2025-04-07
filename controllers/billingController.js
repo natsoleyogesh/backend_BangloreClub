@@ -1407,6 +1407,100 @@ const deleteOfflineBilling = async (req, res) => {
 
 // // Get active billing records with paymentStatus 'Due', pagination, and total outstanding amount
 
+// const getOfflineActiveBill = async (req, res) => {
+//     try {
+//         const { userId } = req.user; // Extract user ID from the authenticated user
+
+//         // Destructure query parameters for pagination
+//         const { page = 1, limit = 10 } = req.query; // Default to page 1, limit 10
+
+//         // Convert to numbers
+//         const pageNumber = parseInt(page);
+//         const pageLimit = parseInt(limit);
+
+//         // Validate page and limit
+//         if (isNaN(pageNumber) || pageNumber < 1) {
+//             return res.status(400).json({ message: 'Invalid page number' });
+//         }
+//         if (isNaN(pageLimit) || pageLimit < 1) {
+//             return res.status(400).json({ message: 'Invalid limit value' });
+//         }
+
+//         // Calculate the skip value for pagination
+//         const skip = (pageNumber - 1) * pageLimit;
+
+//         // Query to find all active bills for the specific memberId with paymentStatus 'Due'
+//         const bills = await ConsolidatedBilling.find({ memberId: userId, paymentStatus: 'Due', isDeleted: false })
+//             .sort({ transactionMonth: -1 })
+//             .skip(skip) // Skip records for pagination
+//             .limit(pageLimit); // Limit number of records
+//         // .sort({ transactionMonth: -1 });
+
+//         // Manually sort the bills based on the transactionMonth in chronological order
+//         bills.sort((a, b) => {
+//             // Convert the transactionMonth string into a Date object for comparison
+//             const aDate = new Date(a.transactionMonth.replace(/^(\w+), (\d+), (\w+ \d{4})$/, '$2 $1 $3'));
+//             const bDate = new Date(b.transactionMonth.replace(/^(\w+), (\d+), (\w+ \d{4})$/, '$2 $1 $3'));
+
+//             return bDate - aDate;  // Sort in descending order: March -> Feb -> Jan
+//         });
+
+//         // Format the 'billGeneratedOn' field to show only "MMM YYYY" (e.g., "Feb 2025")
+//         const formattedBills = bills.map(bill => {
+//             const formattedDate = new Date(bill.billGeneratedOn).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+//             const formattedMonth = new Date(bill.transactionMonth).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+
+//             return {
+//                 ...bill.toObject(),
+//                 billGeneratedOn: formattedDate,
+//                 transactionMonth: formattedMonth
+//             };
+//         });
+
+//         // Aggregate pipeline to calculate total outstanding amount
+//         const totalOutstandingAmount = await ConsolidatedBilling.aggregate([
+//             {
+//                 $match: {
+//                     memberId: new mongoose.Types.ObjectId(userId),  // Ensure memberId is treated as an ObjectId
+//                     // paymentStatus: 'Due',
+//                     paymentStatus: "Due", // Only include bills with paymentStatus as "Due"
+//                     isDeleted: false
+//                 }
+//             },
+//             {
+//                 $group: {
+//                     _id: null,
+//                     totalOutstandingAmount: { $sum: '$totalAmount' }
+//                 }
+//             }
+//         ]);
+//         const totalAmount = totalOutstandingAmount[0] ? totalOutstandingAmount[0].totalOutstandingAmount : 0;
+
+//         // Prepare response object
+//         const response = {
+//             message: "Total Outstanding & All Offline Bills!",
+//             // bills,
+//             bills: formattedBills,  // Return the formatted bills
+//             pagination: {
+//                 currentPage: pageNumber,
+//                 totalPages: Math.ceil(
+//                     await ConsolidatedBilling.countDocuments({ memberId: userId, paymentStatus: 'Due', isDeleted: false }) /
+//                     pageLimit
+//                 ),
+//                 totalRecords: await ConsolidatedBilling.countDocuments({ memberId: userId, paymentStatus: 'Due', isDeleted: false }),
+//                 recordsPerPage: pageLimit
+//             },
+//             totalOutstandingAmount: Math.round(totalAmount)
+//         };
+
+//         // Send response
+//         return res.status(200).json(response);
+//     } catch (error) {
+//         console.error('Error fetching active bills:', error);
+//         return res.status(500).json({ message: 'Internal server error', error: error.message });
+//     }
+// };
+
 const getOfflineActiveBill = async (req, res) => {
     try {
         const { userId } = req.user; // Extract user ID from the authenticated user
@@ -1426,17 +1520,11 @@ const getOfflineActiveBill = async (req, res) => {
             return res.status(400).json({ message: 'Invalid limit value' });
         }
 
-        // Calculate the skip value for pagination
-        const skip = (pageNumber - 1) * pageLimit;
-
         // Query to find all active bills for the specific memberId with paymentStatus 'Due'
         const bills = await ConsolidatedBilling.find({ memberId: userId, paymentStatus: 'Due', isDeleted: false })
-            .sort({ transactionMonth: -1 })
-            .skip(skip) // Skip records for pagination
-            .limit(pageLimit); // Limit number of records
-        // .sort({ transactionMonth: -1 });
+            .sort({ transactionMonth: 1 });  // Sort in ascending order initially (it'll be reversed later)
 
-        // Manually sort the bills based on the transactionMonth in chronological order
+        // Manually sort the bills based on the transactionMonth in chronological order (descending)
         bills.sort((a, b) => {
             // Convert the transactionMonth string into a Date object for comparison
             const aDate = new Date(a.transactionMonth.replace(/^(\w+), (\d+), (\w+ \d{4})$/, '$2 $1 $3'));
@@ -1445,8 +1533,14 @@ const getOfflineActiveBill = async (req, res) => {
             return bDate - aDate;  // Sort in descending order: March -> Feb -> Jan
         });
 
-        // Format the 'billGeneratedOn' field to show only "MMM YYYY" (e.g., "Feb 2025")
-        const formattedBills = bills.map(bill => {
+        // Calculate the skip value for pagination
+        const skip = (pageNumber - 1) * pageLimit;
+
+        // Apply pagination after sorting
+        const paginatedBills = bills.slice(skip, skip + pageLimit);  // Slicing the bills array for pagination
+
+        // Format the 'billGeneratedOn' and 'transactionMonth' fields to show only "MMM YYYY" (e.g., "Feb 2025")
+        const formattedBills = paginatedBills.map(bill => {
             const formattedDate = new Date(bill.billGeneratedOn).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
             const formattedMonth = new Date(bill.transactionMonth).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 
@@ -1462,7 +1556,6 @@ const getOfflineActiveBill = async (req, res) => {
             {
                 $match: {
                     memberId: new mongoose.Types.ObjectId(userId),  // Ensure memberId is treated as an ObjectId
-                    // paymentStatus: 'Due',
                     paymentStatus: "Due", // Only include bills with paymentStatus as "Due"
                     isDeleted: false
                 }
@@ -1474,12 +1567,12 @@ const getOfflineActiveBill = async (req, res) => {
                 }
             }
         ]);
+
         const totalAmount = totalOutstandingAmount[0] ? totalOutstandingAmount[0].totalOutstandingAmount : 0;
 
         // Prepare response object
         const response = {
             message: "Total Outstanding & All Offline Bills!",
-            // bills,
             bills: formattedBills,  // Return the formatted bills
             pagination: {
                 currentPage: pageNumber,
@@ -1500,6 +1593,7 @@ const getOfflineActiveBill = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 };
+
 
 const updateOfflineBillingFunc = async (id, paymentStatus, status) => {
     try {
@@ -1617,7 +1711,7 @@ const getOfflineMemberActiveBills = async (req, res) => {
             .sort({ transactionMonth: -1 })
             .skip(skip) // Skip records for pagination
             .limit(pageLimit); // Limit number of records
-            // .sort({ transactionMonth: -1 });
+        // .sort({ transactionMonth: -1 });
 
         // Manually sort the bills based on the transactionMonth in chronological order
         billings.sort((a, b) => {
