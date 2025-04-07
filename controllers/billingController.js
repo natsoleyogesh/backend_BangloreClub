@@ -1350,9 +1350,18 @@ const getOfflineBillingById = async (req, res) => {
         if (!billing) {
             return res.status(404).json({ message: 'Billing record not found.' });
         }
+        // Format the transactionMonth
+        const formattedMonth = billing.transactionMonth
+            ? new Date(billing.transactionMonth).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+            : null;
         return res.status(200).json({
             message: 'Billing record fetched successfully.',
-            billing
+            // billing,
+            billing: {
+                ...billing.toObject(),
+                transactionMonth: formattedMonth
+            }
+
         });
     } catch (error) {
         console.error('Error fetching billing by ID:', error);
