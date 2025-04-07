@@ -1430,7 +1430,7 @@ const getOfflineActiveBill = async (req, res) => {
             .limit(pageLimit) // Limit number of records
             // .sort({ createdAt: -1 }); // Optionally, sort by createdAt in descending order
             // .sort({ transactionMonth: -1 });
-            .sort({ billGeneratedOn: -1 });
+            .sort({ billGeneratedOn: 1 });
 
         // Aggregate pipeline to calculate total outstanding amount
         const totalOutstandingAmount = await ConsolidatedBilling.aggregate([
@@ -1592,7 +1592,7 @@ const getOfflineMemberActiveBills = async (req, res) => {
             .limit(pageLimit) // Limit number of records
             // .sort({ createdAt: -1 }); // Optionally, sort by createdAt in descending order
             // .sort({ transactionMonth: -1 })
-            .sort({ billGeneratedOn: -1 });
+            .sort({ billGeneratedOn: 1 });
 
         // // Check if any billings were found
         // if (billings.length === 0) {
