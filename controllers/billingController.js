@@ -1431,10 +1431,10 @@ const getOfflineActiveBill = async (req, res) => {
 
         // Query to find all active bills for the specific memberId with paymentStatus 'Due'
         const bills = await ConsolidatedBilling.find({ memberId: userId, paymentStatus: 'Due', isDeleted: false })
+            .sort({ transactionMonth: -1 })
             .skip(skip) // Skip records for pagination
-            .limit(pageLimit) // Limit number of records
-            // .sort({ createdAt: -1 }); // Optionally, sort by createdAt in descending order
-            .sort({ transactionMonth: -1 });
+            .limit(pageLimit); // Limit number of records
+        // .sort({ transactionMonth: -1 });
 
         // Manually sort the bills based on the transactionMonth in chronological order
         bills.sort((a, b) => {
@@ -1614,11 +1614,10 @@ const getOfflineMemberActiveBills = async (req, res) => {
         // Query the ConsolidatedBilling model with the applied filters
         const billings = await ConsolidatedBilling.find(filter)
             .populate('memberId') // Populate relevant member fields
+            .sort({ transactionMonth: -1 })
             .skip(skip) // Skip records for pagination
-            .limit(pageLimit) // Limit number of records
-            // .sort({ createdAt: -1 }); // Optionally, sort by createdAt in descending order
-            .sort({ transactionMonth: -1 });
-        // .sort({ billGeneratedOn: -1 });
+            .limit(pageLimit); // Limit number of records
+            // .sort({ transactionMonth: -1 });
 
         // Manually sort the bills based on the transactionMonth in chronological order
         billings.sort((a, b) => {
