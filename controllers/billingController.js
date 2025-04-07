@@ -1353,13 +1353,18 @@ const getOfflineBillingById = async (req, res) => {
         // Format the transactionMonth
         const formattedMonth = billing.transactionMonth
             ? new Date(billing.transactionMonth).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
-            : null;
+            : "";
+        // Format the transactionMonth
+        const formattedBillMonth = billing.billGeneratedOn
+            ? new Date(billing.billGeneratedOn).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+            : "";
         return res.status(200).json({
             message: 'Billing record fetched successfully.',
             // billing,
             billing: {
                 ...billing.toObject(),
-                transactionMonth: formattedMonth
+                transactionMonth: formattedMonth,
+                billGeneratedOn: formattedBillMonth
             }
 
         });
@@ -1440,6 +1445,18 @@ const getOfflineActiveBill = async (req, res) => {
             return bDate - aDate;  // Sort in descending order: March -> Feb -> Jan
         });
 
+        // Format the 'billGeneratedOn' field to show only "MMM YYYY" (e.g., "Feb 2025")
+        const formattedBills = bills.map(bill => {
+            const formattedDate = new Date(bill.billGeneratedOn).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+            const formattedMonth = new Date(bill.transactionMonth).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+
+            return {
+                ...bill.toObject(),
+                billGeneratedOn: formattedDate,
+                transactionMonth: formattedMonth
+            };
+        });
+
         // Aggregate pipeline to calculate total outstanding amount
         const totalOutstandingAmount = await ConsolidatedBilling.aggregate([
             {
@@ -1462,7 +1479,8 @@ const getOfflineActiveBill = async (req, res) => {
         // Prepare response object
         const response = {
             message: "Total Outstanding & All Offline Bills!",
-            bills,
+            // bills,
+            bills: formattedBills,  // Return the formatted bills
             pagination: {
                 currentPage: pageNumber,
                 totalPages: Math.ceil(
@@ -1611,6 +1629,18 @@ const getOfflineMemberActiveBills = async (req, res) => {
             return bDate - aDate;  // Sort in descending order: March -> Feb -> Jan
         });
 
+        // Format the 'billGeneratedOn' field to show only "MMM YYYY" (e.g., "Feb 2025")
+        const formattedBills = billings.map(bill => {
+            const formattedDate = new Date(bill.billGeneratedOn).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+            const formattedMonth = new Date(bill.transactionMonth).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+
+            return {
+                ...bill.toObject(),
+                billGeneratedOn: formattedDate,
+                transactionMonth: formattedMonth
+            };
+        });
+
         // // Check if any billings were found
         // if (billings.length === 0) {
         //     return res.status(404).json({ message: 'No billings found.' });
@@ -1641,7 +1671,8 @@ const getOfflineMemberActiveBills = async (req, res) => {
                 totalOfflinePaid: Math.round(totalOfflinePaid), // Total of Offline Paid records
                 totalDue: Math.round(totalDue)          // Total of Due records
             },
-            billings,
+            // billings,
+            billings: formattedBills,  // Return the formatted bills
             pagination: {
                 currentPage: pageNumber,
                 totalPages: Math.ceil(
