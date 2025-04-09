@@ -7,7 +7,7 @@ module.exports = {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rooms Booking Rejected - Bangalore Club</title>
+    <title>Room Booking Not Available - Bangalore Club</title>
     <style>
         /* General styling for responsive and clean design */
         body {
@@ -153,7 +153,7 @@ module.exports = {
 <body>
     <div class="email-container">
         <div class="header">
-            <h1>Rooms Booking Rejected ({{memberType}})</h1>
+            <h1>Room Booking Not Available ({{memberType}})</h1>
         </div>
         <div class="content">
             <h2>Booking Details</h2>
