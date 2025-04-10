@@ -4,6 +4,10 @@ const mongoose = require('mongoose');
 // Define BanquetBooking schema
 const banquetBookingSchema = new mongoose.Schema(
     {
+        booking_id: {
+            type: String,
+            required: true
+        },
         // Primary member details
         primaryMemberId: {
             type: mongoose.Schema.Types.ObjectId,

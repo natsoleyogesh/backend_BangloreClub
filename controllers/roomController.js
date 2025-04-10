@@ -512,8 +512,11 @@ const createRoomBooking = async (req, res) => {
         };
         const allDetailsQRCode = await QRCodeHelper.generateQRCode(allDetailsQRCodeData);
 
+        const bookingId = QRCodeHelper.generateBookingId();
+
         // Create room booking object
         const roomBooking = new RoomBooking({
+            booking_id: bookingId,
             primaryMemberId,
             memberType,
             memberDetails,
@@ -595,7 +598,7 @@ const createRoomBooking = async (req, res) => {
             bookingDate: populatedBooking.bookingDates.checkIn.toDateString(),
             bookingStatus: roomBooking.bookingStatus,
             uniqueQRCode: roomBooking.uniqueQRCode,
-            bookingReferenceId: roomBooking._id,
+            bookingReferenceId: roomBooking.booking_id,
             qrCode: roomBooking.allDetailsQRCode, // Base64 string for QR Code
 
             // Room details
@@ -1724,7 +1727,7 @@ const updateRoomAllocation = async (req, res) => {
             bookingDate: populatedBooking.bookingDates.checkIn.toDateString(),
             bookingStatus: booking.bookingStatus,
             uniqueQRCode: booking.uniqueQRCode,
-            bookingReferenceId: booking._id,
+            bookingReferenceId: booking.booking_id,
             qrCode: booking.allDetailsQRCode, // Base64 string for QR Code
 
             // Room details

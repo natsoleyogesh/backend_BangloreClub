@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 
 const eventBookingSchema = new mongoose.Schema(
     {
+        booking_id: {
+            type: String,
+            required: true
+        },
         eventId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Event', // Reference to the Event schema

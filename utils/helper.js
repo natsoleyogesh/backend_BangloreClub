@@ -103,4 +103,70 @@ const decrypt = (text) => {
 };
 
 
-module.exports = { generateQRCode, generateMultipleQRCodes, formatTimeTo12Hour, encrypt, decrypt, generateQRCodeWithoutString };
+const generateBookingId = () => {
+    // Get the current date and time
+    const now = new Date();
+
+    // Format date to DDMMYYYY
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const year = now.getFullYear();
+    const formattedDate = `${day}${month}${year}`;
+
+    // Format time to HHMM (24-hour format)
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const formattedTime = `${hours}${minutes}`;
+
+    // Format seconds (this can be added if needed)
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+
+    // Generate a random number (you can adjust the range as needed)
+    const randomNumber = Math.floor(Math.random() * 10000); // Random number between 0 and 9999
+
+    // Generate the final Booking ID with the serial number and random number
+    const bookingId = `CMB000-${formattedDate}-${formattedTime}${seconds}-${randomNumber}`;
+    console.log(bookingId);
+    return bookingId;
+}
+
+module.exports = { generateQRCode, generateMultipleQRCodes, formatTimeTo12Hour, encrypt, decrypt, generateQRCodeWithoutString, generateBookingId };
+
+
+
+// // Define the function to generate the booking_id based on createdAt
+// function generateBookingId(createdAt) {
+//     const now = new Date(createdAt);
+
+//     // Format date to DDMMYYYY
+//     const day = String(now.getDate()).padStart(2, '0');
+//     const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+//     const year = now.getFullYear();
+//     const formattedDate = `${day}${month}${year}`;
+
+//     // Format time to HHMM (24-hour format)
+//     const hours = String(now.getHours()).padStart(2, '0');
+//     const minutes = String(now.getMinutes()).padStart(2, '0');
+//     const formattedTime = `${hours}${minutes}`;
+
+//     // Format seconds
+//     const seconds = String(now.getSeconds()).padStart(2, '0');
+
+//     // Generate a random number
+//     const randomNumber = Math.floor(Math.random() * 10000); // Random number between 0 and 9999
+
+//     // Generate the final Booking ID
+//     const bookingId = `CMB000-${formattedDate}-${formattedTime}${seconds}-${randomNumber}`;
+//     print(bookingId + "BookingId")
+//     return bookingId;
+// }
+
+// // Find all documents in the collection and update them with the booking_id
+// db.roombookings.find().forEach(function(doc) {
+//     const bookingId = generateBookingId(doc.createdAt);  // Use the createdAt field for each document
+//     db.roombookings.updateOne(
+//         { _id: doc._id },  // Find the document by its _id
+//         { $set: { booking_id: bookingId } }  // Set the booking_id
+//     );
+//     print("Updated booking_id for document: " + doc._id);
+// });

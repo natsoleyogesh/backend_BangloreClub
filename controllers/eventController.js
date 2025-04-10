@@ -1931,8 +1931,11 @@ const bookEvent = async (req, res) => {
             }))
             : [];
 
+        const bookingId = QRCodeHelper.generateBookingId();
+
         // Save the booking
         const newBooking = new EventBooking({
+            booking_id: bookingId,
             eventId,
             primaryMemberId,
             // primaryMemberQRCode: qrCodes.find(qr => qr.userId.toString() === primaryMemberId.toString()).qrCode,
@@ -2974,6 +2977,7 @@ const getBookingDetailsById = async (req, res) => {
         // Format the booking details
         const formattedBooking = {
             _id: booking._id,
+            booking_id: booking.booking_id,
             ticketDetails: booking.ticketDetails,
             memberDetails: [], // Array to hold all members (primary, dependents, and guests)
             allDetailsUniqueQRCode: booking.allDetailsUniqueQRCode, // QR code for all details
@@ -3504,6 +3508,7 @@ const getBookingDetails = async (req, res) => {
             bookings.map(async (booking) => {
                 const formattedBooking = {
                     _id: booking._id,
+                    booking_id: booking.booking_id,
                     eventName: booking.eventId ? booking.eventId.eventTitle : "",
                     eventImage: booking.eventId ? booking.eventId.eventImage : "",
                     eventDate: booking.eventId ? booking.eventId.eventStartDate : "",

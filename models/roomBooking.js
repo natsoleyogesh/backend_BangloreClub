@@ -3,6 +3,10 @@ const mongoose = require('mongoose');
 // Define RoomBooking schema
 const roomBookingSchema = new mongoose.Schema(
   {
+    booking_id: {
+      type: String,
+      required: true
+    },
     // Primary member details
     primaryMemberId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -226,11 +230,11 @@ const roomBookingSchema = new mongoose.Schema(
       default: 'Pending',
     },
 
-    // billable: {
-    //   type: Boolean,
-    //   default: true,
-    //   required: true
-    // },
+    billable: {
+      type: Boolean,
+      default: false,
+      // required: true
+    },
     // billableDate: {
     //   type: Date,
     //   default: null,
