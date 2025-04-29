@@ -2233,7 +2233,9 @@ const allocateBanquet = async (req, res) => {
         await booking.save();
 
         if (booking.bookingStatus === 'Confirmed') {
-            await addBilling(booking.primaryMemberId, 'Banquet', { banquetBooking: booking._id }, booking.pricingDetails.totalAmount, 0, booking.pricingDetails.totalTaxAmount, booking.pricingDetails.final_totalAmount, userId)
+            if (booking.billable && booking.billableDate !== null) {
+                await addBilling(booking.primaryMemberId, 'Banquet', { banquetBooking: booking._id }, booking.pricingDetails.totalAmount, 0, booking.pricingDetails.totalTaxAmount, booking.pricingDetails.final_totalAmount, userId)
+            }
 
 
             const template = emailTemplates.banquetBooking;

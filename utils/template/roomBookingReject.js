@@ -156,6 +156,12 @@ module.exports = {
             <h1>Room Booking Not Available ({{memberType}})</h1>
         </div>
         <div class="content">
+            <div class="details-section2" style="border-left: 4px solid #d9534f;">
+              <h2 style="color: #d9534f; margin-top: 0;">Admin Feedback</h2>
+              <div style="font-weight: bold; color: #333;">
+                {{adminFeedback}}
+              </div>
+            </div>
             <h2>Booking Details</h2>
             <div class="details-section" style="align-content: center; text-align: center;">
                  <!--  <p><img src="cid:qrCodeImage" alt="QR Code" style="width: 250px; height: 250px;" /></p> -->

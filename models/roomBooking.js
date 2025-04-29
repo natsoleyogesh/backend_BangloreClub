@@ -229,7 +229,10 @@ const roomBookingSchema = new mongoose.Schema(
       enum: ['Pending', 'Confirmed', 'Cancelled'],
       default: 'Pending',
     },
-
+    adminFeedback: {
+      type: String,
+      default: ""
+    },
     billable: {
       type: Boolean,
       default: false,

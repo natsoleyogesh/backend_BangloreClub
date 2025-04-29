@@ -1631,7 +1631,7 @@ const deleteBooking = async (req, res) => {
 const updateRoomAllocation = async (req, res) => {
     try {
         const bookingId = req.params.bookingId; // Booking ID from URL
-        const { allocatedRooms, bookingStatus } = req.body; // Allocated rooms and booking status from the request body
+        const { allocatedRooms, bookingStatus, adminFeedback } = req.body; // Allocated rooms and booking status from the request body
         const { userId, role } = req.user; // User information from the request
 
         // // Check if the user has admin privileges
@@ -1741,13 +1741,14 @@ const updateRoomAllocation = async (req, res) => {
             memberType: booking.memberType == "Member" ? "Self" : "Guest",
 
         };
-        console.log(templateData, "templaedate")
+        // console.log(templateData, "templaedate")
 
 
         if (bookingStatus === 'Pending' || bookingStatus === 'Cancelled') {
             // Update the booking status
             booking.bookingStatus = bookingStatus;
             booking.allDetailsQRCode = allDetailsQRCode;
+            booking.adminFeedback = adminFeedback;
             await booking.save();
             // Create a cancellation notification for the user
             await createNotification({
@@ -1768,9 +1769,16 @@ const updateRoomAllocation = async (req, res) => {
 
             const template = emailTemplates.roomBookingReject;
 
+            const newTemplateData = {
+                ...templateData,
+                adminFeedback: booking.adminFeedback,
+            }
+
             // Render template
-            const htmlBody = roomrenderTemplate(template.body, templateData);
-            const subject = roomrenderTemplate(template.subject, templateData);
+            const htmlBody = roomrenderTemplate(template.body, newTemplateData);
+            const subject = roomrenderTemplate(template.subject, newTemplateData);
+
+            // console.log(newTemplateData, "newTemplateDatat")
 
             // Send email
             await sendEmail(
