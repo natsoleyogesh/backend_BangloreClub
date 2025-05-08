@@ -1985,7 +1985,8 @@ const getMyBookings = async (req, res) => {
             .limit(Number(limit));
 
         if (!bookings.length) {
-            return res.status(404).json({ message: 'No bookings found for this user' });
+            // return res.status(404).json({ message: 'No bookings found for this user' });
+            return res.status(200).json({ bookings: [], message: 'Bookings Not Available!.' });
         }
 
         const totalBookings = await BanquetBooking.countDocuments({ primaryMemberId, isDeleted: false });

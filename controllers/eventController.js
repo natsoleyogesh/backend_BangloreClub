@@ -3500,7 +3500,9 @@ const getBookingDetails = async (req, res) => {
             .sort({ createdAt: -1 }); // Sort by createdAt in descending order
 
         if (bookings.length === 0) {
-            return res.status(404).json({ message: 'No bookings found or all bookings have been deleted' });
+            // return res.status(404).json({ message: 'No bookings found or all bookings have been deleted' });
+            return res.status(200).json({ bookings: [], message: 'Bookings Not Available!.' });
+
         }
 
         // Format the booking details for each booking
