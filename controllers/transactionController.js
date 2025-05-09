@@ -110,92 +110,6 @@ const createTransaction = async (req, res) => {
     }
 };
 
-// const getAllTransactions = async (req, res) => {
-//     try {
-//         let { filterType, customStartDate, customEndDate, paymentStatus, userId, page, limit } = req.query;
-
-//         // Convert pagination parameters
-//         page = parseInt(page) || 1;
-//         limit = parseInt(limit) || 10;
-//         const skip = (page - 1) * limit;
-
-//         let filter = { isDeleted: false };
-
-//         // Add paymentStatus filter
-//         if (paymentStatus) {
-//             filter.paymentStatus = paymentStatus;
-//         }
-//         if (userId) {
-//             filter.memberId = userId;
-//         }
-
-//         // Handle date filters
-//         if (filterType) {
-//             const today = moment().startOf("day");
-
-//             switch (filterType) {
-//                 case "today":
-//                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf("day").toDate() };
-//                     break;
-//                 case "last7days":
-//                     filter.createdAt = { $gte: moment(today).subtract(7, "days").toDate(), $lt: today.toDate() };
-//                     break;
-//                 case "last30days":
-//                     filter.createdAt = { $gte: moment(today).subtract(30, "days").toDate(), $lt: today.toDate() };
-//                     break;
-//                 case "last3months":
-//                     filter.createdAt = { $gte: moment(today).subtract(3, "months").toDate(), $lt: today.toDate() };
-//                     break;
-//                 case "last6months":
-//                     filter.createdAt = { $gte: moment(today).subtract(6, "months").toDate(), $lt: today.toDate() };
-//                     break;
-//                 case "last1year":
-//                     filter.createdAt = { $gte: moment(today).subtract(1, "year").toDate(), $lt: today.toDate() };
-//                     break;
-//                 case "custom":
-//                     if (!customStartDate || !customEndDate) {
-//                         return res.status(400).json({ message: "Custom date range requires both start and end dates." });
-//                     }
-//                     filter.createdAt = {
-//                         $gte: moment(customStartDate, "YYYY-MM-DD").startOf("day").toDate(),
-//                         $lt: moment(customEndDate, "YYYY-MM-DD").endOf("day").toDate(),
-//                     };
-//                     break;
-//                 default:
-//                     break;
-//             }
-//         }
-
-//         // Get total count of matching transactions
-//         const totalTransactions = await Transaction.countDocuments(filter);
-//         const totalPages = Math.ceil(totalTransactions / limit);
-
-//         // Query to find paginated transactions
-//         const transactions = await Transaction.find(filter)
-//             .populate("memberId")
-//             .populate("billingId")
-//             .sort({ createdAt: -1 }) // Sort by newest first
-//             .skip(skip)
-//             .limit(limit);
-
-//         // Return the response with pagination
-//         return res.status(200).json({
-//             message: "Transactions fetched successfully.",
-//             transactions,
-//             pagination: {
-//                 currentPage: page,
-//                 totalPages,
-//                 totalTransactions,
-//                 pageSize: limit,
-//             }
-//         });
-//     } catch (error) {
-//         console.error("Error fetching transactions:", error);
-//         return res.status(500).json({ message: "Internal server error", error: error.message });
-//     }
-// };
-
-
 const getAllTransactions = async (req, res) => {
     try {
         let { filterType, customStartDate, customEndDate, paymentStatus, userId, page, limit, exportData } = req.query;
@@ -322,7 +236,6 @@ const getAllTransactions = async (req, res) => {
     }
 };
 
-
 const getTransactionById = async (req, res) => {
     const { id } = req.params;
 
@@ -395,9 +308,6 @@ const getTransactionById = async (req, res) => {
     }
 };
 
-
-
-
 const deleteTransaction = async (req, res) => {
     const { id } = req.params;
 
@@ -423,7 +333,6 @@ const deleteTransaction = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 };
-
 
 const updateTransaction = async (req, res) => {
     const { id } = req.params;
@@ -462,7 +371,6 @@ const updateTransaction = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 };
-
 
 const getAllFilterTransactions = async (req, res) => {
     const { userId } = req.user;
@@ -596,8 +504,6 @@ const getAllFilterTransactions = async (req, res) => {
     }
 };
 
-
-
 // OFFLINE BILLS TRABSACTION API
 
 // Create a new transaction
@@ -668,91 +574,6 @@ const createOfflineBillTransaction = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 };
-
-// const getAllOfflineTransactions = async (req, res) => {
-//     try {
-//         let { filterType, customStartDate, customEndDate, paymentStatus, userId, page, limit } = req.query;
-
-//         // Convert pagination parameters
-//         page = parseInt(page) || 1;
-//         limit = parseInt(limit) || 10;
-//         const skip = (page - 1) * limit;
-
-//         let filter = { isDeleted: false };
-
-//         // Add paymentStatus filter
-//         if (paymentStatus) {
-//             filter.paymentStatus = paymentStatus;
-//         }
-//         if (userId) {
-//             filter.memberId = userId;
-//         }
-
-//         // Handle date filters
-//         if (filterType) {
-//             const today = moment().startOf("day");
-
-//             switch (filterType) {
-//                 case "today":
-//                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf("day").toDate() };
-//                     break;
-//                 case "last7days":
-//                     filter.createdAt = { $gte: moment(today).subtract(7, "days").toDate(), $lt: today.toDate() };
-//                     break;
-//                 case "last30days":
-//                     filter.createdAt = { $gte: moment(today).subtract(30, "days").toDate(), $lt: today.toDate() };
-//                     break;
-//                 case "last3months":
-//                     filter.createdAt = { $gte: moment(today).subtract(3, "months").toDate(), $lt: today.toDate() };
-//                     break;
-//                 case "last6months":
-//                     filter.createdAt = { $gte: moment(today).subtract(6, "months").toDate(), $lt: today.toDate() };
-//                     break;
-//                 case "last1year":
-//                     filter.createdAt = { $gte: moment(today).subtract(1, "year").toDate(), $lt: today.toDate() };
-//                     break;
-//                 case "custom":
-//                     if (!customStartDate || !customEndDate) {
-//                         return res.status(400).json({ message: "Custom date range requires both start and end dates." });
-//                     }
-//                     filter.createdAt = {
-//                         $gte: moment(customStartDate, "YYYY-MM-DD").startOf("day").toDate(),
-//                         $lt: moment(customEndDate, "YYYY-MM-DD").endOf("day").toDate(),
-//                     };
-//                     break;
-//                 default:
-//                     break;
-//             }
-//         }
-
-//         // Get total count of matching offline transactions
-//         const totalTransactions = await OfflineBillTransaction.countDocuments(filter);
-//         const totalPages = Math.ceil(totalTransactions / limit);
-
-//         // Query to find paginated offline transactions
-//         const transactions = await OfflineBillTransaction.find(filter)
-//             .populate("memberId")
-//             .populate("billingId")
-//             .sort({ createdAt: -1 }) // Sort by newest first
-//             .skip(skip)
-//             .limit(limit);
-
-//         // Return the response with pagination
-//         return res.status(200).json({
-//             message: "Offline transactions fetched successfully.",
-//             transactions,
-//             pagination: {
-//                 currentPage: page,
-//                 totalPages,
-//                 totalTransactions,
-//                 pageSize: limit,
-//             }
-//         });
-//     } catch (error) {
-//         console.error("Error fetching offline transactions:", error);
-//         return res.status(500).json({ message: "Internal server error", error: error.message });
-//     }
-// };
 
 const getAllOfflineTransactions = async (req, res) => {
     try {

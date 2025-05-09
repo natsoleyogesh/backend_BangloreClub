@@ -42,19 +42,6 @@ const createAmenity = async (req, res) => {
     });
 };
 
-// // Get all amenities (excluding soft deleted ones)
-// const getAllAmenities = async (req, res) => {
-//     try {
-//         const amenities = await Amenities.find({ isDeleted: false }).sort({ createdAt: -1 });
-
-//         return res.status(200).json({
-//             message: 'Amenities fetched successfully',
-//             data: amenities
-//         });
-//     } catch (err) {
-//         return res.status(500).json({ message: 'Server error', error: err });
-//     }
-// };
 
 // Get all amenities (excluding soft deleted ones) with pagination
 const getAllAmenities = async (req, res) => {

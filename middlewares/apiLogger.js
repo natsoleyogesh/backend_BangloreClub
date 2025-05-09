@@ -33,43 +33,6 @@ const apiLogger = async (req, res, next) => {
   if (excludedMethod.includes(req.method)) {
     return next(); // Skip logging for public routes
   }
-  //  // Check if the request is for an excluded route
-  //  if (excludedRoutes.includes(req.originalUrl)) {
-  //   return next(); // Skip logging for public routes
-  // }
-
-  // res.on("finish", async () => {
-  //   try {
-  //     // Extract user from authentication (JWT or session)
-  //     let userId = null;
-
-  //     if (req.user) { // If authentication middleware sets req.user
-  //       userId = req.user.userId; // Assuming Mongoose ObjectId
-  //     }
-  //     let user = await User.findById(userId);
-  //     let role = "User";
-
-  //     if (!user) {
-  //       user = await Admin.findById(userId);
-  //       if (!user) {
-  //         return;
-  //       }
-  //       role = "Admin";
-  //     }
-
-  //     await ApiLog.create({
-  //       method: req.method,
-  //       endpoint: cleanUrl, // Stores only base URL without query params
-  //       status: res.statusCode,
-  //       ip: req.userIp, // req.ip,
-  //       requestBody: req.method !== "GET" ? req.body : null, // Log body only for non-GET requests
-  //       userId,
-  //       userRole: role
-  //     });
-  //   } catch (error) {
-  //     console.error("Log Error:", error);
-  //   }
-  // });
 
   res.on("finish", async () => {
     try {

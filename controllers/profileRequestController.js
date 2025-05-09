@@ -108,11 +108,6 @@ const rejectProfileRequest = async (req, res) => {
     try {
         const adminId = req.user.userId; // Extract adminId from the token's decoded data
 
-        // // Check if the requesting user is an admin
-        // if (req.user.role !== 'admin') {
-        //     return res.status(403).json({ message: 'Access denied. Admins only.' });
-        // }
-
         const { requestId } = req.params; // The ID of the profile edit request
         const { adminResponse } = req.body;
 
@@ -161,10 +156,6 @@ const updateUserDetailsByAdmin = async (req, res) => {
     try {
         const adminId = req.user.userId; // Extract adminId from the token's decoded data
 
-        // Check if the requesting user is an admin
-        // if (req.user.role !== "admin") {
-        //     return res.status(403).json({ message: "Access denied. Admins only." });
-        // }
 
         // Determine the `requestId` from `req.body` or `req.params`
         const requestId = req.body.requestId || req.params.requestId;

@@ -69,22 +69,6 @@ const updateRole = async (req, res) => {
     }
 };
 
-
-
-// const deleteRole = async (req, res) => {
-//     try {
-//         const { roleId } = req.params;
-
-//         const deletedRole = await Role.findByIdAndDelete(roleId);
-
-//         if (!deletedRole) return res.status(404).json({ message: "Role not found" });
-
-//         res.status(200).json({ message: "Role deleted successfully" });
-//     } catch (error) {
-//         res.status(500).json({ message: "Failed to delete role", error: error.message });
-//     }
-// };
-
 // Soft delete a role
 const deleteRole = async (req, res) => {
     try {

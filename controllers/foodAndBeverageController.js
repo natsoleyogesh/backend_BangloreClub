@@ -198,52 +198,6 @@ const getEditFoodAndBeverageById = async (req, res) => {
     }
 };
 
-// const getAllFoodAndBeverages = async (req, res) => {
-//     try {
-//         // Fetch all food and beverages with necessary fields populated
-//         const foodAndBeveragesData = await FoodAndBeverage.find({ isDeleted: false })
-//             .populate('name', '_id name') // Populate the Restaurant reference in the "name" field
-//             .sort({ createdAt: -1 });
-
-//         // Structuring the response to match the desired format
-//         const responseData = foodAndBeveragesData.map(fb => ({
-//             _id: fb._id,
-//             name: fb.name ? fb.name.name : "N/A",
-//             nameId: fb.name ? fb.name._id : null,
-//             location: fb.location || "",
-//             extansion_no: fb.extansion_no || "",
-//             description: fb.description || "",
-//             bannerImage: fb.bannerImage || [],
-//             mainmenu: fb.mainmenu || null,
-//             timings: fb.timings.map(timing => ({
-//                 menu: timing.menu || "",
-//                 menuType: timing.menuType || "",
-//                 startDay: timing.startDay || "",
-//                 endDay: timing.endDay || "",
-//                 startTime: timing.startTime || "",
-//                 endTime: timing.endTime || "",
-//                 _id: timing._id,
-//             })),
-//             status: fb.status || "Active",
-//             createdAt: fb.createdAt,
-//             updatedAt: fb.updatedAt,
-//             __v: fb.__v || 0,
-//         }));
-
-//         // Send the structured response
-//         res.status(200).json({
-//             message: "Food & Beverage categories fetched successfully.",
-//             foodAndBeverages: responseData,
-//         });
-//     } catch (error) {
-//         console.error("Error fetching Food & Beverages:", error);
-//         res.status(500).json({
-//             message: "Failed to fetch Food & Beverages.",
-//             error: error.message,
-//         });
-//     }
-// };
-
 const getAllFoodAndBeverages = async (req, res) => {
     try {
         let { page, limit } = req.query;

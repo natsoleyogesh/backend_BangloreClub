@@ -2,11 +2,6 @@ const mongoose = require("mongoose");
 
 const subCategorySchema = new mongoose.Schema(
     {
-        // name: {
-        //     type: String,
-        //     required: true,
-        //     trim: true, // Subcategory name, e.g., "Go Green"
-        // },
         name: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Department', // Reference to the Department model
@@ -18,11 +13,6 @@ const subCategorySchema = new mongoose.Schema(
 
 const categorySchema = new mongoose.Schema(
     {
-        // name: {
-        //     type: String,
-        //     required: true,
-        //     trim: true, // Category name, e.g., "Chairman"
-        // },
         name: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Designation', // Reference to the Department model

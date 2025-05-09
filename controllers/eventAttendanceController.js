@@ -5,54 +5,6 @@ const User = require("../models/user");
 
 const createAttendanceRecords = async (booking) => {
     const attendanceRecords = [];
-
-    // // Add primary member attendance record
-    // if (booking.counts.primaryMemberCount > 0) {
-    //     const primaryDetails = await User.findById(booking.primaryMemberId);
-    //     attendanceRecords.push({
-    //         eventId: booking.eventId,
-    //         eventBookingId: booking._id,
-    //         memberId: booking.primaryMemberId,
-    //         name: primaryDetails.name,
-    //         mobileNumber: primaryDetails.mobileNumber,
-    //         email: primaryDetails.email,
-    //         qrCode: booking.uniqueQRCode,
-    //         qrCodeData: booking.primaryMemberQRCode
-    //     });
-    // }
-
-
-    // // Add dependent attendance records
-    // booking.dependents.forEach(async (dependent) => {
-    //     const DependentDetails = await User.findById(dependent.userId);
-    //     attendanceRecords.push({
-    //         eventId: booking.eventId,
-    //         eventBookingId: booking._id,
-    //         memberId: dependent.userId,
-    //         name: DependentDetails.name,
-    //         mobileNumber: DependentDetails.mobileNumber,
-    //         email: DependentDetails.email,
-    //         qrCode: dependent.uniqueQRCode,
-    //         qrCodeData: dependent.qrCode
-    //     });
-    // });
-
-    // // Add guest attendance records
-    // booking.guests.forEach((guest) => {
-    //     attendanceRecords.push({
-    //         eventId: booking.eventId,
-    //         eventBookingId: booking._id,
-    //         guestName: guest.name,
-    //         name: guest.name,
-    //         mobileNumber: guest.phone,
-    //         email: guest.email,
-    //         qrCode: guest.uniqueQRCode,
-    //         qrCodeData: guest.qrCode
-    //     });
-    // });
-
-    // console.log(attendanceRecords, "attendanceRecords")
-
     // ✅ Add primary member attendance record (if exists)
     if (booking.counts.primaryMemberCount > 0) {
         const primaryDetails = await User.findById(booking.primaryMemberId);

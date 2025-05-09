@@ -159,48 +159,6 @@ const updateOffer = async (req, res) => {
     }
 };
 
-// // Fetch all offers
-// const getAllOffers = async (req, res) => {
-//     try {
-//         const offerDetails = await Offer.find({})
-//             .populate('department')
-//             .sort({ createdAt: -1 }); // Sort by newest first
-
-//         const offers = offerDetails.map((offer) => ({
-//             _id: offer._id,
-//             title: offer.title,
-//             description: offer.description,
-//             couponCode: offer.couponCode,
-//             discountPercentage: offer.discountPercentage,
-//             discountAmount: offer.discountAmount,
-//             startDate: offer.startDate,
-//             endDate: offer.endDate,
-//             status: offer.status,
-//             type: offer.type,
-//             department: offer.department.departmentName || "N/A", // Assuming `department.name` exists
-//             bannerImage: offer.bannerImage,
-//             termsAndConditions: offer.termsAndConditions,
-//             showExclusive: offer.showExclusive,
-//             discountOffer: offer.discountOffer,
-//             showBanner: offer.showBanner,
-//             createdAt: offer.createdAt,
-//             updatedAt: offer.updatedAt,
-//         }));
-
-//         res.status(200).json({
-//             message: "Offers retrieved successfully",
-//             offers,
-//         });
-//     } catch (error) {
-//         console.error("Error retrieving offers:", error);
-//         res.status(500).json({
-//             message: "Error retrieving offers",
-//             error: error.message,
-//         });
-//     }
-// };
-
-
 const getAllOffers = async (req, res) => {
     try {
         let { page, limit } = req.query;

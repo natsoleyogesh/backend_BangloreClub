@@ -45,16 +45,6 @@ const addDownload = async (req, res, next) => {
     }
 };
 
-// const getAllDownloads = async (req, res) => {
-//     try {
-//         const data = await Download.find();
-//         const downloads = data.reverse();
-//         return res.status(200).json({ message: "Downloads fetched successfully", downloads });
-//     } catch (error) {
-//         return res.status(500).json({ message: 'Error fetching downloads', error: error.message });
-//     }
-// }
-
 const getAllDownloads = async (req, res) => {
     try {
         let { page, limit } = req.query;

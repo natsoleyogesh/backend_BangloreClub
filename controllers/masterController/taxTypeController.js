@@ -25,20 +25,6 @@ const createTaxType = async (req, res) => {
     }
 };
 
-// // Get all tax types (excluding soft deleted ones)
-// const getAllTaxTypes = async (req, res) => {
-//     try {
-//         // Fetch all tax types that are not marked as deleted, sorted by `createdAt` in descending order
-//         const taxTypes = await TaxType.find({ isDeleted: false }).sort({ createdAt: -1 });
-
-//         return res.status(200).json({
-//             message: 'Tax types fetched successfully',
-//             data: taxTypes
-//         });
-//     } catch (err) {
-//         return res.status(500).json({ message: 'Server error', error: err });
-//     }
-// };
 
 // Get all tax types (excluding soft deleted ones) with pagination
 const getAllTaxTypes = async (req, res) => {

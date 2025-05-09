@@ -7,15 +7,6 @@ const designationSchema = new mongoose.Schema({
         required: true,
         trim: true      // Trims leading/trailing spaces
     },
-    // email: {
-    //     type: String,
-    //     required: [true, "Email is required"],
-    //     lowercase: true,
-    //     match: [
-    //         /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/,
-    //         "Please provide a valid email address",
-    //     ],
-    // },
     status: {
         type: String,
         enum: ['active', 'inactive'], // Only these two values are allowed

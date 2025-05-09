@@ -76,29 +76,6 @@ const addRuleBylaw = async (req, res) => {
     }
 };
 
-
-// const getAllRulesBylaws = async (req, res) => {
-//     try {
-//         // Fetch all rules and bylaws from the database, sorted by creation date (newest first)
-//         const rulesBylaws = await ClubRuleByelaw.find({ isDeleted: false }).sort({ createdAt: -1 });
-
-//         // Return success response
-//         return res.status(200).json({
-//             message: "Rules and Bylaws fetched successfully.",
-//             ruleByelaws: rulesBylaws,
-//         });
-//     } catch (error) {
-//         // Log the error for debugging
-//         console.error("Error fetching Rules and Bylaws:", error);
-
-//         // Return error response
-//         return res.status(500).json({
-//             message: "An error occurred while fetching Rules and Bylaws.",
-//             error: error.message,
-//         });
-//     }
-// };
-
 const getAllRulesBylaws = async (req, res) => {
     try {
         let { page, limit } = req.query;
@@ -139,8 +116,6 @@ const getAllRulesBylaws = async (req, res) => {
         });
     }
 };
-
-
 
 const getRuleBylawById = async (req, res) => {
     try {
@@ -238,7 +213,6 @@ const updateRuleBylaw = async (req, res) => {
     }
 };
 
-
 const deleteRuleBylaw = async (req, res) => {
     try {
         const { id } = req.params;
@@ -260,7 +234,6 @@ const deleteRuleBylaw = async (req, res) => {
         });
     }
 };
-
 
 const getActiveRulesBylaws = async (req, res) => {
     try {
@@ -310,9 +283,6 @@ const getActiveRulesBylaws = async (req, res) => {
         });
     }
 };
-
-
-
 
 module.exports = {
     addRuleBylaw,

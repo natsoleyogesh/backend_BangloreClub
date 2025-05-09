@@ -20,186 +20,6 @@ require("dotenv").config();
 
 // Static OTP for testing
 const STATIC_OTP = "224455";
-// Twilio setup (uncomment when ready to use Twilio)
-// const accountSid = process.env.TWILIO_ACCOUNT_SID;
-// const authToken = process.env.TWILIO_AUTH_TOKEN;
-// const client = twilio(accountSid, authToken);
-
-// const createUser = async (req, res) => {
-//     try {
-//         const {
-//             name,
-//             email,
-//             mobileNumber,
-//             relation,
-//             parentUserId,
-//             address,
-//             address1,
-//             address2,
-//             city,
-//             state,
-//             country,
-//             pin,
-//             dateOfBirth,
-//             maritalStatus,
-//             marriageDate,
-//             title,
-//             vehicleNumber,
-//             vehicleModel,
-//             drivingLicenceNumber,
-//             creditLimit,
-//             creditStop,
-//             qrCodeId,
-//             cardId
-//         } = req.body;
-
-//         // Handle profile picture
-//         const profilePicturePath = req.files?.profilePicture
-//             ? `/uploads/profilePictures/${req.files.profilePicture[0].filename}`
-//             : "";
-
-//         // Handle proof files
-//         const uploadProofs = req.files?.proofs
-//             ? req.files.proofs.map((file) => `/uploads/proofs/${file.filename}`)
-//             : [];
-
-//         // Ensure no more than 3 proofs are uploaded
-//         if (uploadProofs.length > 3) {
-//             return res.status(400).json({ message: "You can upload a maximum of 3 proof files." });
-//         }
-
-
-//         // Determine if this user is a primary user or a family member
-//         if (!parentUserId) {
-//             // Generate a unique member ID for the primary user
-//             // const memberId = await generatePrimaryMemberId();
-
-//             // // Check if email or mobile number is already linked to another account
-//             // const existingUser = await User.findOne({
-//             //     $or: [{ email: email }, { mobileNumber: mobileNumber }, { relation: "Primary" }],
-//             // });
-//             const existingUser = await User.findOne({
-//                 $and: [
-//                     { relation: "Primary" },
-//                     { $or: [{ email: email }, { mobileNumber: mobileNumber }] }
-//                 ]
-//             });
-
-//             if (existingUser) {
-//                 return res.status(400).json({
-//                     message: "This mobile number or e-mail is already linked to another primary member account.",
-//                 });
-//             }
-
-
-//             const memberId = req.body.memberId;
-
-
-//             // Create a new primary user
-//             const newUser = new User({
-//                 name,
-//                 email,
-//                 mobileNumber,
-//                 memberId,
-//                 relation: "Primary",
-//                 address,
-//                 address1,
-//                 address2,
-//                 city,
-//                 state,
-//                 country,
-//                 pin,
-//                 dateOfBirth,
-//                 maritalStatus,
-//                 marriageDate,
-//                 title,
-//                 profilePicture: profilePicturePath,
-//                 vehicleNumber,
-//                 vehicleModel,
-//                 drivingLicenceNumber,
-//                 uploadProofs,
-//                 isDeleted: false,
-//                 lastLogin: Date.now(),
-//                 creditLimit,
-//                 creditStop,
-//                 qrCodeId,
-//                 cardId
-//             });
-
-//             // Save the primary user to the database
-//             let savedUser = await newUser.save();
-//             // Generate and update the QR Code
-//             const userQRCode = await QRCodeHelper.generateQRCode(savedUser);
-//             savedUser.qrCode = userQRCode;
-//             const finalSavedUser = await savedUser.save();
-
-//             return res.status(201).json({
-//                 message: "Primary user created successfully",
-//                 user: finalSavedUser,
-//             });
-//         }
-
-//         // If parentUserId is provided, it means this is a family member addition
-//         const parentUser = await User.findById(parentUserId);
-//         if (!parentUser) {
-//             return res.status(404).json({ message: "Parent user not found." });
-//         }
-
-//         // Validate relationship rules
-//         const existingRelations = await User.find({ parentUserId });
-//         if (relation === "Spouse" && existingRelations.some((member) => member.relation === "Spouse")) {
-//             return res.status(400).json({ message: "Only one spouse can be added per user." });
-//         }
-
-//         // Generate a unique member ID for the family member
-//         const memberId = await generateFamilyMemberId(parentUser.memberId, existingRelations.length);
-
-//         // Create a new family member
-//         const familyMember = new User({
-//             name,
-//             email,
-//             mobileNumber,
-//             memberId,
-//             relation,
-//             address,
-//             address1,
-//             address2,
-//             city,
-//             state,
-//             country,
-//             pin,
-//             dateOfBirth,
-//             maritalStatus,
-//             marriageDate,
-//             title,
-//             parentUserId: parentUser._id,
-//             profilePicture: profilePicturePath,
-//             vehicleNumber,
-//             vehicleModel,
-//             drivingLicenceNumber,
-//             uploadProofs,
-//             qrCodeId,
-//             cardId
-//         });
-
-//         // Save the family member to the database
-//         let savedFamilyMember = await familyMember.save();
-//         const familyUserQRCode = await QRCodeHelper.generateQRCode(savedFamilyMember);
-//         savedFamilyMember.qrCode = familyUserQRCode;
-
-//         const finalSavedFamilyMember = await savedFamilyMember.save();
-//         return res.status(201).json({
-//             message: "Family member added successfully",
-//             user: finalSavedFamilyMember,
-//         });
-//     } catch (error) {
-//         console.error("Error in creating user or adding family member:", error);
-//         return res.status(400).json({
-//             message: "Error in creating user or adding family member",
-//             error: error.message,
-//         });
-//     }
-// };
 
 const createUser = async (req, res) => {
     try {
@@ -715,9 +535,6 @@ const getUserDetails = async (req, res) => {
     }
 };
 
-
-// ------------------ ------------------------------------------------------------------------
-
 const updateProfilePicture = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -760,7 +577,6 @@ const updateProfilePicture = async (req, res) => {
         });
     }
 };
-
 
 const updateProfilePictureByUser = async (req, res) => {
     try {
@@ -805,7 +621,6 @@ const updateProfilePictureByUser = async (req, res) => {
     }
 };
 
-
 const userLogout = async (req, res) => {
     try {
         const user = req.user;
@@ -847,7 +662,6 @@ const userLogout = async (req, res) => {
         });
     }
 };
-
 
 const uploadProofs = async (req, res) => {
     const { userId } = req.params;
@@ -891,7 +705,6 @@ const uploadProofs = async (req, res) => {
     }
 };
 
-
 const deleteProofs = async (req, res) => {
     const { userId, index } = req.params;
 
@@ -933,330 +746,6 @@ const deleteProofs = async (req, res) => {
         });
     }
 };
-
-
-
-
-// const uploadMemberData = async (req, res) => {
-//     try {
-//         const filePath = req.file.path;
-//         const workbook = xlsx.readFile(filePath);
-//         const sheetName = workbook.SheetNames[0];
-//         const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-//         const savedMembers = [];
-
-//         for (const member of data) {
-//             // if (member.CATEGORY === "Permanent Member") {
-//             if (member.CATEGORY && member.CATEGORY.startsWith("Permanent Member")) {
-//                 const existingMember = await User.findOne({ memberId: member.MEMBERACCNO });
-//                 if (existingMember) {
-//                     console.log(`Skipping duplicate entry for memberId: ${member.MEMBERACCNO}`);
-//                     continue;
-//                 }
-//                 // Create Primary Member
-//                 const primaryMember = new User({
-//                     memberId: member.MEMBERACCNO,
-//                     title: member.TITLEDESCRIPTION || "Mr.",
-//                     name: member.MEMBERNAME,
-//                     dateOfBirth: member.DATEOFBIRTH ? new Date(member.DATEOFBIRTH) : null,
-//                     relation: "Primary",
-//                     maritalStatus: member.MARITALINFO || "Single",
-//                     address: "",
-//                     address1: "",
-//                     address2: "",
-//                     city: "",
-//                     state: "",
-//                     country: "",
-//                     pin: "",
-//                     email: "", // Placeholder, as email is not in the file
-//                     mobileNumber: "", // Placeholder, as mobileNumber is not in the file
-//                     otp: null,
-//                     age: null,
-//                     marriageDate: null,
-//                     status: "Active",
-//                     activatedDate: Date.now(),
-//                     profilePicture: "",
-//                     isDeleted: false,
-//                     fcmToken: "",
-//                     lastLogin: Date.now(),
-//                     vehicleNumber: "",
-//                     vehicleModel: "",
-//                     drivingLicenceNumber: "",
-//                     uploadProofs: [],
-//                     creditStop: false,
-//                     creditLimit: 0,
-//                 });
-
-//                 const savedPrimary = await primaryMember.save();
-//                 savedMembers.push(savedPrimary);
-
-//                 // Create Spouse if available
-//                 if (member.SPOUSEID && member.SPOUSENAME) {
-//                     const existingSpouse = await User.findOne({ memberId: member.SPOUSEID });
-//                     if (existingSpouse) {
-//                         console.log(`Skipping duplicate entry for spouseId: ${member.SPOUSEID}`);
-//                         continue;
-//                     }
-//                     const spouseMember = new User({
-//                         memberId: member.SPOUSEID,
-//                         title: member.SPOUSETITLE || "Mrs.",
-//                         name: member.SPOUSENAME,
-//                         dateOfBirth: member.SPOUSEDATEOFBIRTH ? new Date(member.SPOUSEDATEOFBIRTH) : null,
-//                         relation: "Spouse",
-//                         maritalStatus: "Married",
-//                         parentUserId: savedPrimary._id,
-//                         address: "",
-//                         address1: "",
-//                         address2: "",
-//                         city: "",
-//                         state: "",
-//                         country: "",
-//                         pin: "",
-//                         email: "", // Placeholder
-//                         mobileNumber: "", // Placeholder
-//                         otp: null,
-//                         age: null,
-//                         marriageDate: null,
-//                         status: "Active",
-//                         activatedDate: Date.now(),
-//                         profilePicture: "",
-//                         isDeleted: false,
-//                         fcmToken: "",
-//                         lastLogin: Date.now(),
-//                         vehicleNumber: "",
-//                         vehicleModel: "",
-//                         drivingLicenceNumber: "",
-//                         uploadProofs: [],
-//                         creditStop: false,
-//                         creditLimit: 0,
-//                     });
-
-//                     const savedSpouse = await spouseMember.save();
-//                     savedMembers.push(savedSpouse);
-//                 }
-//             }
-//         }
-//         // Delete the uploaded file
-//         fs.unlinkSync(filePath);
-
-//         return res.status(200).json({ message: "Members and their spouses uploaded successfully", data: savedMembers });
-//     } catch (error) {
-//         console.error(error);
-//         return res.status(500).json({ message: "Error uploading members", error: error.message });
-//     }
-// }
-
-
-// const uploadMemberData = async (req, res) => {
-//     try {
-//         const filePath = req.file.path;
-//         const workbook = xlsx.readFile(filePath);
-//         const sheetName = workbook.SheetNames[0];
-//         const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-//         const savedMembers = new Map();
-
-//         for (const member of data) {
-//             if (member.MEMBERCATEGORY) {
-//                 // Primary Member
-//                 const primaryMemberId = member.MEMBERACCNO;
-//                 const existingMember = await User.findOne({ memberId: primaryMemberId });
-//                 if (existingMember) {
-//                     console.log(`Skipping duplicate entry for memberId: ${primaryMemberId}`);
-//                     continue;
-//                 }
-//                 const primaryMember = new User({
-//                     memberId: primaryMemberId,
-//                     title: member.MEMBERTITLE || "Mr.",
-//                     name: member.MEMBERNAME,
-//                     dateOfBirth: member.MEMBERDOB ? new Date(member.MEMBERDOB) : null,
-//                     relation: "Primary",
-//                     maritalStatus: member.MEMBERMARITALINFO || "Single",
-//                     // address: `${member.ADDR2 || ""}, ${member.ADDR3 || ""}`.trim(),
-//                     address: member.ADDR1 || "",
-//                     address1: member.ADDR2 || "",
-//                     address2: member.ADDR3 || "",
-//                     city: member.CITYDESCRIPTION || "",
-//                     state: member.STATEDESCRIPTION || "",
-//                     country: member.COUNTRYDESCRIPTION || "",
-//                     pin: member.PIN || "",
-//                     email: member.EMAIL1 || "",
-//                     mobileNumber: member.PH1 || "",
-//                     email2: member.EMAIL2 || "",
-//                     mobileNumber2: member.PH2 || "",
-//                     otp: null,
-//                     age: null,
-//                     marriageDate: null,
-//                     status: "Active",
-//                     activatedDate: Date.now(),
-//                     profilePicture: "",
-//                     isDeleted: false,
-//                     fcmToken: "",
-//                     lastLogin: Date.now(),
-//                     vehicleNumber: member.VEHICLENO || "",
-//                     vehicleModel: member.VEHICLEMAKE || "",
-//                     drivingLicenceNumber: "",
-//                     uploadProofs: [],
-//                     creditStop: false,
-//                     creditLimit: 0,
-//                 });
-//                 const savedPrimary = await primaryMember.save();
-//                 savedMembers.set(primaryMemberId, savedPrimary);
-//                 // await primaryMember.save();
-//             }
-
-//             // Spouse Member
-//             if (member.MEMBERSPOUSEID && member.MEMBERSPOUSENAME) {
-//                 const spouseId = member.MEMBERSPOUSEID;
-//                 const existingSpouse = await User.findOne({ memberId: spouseId });
-//                 if (existingSpouse) {
-//                     console.log(`Skipping duplicate entry for spouseId: ${spouseId}`);
-//                     continue;
-//                 }
-//                 const spouseMember = new User({
-//                     memberId: spouseId,
-//                     title: member.MEMBERSPOUSETITLE || "Mrs.",
-//                     name: member.MEMBERSPOUSENAME,
-//                     dateOfBirth: member.MEMBERSPOUSEDOB ? new Date(member.MEMBERSPOUSEDOB) : null,
-//                     relation: "Spouse",
-//                     maritalStatus: "Married",
-//                     parentUserId: savedMembers.get(member.MEMBERACCNO)?._id || null,
-//                     // address: `${member.ADDR2 || ""}, ${member.ADDR3 || ""}`.trim(),
-//                     address: member.ADDR1 || "",
-//                     address1: member.ADDR2 || "",
-//                     address2: member.ADDR3 || "",
-//                     city: member.CITYDESCRIPTION || "",
-//                     state: member.STATEDESCRIPTION || "",
-//                     country: member.COUNTRYDESCRIPTION || "",
-//                     pin: member.PIN || "",
-//                     email: member.EMAIL1 || "",
-//                     mobileNumber: member.PH1 || "",
-//                     email2: member.EMAIL2 || "",
-//                     mobileNumber2: member.PH2 || "",
-//                     otp: null,
-//                     age: null,
-//                     marriageDate: null,
-//                     status: "Active",
-//                     activatedDate: Date.now(),
-//                     profilePicture: "",
-//                     isDeleted: false,
-//                     fcmToken: "",
-//                     lastLogin: Date.now(),
-//                     vehicleNumber: member.VEHICLENO || "",
-//                     vehicleModel: member.VEHICLEMAKE || "",
-//                     drivingLicenceNumber: "",
-//                     uploadProofs: [],
-//                     creditStop: false,
-//                     creditLimit: 0,
-//                 });
-//                 // const savedSpouse = await spouseMember.save();
-//                 // savedMembers.set(spouseId, savedSpouse);
-//                 await spouseMember.save();
-//             }
-
-//             // Additional User Members and User Spouses
-//             if (member.USERID && member.USERNAME) {
-//                 const userId = member.USERID;
-//                 const existingUser = await User.findOne({ memberId: userId });
-//                 if (existingUser) {
-//                     console.log(`Skipping duplicate entry for userId: ${userId}`);
-//                     continue;
-//                 }
-//                 const userRelation = member.USERCATEGORY || "Dependent";
-//                 const userMember = new User({
-//                     memberId: userId,
-//                     title: member.USERTITLE || "Mr.",
-//                     name: member.USERNAME,
-//                     dateOfBirth: member.USERDOB ? new Date(member.USERDOB) : null,
-//                     relation: userRelation,
-//                     parentUserId: savedMembers.get(member.MEMBERACCNO)?._id || null,
-//                     maritalStatus: member.USERMARITALINFO || "Single",
-//                     // address: `${member.ADDR2 || ""}, ${member.ADDR3 || ""}`.trim(),
-//                     address: member.ADDR1 || "",
-//                     address1: member.ADDR2 || "",
-//                     address2: member.ADDR3 || "",
-//                     city: member.CITYDESCRIPTION || "",
-//                     state: member.STATEDESCRIPTION || "",
-//                     country: member.COUNTRYDESCRIPTION || "",
-//                     pin: member.PIN || "",
-//                     email: member.EMAIL1 || "",
-//                     mobileNumber: member.PH1 || "",
-//                     email2: member.EMAIL2 || "",
-//                     mobileNumber2: member.PH2 || "",
-//                     otp: null,
-//                     age: null,
-//                     marriageDate: null,
-//                     status: "Active",
-//                     activatedDate: Date.now(),
-//                     profilePicture: "",
-//                     isDeleted: false,
-//                     fcmToken: "",
-//                     lastLogin: Date.now(),
-//                     vehicleNumber: member.VEHICLENO || "",
-//                     vehicleModel: member.VEHICLEMAKE || "",
-//                     drivingLicenceNumber: "",
-//                     uploadProofs: [],
-//                     creditStop: false,
-//                     creditLimit: 0,
-//                 });
-//                 await userMember.save();
-//                 // savedMembers.set(userId, savedUser);
-
-//                 // User Spouse
-//                 if (member.USERSPOUSEID && member.USERSPOUSENAME) {
-//                     const userSpouseId = member.USERSPOUSEID;
-//                     const userSpouseRelation = `${userRelation} Spouse`;
-//                     const userSpouse = new User({
-//                         memberId: userSpouseId,
-//                         title: member.USERSPOUSETITLE || "Mr.",
-//                         name: member.USERSPOUSENAME,
-//                         dateOfBirth: member.USERSPOUSEDOB ? new Date(member.USERSPOUSEDOB) : null,
-//                         relation: userSpouseRelation,
-//                         maritalStatus: member.USERMARITALINFO || "Single",
-//                         parentUserId: savedMembers.get(member.MEMBERACCNO)?._id || null,
-//                         // address: `${member.ADDR2 || ""}, ${member.ADDR3 || ""}`.trim(),
-//                         address: member.ADDR1 || "",
-//                         address1: member.ADDR2 || "",
-//                         address2: member.ADDR3 || "",
-//                         city: member.CITYDESCRIPTION || "",
-//                         state: member.STATEDESCRIPTION || "",
-//                         country: member.COUNTRYDESCRIPTION || "",
-//                         pin: member.PIN || "",
-//                         email: member.EMAIL1 || "",
-//                         mobileNumber: member.PH1 || "",
-//                         email2: member.EMAIL2 || "",
-//                         mobileNumber2: member.PH2 || "",
-//                         otp: null,
-//                         age: null,
-//                         marriageDate: member.USERMARRIAGEDATE ? new Date(member.USERMARRIAGEDATE) : null,
-//                         status: "Active",
-//                         activatedDate: Date.now(),
-//                         profilePicture: "",
-//                         isDeleted: false,
-//                         fcmToken: "",
-//                         lastLogin: Date.now(),
-//                         vehicleNumber: member.VEHICLENO || "",
-//                         vehicleModel: member.VEHICLEMAKE || "",
-//                         drivingLicenceNumber: "",
-//                         uploadProofs: [],
-//                         creditStop: false,
-//                         creditLimit: 0,
-//                     });
-//                     await userSpouse.save();
-//                 }
-//             }
-//         }
-
-//         // Delete the uploaded file
-//         fs.unlinkSync(filePath);
-
-//         return res.status(200).json({ message: "Members, spouses, users, and user spouses uploaded successfully" });
-//     } catch (error) {
-//         console.error(error);
-//         return res.status(500).json({ message: "Error uploading members", error: error.message });
-//     }
-// };
 
 function excelSerialToJSDate(serial) {
     const excelEpoch = new Date(1899, 11, 30); // Excel starts at 1900-01-01, but JavaScript starts at 1899-12-30
@@ -1549,9 +1038,6 @@ const uploadMemberData = async (req, res) => {
     }
 };
 
-
-
-
 const uploadMemberAddress = async (req, res) => {
     try {
         const filePath = req.file.path;
@@ -1602,141 +1088,6 @@ const uploadMemberAddress = async (req, res) => {
         return res.status(500).json({ message: "Error updating member addresses", error: error.message });
     }
 }
-
-// const uploadQrCodeData = async (req, res) => {
-//     const updatedMembers = [];
-//     let filePath;
-
-//     try {
-//         // Ensure the file exists before proceeding
-//         if (!req.file) {
-//             return res.status(400).json({ message: "No file uploaded" });
-//         }
-
-//         filePath = req.file.path;
-//         const workbook = xlsx.readFile(filePath);
-//         const sheetName = workbook.SheetNames[0];
-//         const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-//         // Process each row of data
-//         for (const qrcodeData of data) {
-//             try {
-//                 const member = await User.findOne({ memberId: qrcodeData.USERID });
-
-//                 // Handle if member is not found
-//                 if (!member) {
-//                     console.log(`Member with memberId: ${qrcodeData.USERID} not found, skipping.`);
-//                     continue;
-//                 }
-
-//                 // Update the member's details
-//                 const updatedMember = await updateMemberDetails(member, qrcodeData);
-
-//                 // Generate and update the QR Code
-//                 const userQRCode = await QRCodeHelper.generateQRCode(updatedMember);
-//                 updatedMember.qrCode = userQRCode;
-
-//                 // Save the final updated member data
-//                 const finalUpdatedMember = await updatedMember.save();
-//                 updatedMembers.push(finalUpdatedMember);
-
-//             } catch (error) {
-//                 console.error(`Error processing memberId: ${qrcodeData.USERID}`, error.message);
-//                 continue;
-//             }
-//         }
-
-//         return res.status(200).json({ message: "Member QR code data and contact details updated successfully", data: updatedMembers });
-
-//     } catch (error) {
-//         console.error("Error processing file", error);
-//         return res.status(500).json({ message: "Error updating member QR code data", error: error.message });
-
-//     } finally {
-//         // Clean up the uploaded file after processing
-//         if (filePath) {
-//             fs.unlinkSync(filePath);
-//         }
-//     }
-// };
-
-
-// -----------------------------new data
-// const BATCH_SIZE = 1000; // Define the batch size (you can adjust this based on performance)
-
-// const uploadQrCodeData = async (req, res) => {
-//     const updatedMembers = [];
-//     let filePath;
-//     let batchStart = 0;
-
-//     try {
-//         // Ensure the file exists before proceeding
-//         if (!req.file) {
-//             return res.status(400).json({ message: "No file uploaded" });
-//         }
-
-//         filePath = req.file.path;
-//         const workbook = xlsx.readFile(filePath);
-//         const sheetName = workbook.SheetNames[0];
-//         const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-//         // Process data in batches
-//         const processBatch = async (batchData) => {
-//             for (const qrcodeData of batchData) {
-//                 try {
-//                     const member = await User.findOne({ memberId: qrcodeData.USERID });
-//                     if (!member) {
-//                         console.log(`Member with memberId: ${qrcodeData.USERID} not found, skipping.`);
-//                         continue;
-//                     }
-
-//                     // Update the member's details
-//                     const updatedMember = await updateMemberDetails(member, qrcodeData);
-
-//                     // Generate and update the QR Code
-//                     const userQRCode = await QRCodeHelper.generateQRCode(updatedMember);
-//                     updatedMember.qrCode = userQRCode;
-
-//                     // Save the final updated member data
-//                     const finalUpdatedMember = await updatedMember.save();
-//                     updatedMembers.push(finalUpdatedMember);
-
-//                 } catch (error) {
-//                     console.error(`Error processing memberId: ${qrcodeData.USERID}`, error.message);
-//                     continue;
-//                 }
-//             }
-//         };
-
-//         // Process the file in batches
-//         const totalRows = data.length;
-//         while (batchStart < totalRows) {
-//             const batchData = data.slice(batchStart, batchStart + BATCH_SIZE); // Get the next batch of data
-//             await processBatch(batchData);
-//             batchStart += BATCH_SIZE; // Move the batch pointer
-
-//             console.log(`Processed batch from row ${batchStart - BATCH_SIZE + 1} to ${batchStart}`);
-//         }
-
-//         return res.status(200).json({
-//             message: "Member QR code data and contact details updated successfully",
-//             data: updatedMembers,
-//         });
-
-//     } catch (error) {
-//         console.error("Error processing file", error);
-//         return res.status(500).json({
-//             message: "Error updating member QR code data",
-//             error: error.message,
-//         });
-
-//     } finally {
-//         // Clean up the uploaded file after processing
-//         if (filePath) {
-//             fs.unlinkSync(filePath);
-//         }
-//     }
-// };
 
 const BATCH_SIZE = 1000; // Process in smaller batches
 
@@ -1849,8 +1200,6 @@ const updateMemberDetails = async (member, qrcodeData) => {
     return await member.save();
 };
 
-
-
 // Get User Details by userId (MongoDB _id)
 const getUserDetailById = async (req, res) => {
     try {
@@ -1934,7 +1283,6 @@ const updateQrDetails = async (req, res) => {
         });
     }
 };
-
 
 module.exports = {
     createUser,

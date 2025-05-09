@@ -27,25 +27,6 @@ const addCategory = async (req, res) => {
     }
 }
 
-// const getAllCategory = async (req, res) => {
-//     try {
-//         const { isActive } = req.query;
-
-//         // Build query based on isActive if provided
-//         let query = {};
-//         if (isActive !== undefined) {
-//             // Directly convert the isActive string to a boolean
-//             query.isActive = isActive === 'true'; // Expecting 'true' or 'false' string in query
-//         }
-
-//         const categories = (await Category.find(query)).reverse();
-//         res.status(200).json({ message: 'Categories fetched successfully.', categories });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: 'Server error while fetching categories.' });
-//     }
-// }
-
 const getAllCategory = async (req, res) => {
     try {
         let { isActive, page, limit } = req.query;

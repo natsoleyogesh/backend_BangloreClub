@@ -48,24 +48,6 @@ const addCategory = async (req, res) => {
     }
 }
 
-// const getAllCategory = async (req, res) => {
-//     try {
-//         const { status } = req.query;
-
-//         // Build query based on status if provided
-//         let query = {};
-//         if (status) {
-//             // Directly convert the status string to a boolean
-//             query.status = status
-//         }
-
-//         const categories = (await BanquetCategory.find(query)).reverse();
-//         res.status(200).json({ message: 'Categories fetched successfully.', categories });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: 'Server error while fetching categories.' });
-//     }
-// }
 
 const getAllCategory = async (req, res) => {
     try {
@@ -127,35 +109,6 @@ const getCategoryById = async (req, res) => {
     }
 }
 
-// const updateCategory = async (req, res) => {
-//     try {
-//         const { id } = req.params;
-//         const updates = req.body;
-
-//         // Filter the updates to include only the fields provided in the request body
-//         const filteredUpdates = Object.keys(updates).reduce((acc, key) => {
-//             if (updates[key] !== undefined) {
-//                 acc[key] = updates[key];
-//             }
-//             return acc;
-//         }, {});
-
-//         // Update the category with the filtered updates
-//         const updatedCategory = await BanquetCategory.findByIdAndUpdate(id, filteredUpdates, {
-//             new: true, // Return the updated document
-//             runValidators: true, // Ensure validation rules are applied
-//         });
-
-//         if (!updatedCategory) {
-//             return res.status(404).json({ message: 'Category not found.' });
-//         }
-
-//         res.json({ message: 'Category updated successfully.', category: updatedCategory });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: 'Server error while updating category.' });
-//     }
-// }
 
 const updateCategory = async (req, res) => {
     try {
@@ -400,34 +353,6 @@ const createBanquet = async (req, res) => {
         });
     }
 };
-
-
-// const getAllBanquets = async (req, res) => {
-//     try {
-
-//         // Define the filter to exclude deleted records
-//         const filter = { isDeleted: false };
-
-//         // Fetch all banquets with related data
-//         const banquets = await Banquet.find(filter)
-//             .populate('banquetName') // Populate specific fields
-//             .populate('taxTypes') // Populate taxTypes
-//             .populate('amenities') // Populate amenities
-//             .sort({ createdAt: -1 }); // Sort by creation date
-
-//         return res.status(200).json({
-//             message: 'Banquets fetched successfully.',
-//             data: banquets,
-//         });
-//     } catch (error) {
-//         console.error('Error fetching banquets:', error);
-//         return res.status(500).json({
-//             message: 'Server error while fetching banquets.',
-//             error: error.message,
-//         });
-//     }
-// };
-
 
 const getAllBanquets = async (req, res) => {
     try {
@@ -873,89 +798,6 @@ const getActiveBanquets = async (req, res) => {
             return res.status(404).json({ message: 'No banquets available for the specified criteria.' });
         }
 
-        //  // Filter available banquets based on pricing details and bookings
-        // const availableBanquets = [];
-
-        // for (const banquet of banquets) {
-        //     const bookingDay = checkInDate.toLocaleString('en-US', { weekday: 'long' });
-
-        //     // Check if the check-in day matches banquet pricing details
-        //     const applicablePricing = banquet.pricingDetails.find(pricing => pricing.days.includes(bookingDay));
-
-        //     if (!applicablePricing) continue;
-
-        //     // Check if the time slots are available
-        //     const isTimeSlotAvailable = applicablePricing.timeSlots.some(slot => {
-        //         const [slotStartHours, slotStartMinutes] = slot.start.split(':').map(Number);
-        //         const [slotEndHours, slotEndMinutes] = slot.end.split(':').map(Number);
-
-        //         const slotStart = slotStartHours * 60 + slotStartMinutes;
-        //         const slotEnd = slotEndHours * 60 + slotEndMinutes;
-
-        //         const requestedStart = fromHours * 60 + fromMinutes;
-        //         const requestedEnd = toHours * 60 + toMinutes;
-
-        //         return requestedStart >= slotStart && requestedEnd <= slotEnd;
-        //     });
-        //     console.log(isTimeSlotAvailable, "isTimeSlotAvailable")
-        //     if (!isTimeSlotAvailable) continue;
-
-
-        //     console.log(checkInDate, checkOutDate, "utcformat")
-        //     // Check for overlapping bookings
-        //     const overlappingBookings = await BanquetBooking.find({
-        //         banquetType: banquet._id,
-        //         // 'bookingDates.checkIn': { $lt: endOfCheckOut },
-        //         // 'bookingDates.checkOut': { $gt: startOfCheckIn },
-        //         isDeleted: false,
-        //     });
-
-        //     const isBookingTimeAvailable = !overlappingBookings.some(booking => {
-        //         console.log("Booking CheckIn:", booking.bookingDates.checkIn, "Booking CheckOut:", booking.bookingDates.checkOut);
-
-        //         // Convert booking dates to only date parts for comparison
-        //         const bookingCheckInDate = new Date(booking.bookingDates.checkIn).toISOString().split('T')[0];
-        //         const bookingCheckOutDate = new Date(booking.bookingDates.checkOut).toISOString().split('T')[0];
-
-        //         const requestedCheckInDate = new Date(checkInDate).toISOString().split('T')[0];
-        //         const requestedCheckOutDate = new Date(checkOutDate).toISOString().split('T')[0];
-
-        //         // Check if dates overlap
-        //         const isDateOverlap =
-        //             requestedCheckInDate <= bookingCheckOutDate &&
-        //             requestedCheckOutDate >= bookingCheckInDate;
-
-        //         if (!isDateOverlap) {
-        //             return false; // Skip if the dates do not overlap
-        //         }
-
-        //         // Extract time components and compare
-        //         const [bookingFromHours, bookingFromMinutes] = booking.bookingTime.from.split(':').map(Number);
-        //         const [bookingToHours, bookingToMinutes] = booking.bookingTime.to.split(':').map(Number);
-
-        //         const bookingStart = bookingFromHours * 60 + bookingFromMinutes;
-        //         const bookingEnd = bookingToHours * 60 + bookingToMinutes;
-
-        //         const requestedStart = fromHours * 60 + fromMinutes;
-        //         const requestedEnd = toHours * 60 + toMinutes;
-
-        //         // Check if time ranges overlap
-        //         const isTimeOverlap = requestedStart < bookingEnd && requestedEnd > bookingStart;
-
-        //         console.log("Date Overlap:", isDateOverlap, "Time Overlap:", isTimeOverlap);
-
-        //         return isDateOverlap && isTimeOverlap; // Return true only if both date and time overlap
-        //     });
-
-        //     if (isBookingTimeAvailable) {
-        //         availableBanquets.push(banquet);
-        //     }
-        // }
-
-        // if (availableBanquets.length === 0) {
-        //     return res.status(404).json({ message: 'No available banquets found for the specified criteria.' });
-        // }
-
         const availableBanquets = [];
 
         for (const banquet of banquets) {
@@ -1112,53 +954,6 @@ const createBanquetBooking = async (req, res) => {
 
         // Calculate pricing based on the day and time slots
         const bookingDay = checkInDate.toLocaleString('en-US', { weekday: 'long' });
-        // const applicablePricing = banquet.pricingDetails.find(pricing => pricing.days.includes(bookingDay));
-
-        // if (!applicablePricing) {
-        //     return res.status(400).json({ message: 'No pricing details available for the selected day.' });
-        // }
-
-        // const timeSlot = applicablePricing.timeSlots.find(slot => {
-        //     // Parse slot start and end times
-        //     const parseTime = timeStr => {
-        //         const [time, modifier] = timeStr.split(' ');
-        //         let [hours, minutes] = time.split(':').map(Number);
-
-        //         if (modifier === 'PM' && hours !== 12) {
-        //             hours += 12; // Convert PM to 24-hour format
-        //         }
-        //         if (modifier === 'AM' && hours === 12) {
-        //             hours = 0; // Handle midnight
-        //         }
-
-        //         return { hours, minutes };
-        //     };
-
-        //     const { hours: slotStartHours, minutes: slotStartMinutes } = parseTime(slot.start);
-        //     const { hours: slotEndHours, minutes: slotEndMinutes } = parseTime(slot.end);
-
-        //     const slotStartTotalMinutes = slotStartHours * 60 + slotStartMinutes;
-        //     const slotEndTotalMinutes = slotEndHours * 60 + slotEndMinutes;
-
-        //     // Booking start and end times
-        //     const bookingStartTotalMinutes = fromHours * 60 + fromMinutes;
-        //     const bookingEndTotalMinutes = toHours * 60 + toMinutes;
-
-        //     return (
-        //         // bookingStartTotalMinutes >= slotStartTotalMinutes &&
-        //         // bookingEndTotalMinutes <= slotEndTotalMinutes
-        //         bookingStartTotalMinutes < slotEndTotalMinutes && bookingEndTotalMinutes > slotStartTotalMinutes
-
-        //     );
-        // });
-
-
-        // if (!timeSlot) {
-        //     return res.status(400).json({ message: 'No pricing details available for the selected time slot.' });
-        // }
-
-        // // const totalAmount = applicablePricing.price * durationInHours;
-        // let totalAmount = applicablePricing.price;
 
         const applicablePricing = banquet.pricingDetails.filter(pricing => pricing.days.includes(bookingDay));
 
@@ -1218,19 +1013,6 @@ const createBanquetBooking = async (req, res) => {
 
         // let totalAmount = applicablePricing.price;
         let totalAmount = finalPrice;
-
-
-        // // Calculate special day charges if applicable
-        // let specialDayExtraCharge = 0;
-        // if (banquet.specialDayTariff && Array.isArray(banquet.specialDayTariff)) {
-        //     banquet.specialDayTariff.forEach(specialDay => {
-        //         const start = new Date(specialDay.startDate);
-        //         const end = new Date(specialDay.endDate);
-        //         if (checkInDate >= start && checkOutDate <= end) {
-        //             specialDayExtraCharge += specialDay.extraCharge;
-        //         }
-        //     });
-        // }
 
         let specialDayExtraCharge = 0;
         if (banquet.specialDayTariff && Array.isArray(banquet.specialDayTariff)) {
@@ -1715,102 +1497,6 @@ const createBanquetBookingDetails = async (req, res) => {
 /**
  * Get all banquet bookings
  */
-// const getAllBanquetBookings = async (req, res) => {
-//     try {
-//         let { page, limit, filterType, customStartDate, customEndDate, bookingStatus, userId } = req.query;
-
-//         // Convert query parameters
-//         page = parseInt(page) || 1;
-//         limit = parseInt(limit) || 10;
-//         const skip = (page - 1) * limit;
-
-//         let filter = { isDeleted: false };
-
-//         // Add bookingStatus to filter if provided
-//         if (bookingStatus) {
-//             filter.bookingStatus = bookingStatus;
-//         }
-//         if (userId) {
-//             filter.primaryMemberId = userId;
-//         }
-
-//         // Handle date filters
-//         if (filterType) {
-//             const today = moment().startOf('day');
-
-//             switch (filterType) {
-//                 case 'today':
-//                     filter.createdAt = { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() };
-//                     break;
-//                 case 'last7days':
-//                     filter.createdAt = { $gte: moment(today).subtract(7, 'days').toDate(), $lt: today.toDate() };
-//                     break;
-//                 case 'last30days':
-//                     filter.createdAt = { $gte: moment(today).subtract(30, 'days').toDate(), $lt: today.toDate() };
-//                     break;
-//                 case 'last3months':
-//                     filter.createdAt = { $gte: moment(today).subtract(3, 'months').toDate(), $lt: today.toDate() };
-//                     break;
-//                 case 'last6months':
-//                     filter.createdAt = { $gte: moment(today).subtract(6, 'months').toDate(), $lt: today.toDate() };
-//                     break;
-//                 case 'last1year':
-//                     filter.createdAt = { $gte: moment(today).subtract(1, 'year').toDate(), $lt: today.toDate() };
-//                     break;
-//                 case 'custom':
-//                     if (!customStartDate || !customEndDate) {
-//                         return res.status(400).json({ message: "Custom date range requires both start and end dates." });
-//                     }
-//                     filter.createdAt = {
-//                         $gte: moment(customStartDate, "YYYY-MM-DD").startOf("day").toDate(),
-//                         $lt: moment(customEndDate, "YYYY-MM-DD").endOf("day").toDate(),
-//                     };
-//                     break;
-//                 default:
-//                     break;
-//             }
-//         }
-
-//         // Get total count of matching bookings
-//         const totalBookings = await BanquetBooking.countDocuments(filter);
-//         const totalPages = Math.ceil(totalBookings / limit);
-
-//         // Fetch paginated bookings
-//         const bookings = await BanquetBooking.find(filter)
-//             .populate({
-//                 path: "banquetType",
-//                 populate: {
-//                     path: "banquetName",
-//                     model: "BanquetCategory",
-//                 },
-//             })
-//             .populate("primaryMemberId")
-//             .sort({ createdAt: -1 })
-//             .skip(skip)
-//             .limit(limit);
-
-//         if (!bookings.length) {
-//             return res.status(404).json({ message: "No bookings found" });
-//         }
-
-//         return res.status(200).json({
-//             message: "Fetched all bookings successfully",
-//             bookings,
-//             pagination: {
-//                 currentPage: page,
-//                 totalPages,
-//                 totalBookings,
-//                 pageSize: limit,
-//             }
-//         });
-//     } catch (error) {
-//         console.error("Error fetching banquet bookings:", error);
-//         return res.status(500).json({
-//             message: "Error retrieving bookings",
-//             error: error.message,
-//         });
-//     }
-// };
 
 const getAllBanquetBookings = async (req, res) => {
     try {

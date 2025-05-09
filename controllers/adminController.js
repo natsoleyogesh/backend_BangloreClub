@@ -67,90 +67,6 @@ const createAdmin = async (req, res) => {
   }
 };
 
-// // Admin login
-// const adminLogin = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     // Validate required fields
-//     if (!email || !password) {
-//       return res
-//         .status(400)
-//         .json({ success: false, message: "Email and password are required" });
-//     }
-
-//     // Find admin by email
-//     const admin = await Admin.findOne({ email }).populate("role");
-//     if (!admin) {
-//       return res
-//         .status(400)
-//         .json({ success: false, message: "Invalid email or password" });
-//     }
-
-//     // Check if password matches
-//     const isMatch = await bcrypt.compare(password, admin.password);
-//     if (!isMatch) {
-//       return res
-//         .status(400)
-//         .json({ success: false, message: "Invalid email or password" });
-//     }
-
-//     // Check if the account is active
-//     if (admin.isDeleted) {
-//       return res
-//         .status(403)
-//         .json({ success: false, message: "Account is deactivated" });
-//     }
-
-//     // Update last login timestamp
-//     admin.lastLogin = new Date();
-//     await admin.save();
-//     // Generate token
-//     const tokenData = {
-//       userId: admin._id,
-//       email: admin.email,
-//       role: admin.role.name,
-//       roleId: admin.role._id
-//     };
-//     const token = generateToken(tokenData);
-
-//     // Set token in response headers
-//     res.setHeader('Authorization', `Bearer ${token}`);
-//     console.log(req.ip, "fdhffdjh")
-//     // Log the login action
-//     const ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
-//     await logAction({
-//       userId: admin._id,
-//       userType: "Admin",
-//       action: "login",
-//       role: admin.role.name,
-//       ipAddress: ip,
-//       userAgent: req.headers["user-agent"],
-//     });
-
-
-//     res.status(200).json({
-//       success: true,
-//       message: "Login successful",
-//       token,
-//       user: {
-//         id: admin._id,
-//         name: admin.name,
-//         email: admin.email,
-//         role: admin.role.name,
-//         roleId: admin.role._id,
-//         lastLogin: admin.lastLogin,
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Error logging in admin:", error);
-//     res
-//       .status(500)
-//       .json({ message: "Error logging in admin", error: error.message });
-//   }
-// };
-
 
 const otpStore = new Map(); // Temporary OTP storage
 
@@ -190,12 +106,6 @@ const adminLogin = async (req, res) => {
     const htmlBody = otpRenderTemplate(emailTemplate.body, templateData);
     const subject = otpRenderTemplate(emailTemplate.subject, templateData);
 
-    // // ✅ Send OTP via email
-    // await sendEmail({
-    //   to: email,
-    //   subject: "Your OTP for Admin Login",
-    //   text: `Your OTP code is: ${otp}. This code is valid for 60 seconds.`,
-    // });
     console.log("templateData=======>", templateData)
     // Send OTP via Email
     await sendEmail(email, subject, htmlBody, attachments = [], cc = null);
@@ -311,13 +221,6 @@ const resendOtp = async (req, res) => {
     const emailTemplate = emailTemplates.otpTemplate;
     const htmlBody = otpRenderTemplate(emailTemplate.body, templateData);
     const subject = otpRenderTemplate(emailTemplate.subject, templateData);
-
-    // // ✅ Send OTP via email
-    // await sendEmail({
-    //   to: email,
-    //   subject: "Your OTP for Admin Login",
-    //   text: `Your OTP code is: ${otp}. This code is valid for 60 seconds.`,
-    // });
 
     // Send OTP via Email
     await sendEmail(email, subject, htmlBody, attachments = [], cc = null);
@@ -468,20 +371,6 @@ const getUserDetailsById = async (req, res) => {
     res.status(500).json({ message: "Error fetching user details", error: error.message });
   }
 };
-
-// const getAllUsers = async (req, res) => {
-//   try {
-//     const users = (await User.find({ relation: "Primary" })).reverse();
-//     // Send the response including the user and their full family tree
-//     res.status(200).json({
-//       message: "User details retrieved successfully",
-//       users
-//     });
-//   } catch (error) {
-//     console.error("Error fetching user details:", error);
-//     res.status(500).json({ message: "Error fetching user details", error: error.message });
-//   }
-// };
 
 const getAllUsers = async (req, res) => {
   try {
@@ -642,21 +531,6 @@ const getAllActiveUsers = async (req, res) => {
   }
 };
 
-
-// const getUsers = async (req, res) => {
-//   try {
-//     const users = (await User.find()).reverse();
-//     // Send the response including the user and their full family tree
-//     res.status(200).json({
-//       message: "User details retrieved successfully",
-//       users
-//     });
-//   } catch (error) {
-//     console.error("Error fetching user details:", error);
-//     res.status(500).json({ message: "Error fetching user details", error: error.message });
-//   }
-// };
-
 const getUsers = async (req, res) => {
   try {
     const { relation, search, page, limit } = req.query;
@@ -790,15 +664,6 @@ const getAdminById = async (req, res) => {
 
 // Get all admins except the current admin
 const getAllAdmins = async (req, res) => {
-  // try {
-  //   const currentAdminId = req.user.userId;
-  //   const admins = await Admin.find({ _id: { $ne: currentAdminId } }).select("-password").populate("role");
-
-  //   res.status(200).json({
-  //     success: true,
-  //     admins,
-  //   });
-  // } 
   try {
     const currentAdminId = req.user.userId;
 
@@ -896,16 +761,12 @@ module.exports = {
   adminLogout,
   qrScanDetails,
   getAllActiveUsers,
-
   getAdminDetails,
   getUsers,
-
-
   updateAdmin,
   getAdminById,
   getAllAdmins,
   getAdminsSearch,
-
   verifyOtp,
   resendOtp
 };

@@ -50,19 +50,6 @@ const hodSchema = new mongoose.Schema(
     { timestamps: true } // Adds createdAt and updatedAt fields
 );
 
-// // Pre-save middleware to format the `name` field
-// hodSchema.pre('save', function (next) {
-//     if (this.name) {
-//         // Convert to name case (e.g., "OTHER Tax" → "Other Tax")
-//         this.name = this.name
-//             .toLowerCase() // Convert all to lowercase first
-//             .split(' ') // Split the name into words
-//             .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize the first letter of each word
-//             .join(' '); // Join words back with spaces
-//     }
-//     next();
-// });
-
 const HOD = mongoose.model("ClubHod", hodSchema);
 
 module.exports = HOD;

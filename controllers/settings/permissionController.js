@@ -2,28 +2,6 @@ const Admin = require("../../models/Admin");
 const Permission = require("../../models/permission");
 
 
-// const assignPermissions = async (req, res) => {
-//     try {
-//         const { roleId, permissions } = req.body;
-
-//         // Remove existing permissions for the role
-//         await Permission.deleteMany({ role: roleId });
-
-//         // Create new permissions
-//         const newPermissions = permissions.map(permission => ({
-//             role: roleId,
-//             menuName: permission.menuName,
-//             subMenus: permission.subMenus,
-//         }));
-
-//         await Permission.insertMany(newPermissions);
-
-//         res.status(200).json({ message: "Permissions assigned successfully" });
-//     } catch (error) {
-//         res.status(500).json({ message: "Failed to assign permissions", error: error.message });
-//     }
-// };
-
 
 const assignPermissions = async (req, res) => {
     try {

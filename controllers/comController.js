@@ -43,16 +43,6 @@ const addCOM = async (req, res, next) => {
     }
 };
 
-// const getAllCOMs = async (req, res) => {
-//     try {
-//         const data = await COM.find();
-//         const coms = data.reverse();
-//         return res.status(200).json({ message: "Consideration Of Membership fetched successfully", coms });
-//     } catch (error) {
-//         return res.status(500).json({ message: 'Error fetching Consideration Of Membership', error: error.message });
-//     }
-// }
-
 const getAllCOMs = async (req, res) => {
     try {
         let { page, limit } = req.query;

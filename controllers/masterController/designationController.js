@@ -28,17 +28,6 @@ const createDesignation = async (req, res) => {
     }
 };
 
-// // Get all designations, excluding soft-deleted ones, ordered by latest first
-// const getAllDesignations = async (req, res) => {
-//     try {
-//         const designations = await Designation.find({ isDeleted: false }).sort({ createdAt: -1 });
-//         return res.status(200).json({ message: "All Designations", designations });
-//     } catch (err) {
-//         console.error("Error fetching designations:", err);
-//         return res.status(500).json({ message: "Server error", error: err });
-//     }
-// };
-
 // Get all designations, excluding soft-deleted ones, ordered by latest first with pagination
 const getAllDesignations = async (req, res) => {
     try {
