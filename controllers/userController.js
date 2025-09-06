@@ -207,29 +207,27 @@ const loginRequest = async (req, res) => {
         const { identifier } = req.body;
 
         // // Find user by mobile number, email, or member ID
-        // const user = await User.findOne({
-        //     $or: [
-        //         { mobileNumber: identifier },
-        //         { email: identifier },
-        //         { memberId: identifier },
-        //         { relation: "Primary" } // Ensuring the relation is "Primary"
-        //     ],
-        // },
-
-        // );
-        const user = await User.findOne({
-            $and: [
-                // { relation: "Primary" || "Spouse"},
-                { relation: { $in: ["Primary", "Spouse"] } },
-                {
-                    $or: [
-                        { mobileNumber: identifier },
-                        { email: identifier },
-                        { memberId: identifier }
-                    ]
-                }
-            ]
+       const user = await User.findOne({
+            $or: [
+                { mobileNumber: identifier },
+                { email: identifier },
+                { memberId: identifier },
+                // { relation: "Primary" } // Ensuring the relation is "Primary"
+            ],
         });
+        // const user = await User.findOne({
+        //     $and: [
+        //         // { relation: "Primary" || "Spouse"},
+        //         { relation: { $in: ["Primary", "Spouse"] } },
+        //         {
+        //             $or: [
+        //                 { mobileNumber: identifier },
+        //                 { email: identifier },
+        //                 { memberId: identifier }
+        //             ]
+        //         }
+        //     ]
+        // });
 
 
         if (!user) {

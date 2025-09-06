@@ -1282,12 +1282,20 @@ const createBanquetBookingDetails = async (req, res) => {
 
         let primaryMemberDetails = await User.findById(primaryMemberId);
         // If the member is not primary, fetch the actual primary member
-        if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {
-            primaryMemberDetails = await User.findById(primaryMemberDetails.parentUserId);
-            if (!primaryMemberDetails) {
-                return res.status(404).json({ message: "Primary member not found for the provided member." });
-            }
-        }
+        // if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {
+        //     primaryMemberDetails = await User.findById(primaryMemberDetails.parentUserId);
+        //     if (!primaryMemberDetails) {
+        //         return res.status(404).json({ message: "Primary member not found for the provided member." });
+        //     }
+        // }
+        //         if (primaryMemberDetails.relation !== "Primary" && primaryMemberDetails.parentUserId !== null) {
+        //         return res.status(400).json({ message: "You are currently not eligible for booking. Only Primary Member Can Book!." });
+        // }
+        if (primaryMemberDetails.relation !== "Primary") {
+    return res.status(400).json({
+        message: "You are currently not eligible for booking. Only Primary Member Can Book!."
+    });
+}
 
         // Check credit stop and credit limit
         if (primaryMemberDetails.creditStop) {
